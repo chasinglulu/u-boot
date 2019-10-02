@@ -12,7 +12,7 @@
 #include <config.h>
 
 /*
- * refer to the datasheet
+ * Refer to the Exynos4412 SoC datasheet
  * the value for high-performance
  */
 #ifdef CONFIG_CLK_800_400_200

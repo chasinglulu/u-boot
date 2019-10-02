@@ -14,6 +14,10 @@
 #include <asm/arch/power.h>
 #include <asm/arch/spl.h>
 #include <asm/arch/spi.h>
+#include <asm/arch/board.h>
+#ifdef CONFIG_EXYNOS4412_SECURE_BOOT
+#include <asm/arch/smc.h>
+#endif
 
 #include "common_setup.h"
 #include "clock_init.h"
@@ -43,32 +47,6 @@ void *get_irom_func(int index)
 {
 	return (void *)*(u32 *)irom_ptr_table[index];
 }
-
-#ifdef CONFIG_ITOP4412
-#define GPL2CON (0x11000100)
-#define GPL2DAT (0x11000104)
-#define GPK1CON (0x11000060)
-#define GPK1DAT (0x11000064)
-
-void early_led_on(uint8_t led)
-{
-        uint8_t val;
-
-        /* LED2 */
-        val = led & 0x01;
-        if (val) {
-                clrsetbits_le32(GPL2CON, 0xf << 0, 0x01 << 0);
-                setbits_8(GPL2DAT, 1);
-        }
-
-        /* LED3 */
-        val = led & 0x02;
-        if (val) {
-                clrsetbits_le32(GPK1CON, 0xf << 4, 0x01 << 4);
-                setbits_8(GPK1DAT, 1 << 1);
-        }
-}
-#endif
 
 #ifdef CONFIG_USB_BOOTING
 /*
@@ -201,6 +179,27 @@ static void exynos_spi_copy(unsigned int uboot_size, unsigned int uboot_addr)
 }
 #endif
 
+#ifdef CONFIG_EXYNOS4412_SECURE_BOOT
+/*
+ * With secure boot, copy uboot.bin to DRAM and call cold_boot to execute
+ * never return in cold_boot function
+ */
+void copy_uboot_to_ram(void)
+{
+    unsigned int bootmode = get_boot_mode();
+    switch (bootmode) {
+        case BOOT_MODE_SD:
+            load_uboot_image(SDMMC_CH2);
+            cold_boot(SDMMC_CH2);
+            break;
+        case BOOT_MODE_EMMC:
+            load_uboot_image(EMMC44_CH4);
+            cold_boot(EMMC44_CH4);
+        default:
+            break;
+    }
+}
+#else
 /*
 * Copy U-Boot from mmc to RAM:
 * COPY_BL2_FNPTR_ADDR: Address in iRAM, which Contains
@@ -282,6 +281,7 @@ void copy_uboot_to_ram(void)
 	if (copy_bl2)
 		copy_bl2(offset, size, CONFIG_SYS_TEXT_BASE);
 }
+#endif /* CONFIG_EXYNOS4412_SECURE_BOOT */
 
 void memzero(void *s, size_t n)
 {

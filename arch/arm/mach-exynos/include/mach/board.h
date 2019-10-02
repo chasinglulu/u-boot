@@ -25,4 +25,12 @@ int exynos_early_init_f(void);
  */
 int exynos_power_init(void);
 
+/*
+ * It might could't use debug_uart in SPL,
+ * so we can make led light to indicate debug info.
+ *
+ * led_num: corresponding led to light up
+ */
+void exynos_led_set_on_early(unsigned int led_num);
+
 #endif	/* EXYNOS_BOARD_H */

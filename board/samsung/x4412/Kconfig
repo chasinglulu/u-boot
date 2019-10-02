@@ -1,0 +1,23 @@
+if TARGET_X4412
+
+config SYS_BOARD
+	default "x4412"
+
+config SYS_VENDOR
+	default "samsung"
+
+config SYS_CONFIG_NAME
+	default "x4412"
+
+config X4412
+        bool "9tripod X4412 development board"
+        default y
+
+config EXYNOS4412
+        bool "Samsung Exynos4412 SoC"
+        default y
+
+config EXYNOS4412_SECURE_BOOT
+        bool "secure boot support by Exynos4412 SoC"
+        default y
+endif

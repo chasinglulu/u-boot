@@ -14,7 +14,6 @@ config ITOP4412
     default y
 
 config EXYNOS4412
-    bool "Samsung Exynos4412 SoC used"
+    bool "Samsung Exynos4412 SoC"
     default y
-
 endif

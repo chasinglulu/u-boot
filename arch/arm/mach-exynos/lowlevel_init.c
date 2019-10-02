@@ -34,6 +34,7 @@
 #include <asm/arch/pinmux.h>
 #include <asm/arch/system.h>
 #include <asm/armv7.h>
+#include <asm/arch/board.h>
 #include "common_setup.h"
 #include "exynos5_setup.h"
 
@@ -164,7 +165,9 @@ static void secondary_cores_configure(void)
 	dsb();
 	sev();
 }
+#endif
 
+#if defined CONFIG_EXYNOS5420 || defined CONFIG_EXYNOS4412_SECURE_BOOT
 extern void relocate_wait_code(void);
 #endif
 
@@ -174,6 +177,7 @@ int do_lowlevel_init(void)
 	int actions = 0;
 
 	arch_cpu_init();
+        exynos_led_set_on_early(1);
 
 #if !defined(CONFIG_SYS_L2CACHE_OFF) && defined(CONFIG_EXYNOS5420)
 	/*
@@ -193,8 +197,14 @@ int do_lowlevel_init(void)
 
 	/* Reconfigure secondary cores */
 	secondary_cores_configure();
-#endif
 
+#elif defined (CONFIG_EXYNOS4412_SECURE_BOOT)
+        /*
+         * Relocate secondary core wait code
+         */
+        relocate_wait_code();
+#endif
+        exynos_led_set_on_early(2);
 	reset_status = get_reset_status();
 
 	switch (reset_status) {
@@ -215,6 +225,7 @@ int do_lowlevel_init(void)
 
 	if (actions & DO_CLOCKS) {
 		system_clock_init();
+                exynos_led_set_on_early(4);
 #ifdef CONFIG_DEBUG_UART
 #if (defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_SERIAL_SUPPORT)) || \
     !defined(CONFIG_SPL_BUILD)
@@ -227,7 +238,7 @@ int do_lowlevel_init(void)
 #endif
 #endif
 		mem_ctrl_init(actions & DO_MEM_RESET);
-#ifndef CONFIG_ITOP4412
+#ifndef CONFIG_EXYNOS4412
 		tzpc_init();
 #endif
 	}
