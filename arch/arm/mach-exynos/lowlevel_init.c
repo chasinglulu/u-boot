@@ -177,7 +177,6 @@ int do_lowlevel_init(void)
 	int actions = 0;
 
 	arch_cpu_init();
-        exynos_led_set_on_early(1);
 
 #if !defined(CONFIG_SYS_L2CACHE_OFF) && defined(CONFIG_EXYNOS5420)
 	/*
@@ -225,7 +224,6 @@ int do_lowlevel_init(void)
 
 	if (actions & DO_CLOCKS) {
 		system_clock_init();
-                exynos_led_set_on_early(4);
 #ifdef CONFIG_DEBUG_UART
 #if (defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_SERIAL_SUPPORT)) || \
     !defined(CONFIG_SPL_BUILD)
