@@ -85,16 +85,16 @@ void load_uboot_image(u32 boot_device)
     info_image = (struct ld_image_info *)CONFIG_IMAGE_INFO_BASE;
 
     if (boot_device == SDMMC_CH2) {
-        info_image->bootdev.sdmmc.images_pos = UBOOT_START_OFFSET;
-        info_image->bootdev.sdmmc.block_count = UBOOT_SIZE_BLOC_COUNT;
+        info_image->bootdev.sdmmc.images_pos = BL2_START_OFFSET;
+        info_image->bootdev.sdmmc.block_count = BL2_SIZE_BLOC_COUNT;
         info_image->bootdev.sdmmc.base_addr = CONFIG_SYS_TEXT_BASE;
     } else if (boot_device == EMMC44_CH4) {
-        info_image->bootdev.emmc.block_count = UBOOT_SIZE_BLOC_COUNT;
+        info_image->bootdev.emmc.block_count = BL2_SIZE_BLOC_COUNT;
         info_image->bootdev.emmc.base_addr = CONFIG_SYS_TEXT_BASE;
     }
 
     info_image->image_base_addr = CONFIG_SYS_TEXT_BASE;
-    info_image->size = COPY_UBOOT_SIZE;
+    info_image->size = UBOOT_SIZE;
     info_image->secure_context_base = SMC_SECURE_CONTEXT_BASE;
     info_image->signature_size = 0;
 
@@ -117,7 +117,7 @@ void cold_boot(u32 boot_device)
     }
 
     info_image->image_base_addr = CONFIG_SYS_TZSW_BASE;
-    info_image->size = COPY_TZSW_SIZE;
+    info_image->size = TZSW_SIZE;
     info_image->secure_context_base = SMC_SECURE_CONTEXT_BASE;
     info_image->signature_size = 0;
 

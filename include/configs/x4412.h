@@ -76,16 +76,16 @@
 #define CONFIG_SYS_MMC_ENV_DEV		0
 #define CONFIG_ENV_SIZE			(16 << 10)	/* 16 KB */
 #define RESERVE_BLOCK_SIZE		(512)
-#define BL1_SIZE			(15 << 10) /* 15 KiB reserved for BL1*/
-#define BL2_SZIE            (16 << 10)
-#define COPY_UBOOT_SIZE     (0x80000)   /* 512 KiB */
-#define COPY_TZSW_SIZE      (0x27000)   /* 156 KiB */
-#define UBOOT_START_OFFSET  ((RESERVE_BLOCK_SIZE + BL1_SIZE + BL2_SZIE)/512)
-#define UBOOT_SIZE_BLOC_COUNT   (COPY_UBOOT_SIZE/512)
-#define TZSW_START_OFFSET   (UBOOT_START_OFFSET + UBOOT_SIZE_BLOC_COUNT)
-#define TZSW_SIZE_BLOC_COUNT    (COPY_TZSW_SIZE/512)
-#define CONFIG_ENV_OFFSET		(RESERVE_BLOCK_SIZE + BL1_SIZE + BL2_SZIE \
-                                    + COPY_UBOOT_SIZE + COPY_TZSW_SIZE)
+#define FWBL_SIZE			(15 << 10) /* 15 KiB reserved for fwbl.bin */
+#define SPL_SZIE            (16 << 10)  /* 16 KiB reserved for u-boot-spl.bin */
+#define UBOOT_SIZE     (0x80000)   /* 512 KiB reserved for u-boot.bin */
+#define TZSW_SIZE      (0x27000)   /* 156 KiB  reserved for tzsw.bin */
+#define BL2_START_OFFSET  ((RESERVE_BLOCK_SIZE + FWBL_SIZE + SPL_SZIE)/512)
+#define BL2_SIZE_BLOC_COUNT   (UBOOT_SIZE/512)
+#define TZSW_START_OFFSET   (BL2_START_OFFSET + BL2_SIZE_BLOC_COUNT)
+#define TZSW_SIZE_BLOC_COUNT    (TZSW_SIZE/512)
+#define CONFIG_ENV_OFFSET       (RESERVE_BLOCK_SIZE + FWBL_SIZE + SPL_SZIE \
+                                    + UBOOT_SIZE + TZSW_SIZE)
 
 #define CONFIG_SUPPORT_EMMC_BOOT
 #endif	/* __CONFIG_H */

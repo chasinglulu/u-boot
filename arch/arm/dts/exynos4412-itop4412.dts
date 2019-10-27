@@ -23,6 +23,10 @@
 	aliases {
 		serial2 = "/serial@13820000";
 		console = "/serial@13820000";
+                pinctrl0 = "/pinctrl@11400000";
+                pinctrl1 = "/pinctrl@11000000";
+                pinctrl2 = "/pinctrl@03860000";
+                pinctrl3 = "/pinctrl@106E0000";
 	};
 
         serial@13800000 {

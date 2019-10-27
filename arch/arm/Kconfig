@@ -662,6 +662,7 @@ config ARCH_EXYNOS
 	bool "Samsung EXYNOS"
 	select DM
 	select DM_GPIO
+        select DM_EXYNOS_GPIO
 	select DM_I2C
 	select DM_KEYBOARD
 	select DM_SERIAL

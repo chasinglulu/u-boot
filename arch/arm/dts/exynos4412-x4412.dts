@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * refer to exynos4210-origen.dts
+ * Refer to exynos4210-origen.dts
  *
  * Samsung's Exynos4412 based X4412 board device tree source
  *
@@ -13,145 +13,138 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
-    model = "9tripod X4412 board based on Exynos4412";
-    compatible = "9tripod,x4412", "samsung,exynos4412";
+        model = "9tripod X4412 board based on Exynos4412";
+        compatible = "9tripod,x4412", "samsung,exynos4412";
 
-    chose {
-        stdout-path = "/serial@13830000";
-    };
+        chose {
+                stdout-path = "/serial@13830000";
+        };
 
-    config {
-        u-boot,mmc-env-offset = <0xAEE00>;
-    };
+        aliases {
+                serial3 = "/serial@13830000";
+                console = "/serial@13830000";
+                mmc1 = "/dwmmc@12550000";
+                mmc0 = "/sdhci@12530000";
+        };
 
-    aliases {
-        serial3 = "/serial@13830000";
-        console = "/serial@13830000";
-        mmc1 = "/dwmmc@12550000";
-        mmc0 = "/sdhci@12530000";
-        pinctrl-exynos0 = "/pinctrl-exynos@0";
-    };
+        serial@13800000 {
+                status = "disabled";
+        };
 
-    serial@13800000 {
-        status = "disabled";
-    };
+        serial@13810000 {
+                status = "disabled";
+        };
 
-    serial@13810000 {
-        status = "disabled";
-    };
+        serial@13820000 {
+                status = "disabled";
+        };
 
-    serial@13820000 {
-        status = "disabled";
-    };
+        serial@13830000 {
+                status = "okay";
+        };
 
-    serial@13830000 {
-        status = "okay";
-    };
+        serial@13840000 {
+                status = "disabled";
+        };
 
-    serial@13840000 {
-        status = "disabled";
-    };
+        pwm: pwm@139d0000 {
+                compatible = "samsung,exynos4210-pwm";
+                reg = <0x139d0000 0x100>;
+                #pwm-cells = <2>;
+                status = "okay";
+        };
 
-    pwm: pwm@139d0000 {
-        compatible = "samsung,exynos4210-pwm";
-        reg = <0x139d0000 0x100>;
-        #pwm-cells = <2>;
-        status = "okay";
-    };
+        fimd@11c00000 {
+                u-boot,dm-pre-reloc;
+                compatible = "samsung,exynos-fimd";
+                reg = <0x11c00000 0xa4>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&lcd_data>;
 
-    pinctrl-exynos@0 {
-        compatible = "samsung,exynos4412-pinctrl";
-        reg = <0x11400000 0x1000>;
+                samsung,vl-freq = <60>;
+                samsung,vl-col = <1024>;
+                samsung,vl-row = <600>;
 
+                samsung,vl-clkp = <0>;
+                samsung,vl-hsp = <0>;
+                samsung,vl-vsp = <0>;
+                samsung,vl-dp = <0>;
+                samsung,vl-bpix = <5>;
+
+                samsung,vl-hspw = <20>;
+                samsung,vl-hbpd = <140>;
+                samsung,vl-hfpd = <160>;
+                samsung,vl-vspw = <3>;
+                samsung,vl-vbpd = <20>;
+                samsung,vl-vfpd = <12>;
+
+                samsung,winid = <0>;
+                samsung,interface-mode = <1>;
+                samsung,rgb-mode = <0>;
+
+                status = "okay";
+        };
+
+        backlight: pwm-backlight {
+                compatible = "pwm-backlight";
+                enable-gpios = <&gpx3 5 0>;
+                pwms = <&pwm 0 1000000>;
+                brightness-levels = <0 100 500 1000 1500 2000 2500 2800>;
+                default-brightness-level = <7>;
+                status = "okay";
+        };
+
+        panel {
+                compatible = "simple-panel";
+                backlight = <&backlight>;
+                status = "okay";
+        };
+
+        sromc {
+                compatible = "samsung,exynos-sromc";
+                bank = <3>;
+                width = <2>;
+                srom-timing = <0 0 12 1 6 1 1>;
+        };
+
+        ehci@12580000 {
+                status = "okay";
+                compatible = "samsung,exynos-ehci";
+                reg = <0x12580000 0x100>;
+                #address-cells = <1>;
+                #size-cells = <1>;
+
+                phy {
+                        compatible = "samsung,exynos-usb-phy";
+                        reg = <0x125B0000 0x100>;
+                };
+        };
+
+        leds {
+                compatible = "gpio-leds";
+
+                led1 {
+                        label = "gpx2_7";
+                        gpios = <&gpx2 7 GPIO_ACTIVE_LOW>;
+                        default-state = "on";
+                };
+        };
+
+};
+
+&pinctrl_0 {
         lcd_data: lcd {
-            samsung,pins = "gpf0-0", "gpf0-1", "gpf0-2", "gpf0-3",
-                           "gpf0-4", "gpf0-5", "gpf0-6", "gpf0-7",
-                           "gpf1-0", "gpf1-1", "gpf1-2", "gpf1-3",
-                           "gpf1-4", "gpf1-5", "gpf1-6", "gpf1-7",
-                           "gpf2-0", "gpf2-1", "gpf2-2", "gpf2-3",
-                           "gpf2-4", "gpf2-5", "gpf2-6", "gpf2-7",
-                           "gpf3-0", "gpf3-1", "gpf3-2", "gpf3-3";
-            samsung,pin-function = <2>;
-            samsung,pin-pud = <0>;
-            samsung,pin-drv = <3>;
+                samsung,pins =  "gpf0-0", "gpf0-1", "gpf0-2", "gpf0-3",
+                                "gpf0-4", "gpf0-5", "gpf0-6", "gpf0-7",
+                                "gpf1-0", "gpf1-1", "gpf1-2", "gpf1-3",
+                                "gpf1-4", "gpf1-5", "gpf1-6", "gpf1-7",
+                                "gpf2-0", "gpf2-1", "gpf2-2", "gpf2-3",
+                                "gpf2-4", "gpf2-5", "gpf2-6", "gpf2-7",
+                                "gpf3-0", "gpf3-1", "gpf3-2", "gpf3-3";
+                samsung,pin-function = <2>;
+                samsung,pin-pud = <0>;
+                samsung,pin-drv = <3>;
         };
-    };
-
-    fimd@11c00000 {
-        u-boot,dm-pre-reloc;
-        compatible = "samsung,exynos-fimd";
-        reg = <0x11c00000 0xa4>;
-        pinctrl-names = "default";
-        pinctrl-0 = <&lcd_data>;
-
-        samsung,vl-freq = <60>;
-        samsung,vl-col = <1024>;
-        samsung,vl-row = <600>;
-
-        samsung,vl-clkp = <0>;
-        samsung,vl-hsp = <0>;
-        samsung,vl-vsp = <0>;
-        samsung,vl-dp = <0>;
-        samsung,vl-bpix = <5>;
-
-        samsung,vl-hspw = <20>;
-        samsung,vl-hbpd = <140>;
-        samsung,vl-hfpd = <160>;
-        samsung,vl-vspw = <3>;
-        samsung,vl-vbpd = <20>;
-        samsung,vl-vfpd = <12>;
-
-        samsung,winid = <0>;
-        samsung,interface-mode = <1>;
-        samsung,rgb-mode = <0>;
-
-        status = "okay";
-    };
-
-    backlight: pwm-backlight {
-        compatible = "pwm-backlight";
-        enable-gpios = <&gpx3 5 0>;
-        pwms = <&pwm 0 1000000>;
-        brightness-levels = <0 100 500 1000 1500 2000 2500 2800>;
-        default-brightness-level = <7>;
-        status = "okay";
-    };
-
-    panel {
-        compatible = "simple-panel";
-        backlight = <&backlight>;
-        status = "okay";
-    };
-
-    sromc {
-        compatible = "samsung,exynos-sromc";
-        bank = <3>;
-        width = <2>;
-        srom-timing = <0 0 12 1 6 1 1>;
-    };
-
-    ehci@12580000 {
-        status = "okay";
-        compatible = "samsung,exynos-ehci";
-        reg = <0x12580000 0x100>;
-        #address-cells = <1>;
-        #size-cells = <1>;
-        phy {
-            compatible = "samsung,exynos-usb-phy";
-            reg = <0x125B0000 0x100>;
-        };
-    };
-
-    leds {
-        compatible = "gpio-leds";
-
-        led1 {
-            label = "gpx2_7";
-            gpios = <&gpx2 7 GPIO_ACTIVE_LOW>;
-            default-state = "on";
-        };
-    };
-
 };
 
 &sdhci2 {
@@ -162,8 +155,8 @@
 };
 
 &mshc_0 {
-    samsung,bus-width = <8>;
-    index = <4>;
-    samsung,timing = <1 1 0>;
-    status ="okay";
+        samsung,bus-width = <8>;
+        index = <4>;
+        samsung,timing = <1 1 0>;
+        status ="okay";
 };

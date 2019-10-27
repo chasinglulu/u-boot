@@ -203,7 +203,6 @@ int do_lowlevel_init(void)
          */
         relocate_wait_code();
 #endif
-        exynos_led_set_on_early(2);
 	reset_status = get_reset_status();
 
 	switch (reset_status) {
