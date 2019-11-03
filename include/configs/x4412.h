@@ -88,4 +88,10 @@
                                     + UBOOT_SIZE + TZSW_SIZE)
 
 #define CONFIG_SUPPORT_EMMC_BOOT
+#define CONFIG_EXYNOS_FB
+#define CONFIG_SPLASH_SCREEN
+#define CONFIG_SPLASH_SOURCE
+#define CONFIG_BMP_24BPP
+#define CONFIG_BMP_32BPP
+
 #endif	/* __CONFIG_H */

@@ -146,7 +146,11 @@ static void exynos_fimd_set_par(struct exynos_fb_priv *priv,
 	/* DATAPATH is DMA */
 	cfg |= EXYNOS_WINCON_DATAPATH_DMA;
 
+#ifdef CONFIG_X4412
+        cfg |= EXYNOS_WINCON_WSWP_ENABLE;
+#else
 	cfg |= EXYNOS_WINCON_HAWSWP_ENABLE;
+#endif
 
 	/* dma burst is 16 */
 	cfg |= EXYNOS_WINCON_BURSTLEN_16WORD;
@@ -653,7 +657,7 @@ static int exynos_fb_probe(struct udevice *dev)
 		debug("%s: Display device error %d\n", __func__, ret);
 		return ret;
 	}
-	if (!dev) {
+	if (!dp) {
 		debug("%s: Display device missing\n", __func__);
 		return -ENODEV;
 	}

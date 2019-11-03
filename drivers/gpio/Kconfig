@@ -14,14 +14,14 @@ config DM_GPIO
 	  particular GPIOs that they provide. The uclass interface
 	  is defined in include/asm-generic/gpio.h.
 
-config DM_EXYNOS_GPIO
+config ALTERA_PIO
 	bool "Altera PIO driver"
 	depends on DM_GPIO
 	help
 	  Select this to enable PIO for Altera devices. Please find
 	  details on the "Embedded Peripherals IP User Guide" of Altera.
 
-config ALTERA_PIO
+config DM_EXYNOS_GPIO
 	bool "Exynos GPIO driver"
 	depends on DM_GPIO
 	help

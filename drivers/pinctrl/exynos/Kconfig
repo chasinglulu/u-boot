@@ -1,6 +1,14 @@
 config PINCTRL_EXYNOS
 	bool
 
+config PINCTRL_EXYNOS4412
+	bool "Samsung Exynos4412 pinctrl driver"
+	depends on ARCH_EXYNOS && PINCTRL_FULL
+	select PINCTRL_EXYNOS
+	help
+	  Support pin multiplexing and pin configuration control on
+	  Samsung's Exynos4412 SoC.
+
 config PINCTRL_EXYNOS7420
 	bool "Samsung Exynos7420 pinctrl driver"
 	depends on ARCH_EXYNOS && PINCTRL_FULL
