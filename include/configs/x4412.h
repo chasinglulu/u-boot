@@ -93,5 +93,6 @@
 #define CONFIG_SPLASH_SOURCE
 #define CONFIG_BMP_24BPP
 #define CONFIG_BMP_32BPP
+#define CONFIG_USB_EHCI_EXYNOS
 
 #endif	/* __CONFIG_H */
