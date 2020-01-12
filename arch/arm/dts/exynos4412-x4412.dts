@@ -23,8 +23,8 @@
         aliases {
                 serial3 = "/serial@13830000";
                 console = "/serial@13830000";
-                mmc1 = "/dwmmc@12550000";
-                mmc0 = "/sdhci@12530000";
+                mmc0 = "/dwmmc@12550000";
+                mmc1 = "/sdhci@12530000";
         };
 
         serial@13800000 {
