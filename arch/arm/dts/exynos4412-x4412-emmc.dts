@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Refer to exynos4210-origen.dts
+ *
+ * Samsung's Exynos4412 based X4412 board device tree source
+ *
+ * Copyright (c) 2018 Wang Xinlu <wangkartx@gmail.com>
+ *
+ */
+
+/dts-v1/;
+#include "exynos4412-x4412.dts"
+
+/ {
+        aliases {
+                mmc0 = "/dwmmc@12550000"; 
+                mmc1 = "/sdhci@12530000"; 
+        };
+};

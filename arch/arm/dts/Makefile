@@ -14,7 +14,9 @@ dtb-$(CONFIG_EXYNOS4) += exynos4210-origen.dtb \
 	exynos4412-trats2.dtb \
 	exynos4412-odroid.dtb \
 	exynos4412-itop4412.dtb \
-	exynos4412-x4412.dtb
+	exynos4412-x4412.dtb \
+	exynos4412-x4412-sd.dtb \
+	exynos4412-x4412-emmc.dtb
 
 dtb-$(CONFIG_TARGET_HIKEY) += hi6220-hikey.dtb
 
