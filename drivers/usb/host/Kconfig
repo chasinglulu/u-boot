@@ -168,6 +168,13 @@ config USB_EHCI_VF
 	help
 	  Enables support for the on-chip EHCI controller on Vybrid SoCs.
 
+config USB_EHCI_EXYNOS
+	bool "Support for Vybrid on-chip EHCI USB controller"
+	depends on ARCH_EXYNOS4
+	default y
+	help
+	  Enables support for the on-chip EHCI controller on Exynos4 SoCs.
+
 if USB_EHCI_MX7
 
 config MXC_USB_OTG_HACTIVE
