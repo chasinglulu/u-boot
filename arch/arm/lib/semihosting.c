@@ -19,6 +19,7 @@
 #define SYSCLOSE	0x02
 #define SYSWRITE	0x05
 #define SYSREAD		0x06
+#define SYSISERROR	0x08
 #define SYSSEEK		0x0A
 #define SYSFLEN		0x0C
 #define SYSERRNO	0x13
@@ -39,6 +40,26 @@ static noinline long smh_trap(unsigned int sysnum, void *addr)
 #endif
 	return result;
 }
+
+#if CONFIG_IS_ENABLED(SEMIHOSTING_FALLBACK)
+static bool _semihosting_enabled = true;
+static bool try_semihosting = true;
+
+bool semihosting_enabled(void)
+{
+	if (try_semihosting) {
+		smh_trap(SYSERRNO, NULL);
+		try_semihosting = false;
+	}
+
+	return _semihosting_enabled;
+}
+
+void disable_semihosting(void)
+{
+	_semihosting_enabled = false;
+}
+#endif
 
 /**
  * smh_errno() - Read the host's errno
