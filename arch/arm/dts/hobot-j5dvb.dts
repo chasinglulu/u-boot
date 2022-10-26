@@ -7,6 +7,7 @@
 
 /dts-v1/;
 
+#include <dt-bindings/interrupt-controller/arm-gic.h>
 / {
 	model = "Horizon Robotics Journey 5 DVB";
 	compatible = "hobot,j5dvb";
@@ -26,7 +27,12 @@
 		interrupt-controller;
 		reg = <0x00 0x58000000 0x00 0x10000>,
 			<0x00 0x58040000 0x00 0x100000>;
-		interrupts = <1 9 4>;
+		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
 	};
 
 	soc {
@@ -35,15 +41,32 @@
 		#size-cells = <2>;
 		ranges;
 
-		serial1: uart@43b90000 {
-			compatible = "snps,dw-apb-uart";
-			reg = <0x00 0x43b90000 0x00 0x1000>;
-			reg-shift = <2>;
-			reg-io-width = <4>;
-			interrupts = <0 23 4>;
-			clock-frequency = <192000000>;
-			u-boot,dm-pre-reloc;
-			status = "okay";
+		safety: safety-apb@43800000 {
+			compatible = "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0 0x43800000 0x400000>;
+
+			serial0: uart@380000 {
+				compatible = "snps,dw-apb-uart";
+				reg = <0x380000 0x1000>;
+				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+				clock-frequency = <192000000>; //192MHz
+				reg-io-width = <4>;
+				reg-shift = <2>;
+				status = "okay";
+			};
+
+			serial1: uart@390000 {
+				compatible = "snps,dw-apb-uart";
+				reg = <0x390000 0x1000>;
+				reg-shift = <2>;
+				reg-io-width = <4>;
+				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+				clock-frequency = <192000000>;
+				u-boot,dm-pre-reloc;
+				status = "okay";
+			};
 		};
 	};
 };
