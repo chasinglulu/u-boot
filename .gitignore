@@ -102,3 +102,6 @@ __pycache__
 # pylint files
 /pylint.cur
 /pylint.out/
+
+tools/boot/
+compile_commands.json
