@@ -1,0 +1,12 @@
+if TARGET_DVB_J5
+
+config SYS_BOARD
+	default "j5dvb"
+
+config SYS_VENDOR
+	default "hobot"
+
+config SYS_CONFIG_NAME
+	default "hobot-j5"
+
+endif

@@ -260,7 +260,7 @@ cmd_wrap = echo "\#include <../$(patsubst $(obj)/%,%,$@)>" >$@
 $(obj)/boot/%.c $(obj)/common/%.c $(obj)/env/%.c $(obj)/lib/%.c:
 	$(call cmd,wrap)
 
-clean-dirs := lib common
+clean-dirs := lib common boot
 
 always := $(hostprogs-y)
 

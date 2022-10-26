@@ -1,0 +1,18 @@
+if ARCH_HOBOT
+
+config HOBOT_J5
+	bool "Support Horizon Robotics Jounery 5 SoC"
+	select ARM64
+	select DM_I2C
+	select DM_ETH
+	help
+	  The Journey 5 is a ARM-based SoC with a eight-core Cortex-A55
+	  and dual-core BPU.
+	  including 2M SRAM, 128K L2 cache per core, 2M L3 cache, dual-core
+	  lockstep Cortex-M and DSP, two DDR4 controller and video codec support.
+	  Peripherals include Gigabit Ethernet, MIPI, PCIe, eMMC, I2S, UARTs, SPI,
+	  I2C and PWMs.
+
+source "arch/arm/mach-hobot/j5/Kconfig"
+
+endif

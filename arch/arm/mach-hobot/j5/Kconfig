@@ -1,0 +1,24 @@
+if HOBOT_J5
+
+choice
+	prompt "Hobot Jounery 5 board select"
+
+config TARGET_DVB_J5
+	bool "J5 Development Verification board"
+	help
+	  J5DVB is a development board for Hobot Jounery 5 SoC,
+	  with full function and physical connectors support like MIPI,
+	  JTAG, MAC, SD card, CAN, QSPI, PCIe, USB-to-serial...
+
+
+endchoice
+
+config SYS_SOC
+	default "j5"
+
+config SYS_MALLOC_F_LEN
+	default 0x4000
+
+source "board/hobot/j5dvb/Kconfig"
+
+endif

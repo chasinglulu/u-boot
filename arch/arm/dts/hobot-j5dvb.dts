@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Horizon Robotics J5 DVB device tree
+ *
+ * Copyright (C) 2022 Horizon Robotics Co,.Ltd.
+ */
+
+/dts-v1/;
+
+/ {
+	model = "Horizon Robotics Journey 5 DVB";
+	compatible = "hobot,j5dvb";
+	#address-cells = <2>;
+	#size-cells = <2>;
+	interrupt-parent = <&gic>;
+
+	chosen {
+		stdout-path = &serial1;
+	};
+
+	gic: interrupt-controller@58000000 {
+		compatible = "arm,gic-v3";
+		#interrupt-cells = <3>;
+		#address-cells = <2>;
+		#size-cells = <2>;
+		interrupt-controller;
+		reg = <0x00 0x58000000 0x00 0x10000>,
+			<0x00 0x58040000 0x00 0x100000>;
+		interrupts = <1 9 4>;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		serial1: uart@43b90000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x00 0x43b90000 0x00 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <0 23 4>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			status = "okay";
+		};
+	};
+};
