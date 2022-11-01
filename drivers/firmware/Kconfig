@@ -37,4 +37,15 @@ config ZYNQMP_FIRMWARE
 	  Say yes to enable ZynqMP firmware interface driver.
 	  If in doubt, say N.
 
+config HOBOT_SCI
+	bool "Hobot System Control Interface Driver"
+	depends on ARCH_HOBOT
+	select FIRMWARE
+	help
+	  The System Control Interface Driver is used to controll Acore booting
+	  with the share SRAM in complex System on Chip (SoC) such as those found on
+	  J5 SoC.
+
+	  Say yes to enable hobot system controll interface driver.
+	  If in doubt, say N.
 source "drivers/firmware/scmi/Kconfig"
