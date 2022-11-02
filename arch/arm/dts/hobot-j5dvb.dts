@@ -16,7 +16,12 @@
 	interrupt-parent = <&gic>;
 
 	chosen {
-		stdout-path = &serial1;
+		stdout-path = "serial1:921600n8";
+	};
+
+	aliases {
+		serial0 = &serial0;
+		serial1 = &serial1;
 	};
 
 	gic: interrupt-controller@58000000 {
@@ -35,11 +40,46 @@
 		method = "smc";
 	};
 
+	hobot_sci {
+		compatible = "hobot,j5-sci-smccc";
+		arm,smc-id = <0x82000009>;
+		hobot,sci-cmds = <0x3>;
+		ranges;
+
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		bootflags_soc {
+			compatible = "hobot,j5-sci";
+			reg = <0x0 0x20000d00 0x0 0x300>;
+			hobot,sci-index = <0>;
+		};
+
+		bootflags_board {
+			compatible = "hobot,j5-sci";
+			reg = <0x0 0x20000c00 0x0 0x100>;
+			hobot,sci-index = <1>;
+		};
+
+		bootflags_efuse {
+			compatible = "hobot,j5-sci";
+			reg = <0x00 0x43084000 0x00 0x00000338>;
+			hobot,sci-index = <2>;
+		};
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+
+		mmc0: sdhci@0x48030000 {
+			compatible = "hobot,j5-sd4hc", "cdns,sd4hc";
+			reg = <0x0 0x48030000 0x0 0x10000>;
+			interrupts = <0 88 4>;
+			bus-width = <8>;
+		};
 
 		safety: safety-apb@43800000 {
 			compatible = "simple-bus";

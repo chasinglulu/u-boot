@@ -10,4 +10,9 @@
 
 #define CONFIG_SYS_INIT_SP_ADDR		0x83000000UL
 
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"stdout=serial\0" \
+	"stdin=serial\0" \
+	"stderr=serial\0"
+
 #endif
