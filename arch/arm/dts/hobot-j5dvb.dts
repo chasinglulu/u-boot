@@ -74,11 +74,135 @@
 		#size-cells = <2>;
 		ranges;
 
+		pinctrl: pinctrl {
+			compatible = "hobot,j5-pinctrl";
+			reg = <0x0 43900000 0x0 0x10000>; // function select
+			hobot,pinctrl-pins = <0x100>;
+			hobot,pinctrl-offset = <0x60>;	// first pin reg offset
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges;
+
+			pinctrl0@43910000 {
+				compatible = "hobot,pinctrl-bank";
+				reg = <0x0 0x43910000 0x0 0x10000>; // pin config
+				hobot,pinctrl-pins = <0x2a>;	//42 pins
+				hobot,pinctrl-offset = <0x10>;	// first pin reg offset in bank
+			};
+
+			pinctrl1@43920000 {
+				compatible = "hobot,pinctrl-bank";
+				reg = <0x0 0x43920000 0x0 0x10000>;
+				hobot,pinctrl-pins = <0x27>;	//39 pins
+				hobot,pinctrl-offset = <0x10>;
+			};
+
+			pinctrl2@43930000 {
+				compatible = "hobot,pinctrl-bank";
+				reg = <0x0 0x43930000 0x0 0x10000>;
+				hobot,pinctrl-pins = <0x5e>;	// 94 pins
+				hobot,pinctrl-offset = <0x10>;
+			};
+
+			pinctrl3@43940000 {
+				compatible = "hobot,pinctrl-bank";
+				reg = <0x0 0x43940000 0x0 0x10000>;
+				hobot,pinctrl-pins = <0x51>;	// 81 pins
+				hobot,pinctrl-offset = <0x10>;
+			};
+
+			pcfg_pull_up: pcfg-pull-up {
+				bias-pull-up;
+			};
+
+			pcfg_pull_down: pcfg-pull-down {
+				bias-pull-down;
+			};
+
+			pcfg_pull_none: pcfg-pull-none {
+				bias-disable;
+			};
+
+			pcfg_pull_none_ds2: pcfg-pull-none-ds2 {
+				bias-disable;
+				drive-strength = <2>;
+			};
+
+			pcfg_pull_up_2ma: pcfg-pull-up-2ma {
+				bias-pull-up;
+				drive-strength = <2>;
+			};
+
+			pcfg_pull_up_4ma: pcfg-pull-up-4ma {
+				bias-pull-up;
+				drive-strength = <4>;
+			};
+
+			pcfg_pull_none_4ma: pcfg-pull-none-4ma {
+				bias-disable;
+				drive-strength = <4>;
+			};
+
+			pcfg_pull_down_4ma: pcfg-pull-down-4ma {
+				bias-pull-down;
+				drive-strength = <4>;
+			};
+
+			pcfg_pull_none_8ma: pcfg-pull-none-8ma {
+				bias-disable;
+				drive-strength = <8>;
+			};
+
+			pcfg_pull_up_8ma: pcfg-pull-up-8ma {
+				bias-pull-up;
+				drive-strength = <8>;
+			};
+
+			pcfg_pull_none_12ma: pcfg-pull-none-12ma {
+				bias-disable;
+				drive-strength = <12>;
+			};
+
+			pcfg_pull_up_12ma: pcfg-pull-up-12ma {
+				bias-pull-up;
+				drive-strength = <12>;
+			};
+
+			pcfg_input_high: pcfg-input-high {
+				bias-pull-up;
+				input-enable;
+			};
+
+			pcfg_input: pcfg-input {
+				input-enable;
+			};
+/*
+			i2s0 {
+				i2s0_xfer: i2s0-xfer {
+					hobot,pins = <0 PINCTRL_I2S0_MCLK 0 &pcfg_pull_up>,
+								<0 PINCTRL_I2S0_MCLK 0 &pcfg_pull_up>;
+				};
+			};
+*/
+		};
+
 		mmc0: sdhci@0x48030000 {
-			compatible = "hobot,j5-sd4hc", "cdns,sd4hc";
+			compatible = "cdns,sd4hc";
 			reg = <0x0 0x48030000 0x0 0x10000>;
-			interrupts = <0 88 4>;
+			interrupts = <0 120 4>;
 			bus-width = <8>;
+			sdhci-caps-mask = <0xffffffff 0xffffffff>;
+			sdhci-caps = <0x00002807 0x37ec6481>;
+			max-frequency = <200000000>;
+			cap-mmc-highspeed;
+			mmc-ddr-1_8v;
+			mmc-hs200-1_8v;
+			cdns,phy-input-delay-sd-default = <8>;
+			cdns,phy-input-delay-mmc-highspeed = <3>;
+			cdns,phy-input-delay-mmc-ddr = <3>;
+			cdns,phy-dll-delay-strobe = <33>; /* for hs400 */
+			cdns,phy-dll-delay-sdclk = <45>;
+			cdns,phy-dll-delay-sdclk-hsmmc = <45>; /* golden for hs400 */
 		};
 
 		safety: safety-apb@43800000 {
