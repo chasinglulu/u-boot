@@ -35,6 +35,19 @@
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
+	pcie@70000000 {
+		compatible = "pci-host-ecam-generic";
+		device_type = "pci";
+		reg = <0x0 0x70000000 0x0 0x10000000>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges = <0x02000000 0 0x60000000 0 0x60000000 0 0x10000000
+					0x03000000 0x4 0x80000000 0x4 0x80000000 0x1 0x0>;
+		bus-range = <0x0 0xff>;
+		dma-coherent;
+		#interrupt-cells = <1>;
+	};
+
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
