@@ -33,12 +33,17 @@
 		reg = <0x00 0x58000000 0x00 0x10000>,
 			<0x00 0x58040000 0x00 0x100000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+		its: its@50000000 {
+			compatible = "arm,gic-v3-its";
+			msi-controller;
+			reg = <0x0 0x50000000 0x0 0x10000>;
+		};
 	};
 
 	pcie@70000000 {
 		compatible = "pci-host-ecam-generic";
 		device_type = "pci";
-		reg = <0x0 0x70000000 0x0 0x10000000>;
+		reg = <0x0 0x59C00000 0x0 0x400000>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges = <0x02000000 0 0x60000000 0 0x60000000 0 0x10000000
@@ -46,6 +51,7 @@
 		bus-range = <0x0 0xff>;
 		dma-coherent;
 		#interrupt-cells = <1>;
+		msi-parent = <&its>;
 	};
 
 	psci {
