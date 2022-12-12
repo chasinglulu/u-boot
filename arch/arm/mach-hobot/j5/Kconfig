@@ -14,7 +14,7 @@ config TARGET_DVB_J5
 endchoice
 
 config SYS_SOC
-	default "j5"
+	default "hobot"
 
 config SYS_MALLOC_F_LEN
 	default 0x4000

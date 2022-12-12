@@ -54,6 +54,13 @@
 		msi-parent = <&its>;
 	};
 
+	ethernet@59110000 {
+		compatible = "cdns,macb";
+		reg = <0x0 0x59110000 0x0 0x10000>;
+		interrupts = <0 40 4>;
+		mac-address = [52 55 00 d1 55 01];
+	};
+
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
