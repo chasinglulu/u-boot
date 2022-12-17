@@ -234,6 +234,23 @@
 			cdns,phy-dll-delay-sdclk-hsmmc = <45>; /* golden for hs400 */
 		};
 
+		mmc1: sdhci@0x48040000 {
+			compatible = "cdns,sd4hc";
+			reg = <0x0 0x48040000 0x0 0x10000>;
+			interrupts = <0 122 4>;
+			sdhci-caps-mask = <0xffffffff 0xffffffff>;
+			sdhci-caps = <0x00000070 0x156ac800>;	// for 3.3V SD
+			//sdhci-caps = <0x00000070 0x546ec800>;	// for 1.8V eMMC
+			bus-width = <4>;
+			cap-sd-highspeed;
+			no-mmc;
+			cdns,phy-input-delay-legacy = <4>;
+			cdns,phy-input-delay-mmc-highspeed = <2>;
+			cdns,phy-input-delay-mmc-ddr = <3>;
+			cdns,phy-dll-delay-sdclk = <21>;
+			cdns,phy-dll-delay-sdclk-hsmmc = <21>;
+		};
+
 		safety: safety-apb@43800000 {
 			compatible = "simple-bus";
 			#address-cells = <1>;
