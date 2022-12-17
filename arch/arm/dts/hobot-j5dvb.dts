@@ -218,11 +218,14 @@
 			interrupts = <0 120 4>;
 			bus-width = <8>;
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
-			sdhci-caps = <0x00002807 0x37ec6481>;
+			sdhci-caps = <0x00000070 0x156ac800>;	// for 3.3V SD
+			//sdhci-caps = <0x00000070 0x546ec800>;	// for 1.8V eMMC
 			max-frequency = <200000000>;
 			cap-mmc-highspeed;
-			mmc-ddr-1_8v;
 			mmc-hs200-1_8v;
+			non-removable;
+			no-sdio;
+			no-sd;
 			cdns,phy-input-delay-sd-default = <8>;
 			cdns,phy-input-delay-mmc-highspeed = <3>;
 			cdns,phy-input-delay-mmc-ddr = <3>;
