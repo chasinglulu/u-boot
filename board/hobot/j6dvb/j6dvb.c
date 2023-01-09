@@ -6,6 +6,7 @@
 #include <common.h>
 #include <dm.h>
 #include <init.h>
+#include <asm/system.h>
 
 #ifndef CONFIG_SPL_BUILD
 int board_early_init_f(void)
