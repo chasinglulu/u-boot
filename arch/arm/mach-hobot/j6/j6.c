@@ -103,12 +103,3 @@ int dram_init_banksize(void)
 
 	return 0;
 }
-
-#if defined(CONFIG_DISPLAY_CPUINFO)
-int print_cpuinfo(void)
-{
-	printf("Reset cause:\n");
-
-	return 0;
-}
-#endif

@@ -16,5 +16,7 @@ int board_early_init_f(void)
 
 int board_init(void)
 {
+	printf("EL Level:\tEL%d\n", current_el());
+
 	return 0;
 }
