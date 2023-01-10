@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Horizon Robotics J5 DVB device tree
+ * Horizon Robotics J6 DVB device tree
  *
- * Copyright (C) 2022 Horizon Robotics Co,.Ltd.
+ * Copyright (C) 2023 Horizon Robotics Co,.Ltd.
  */
 
 /dts-v1/;
-
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+
 / {
 	model = "Horizon Robotics Journey 6 DVB";
 	compatible = "hobot,j6dvb";
@@ -16,82 +16,35 @@
 	interrupt-parent = <&gic>;
 
 	chosen {
-		stdout-path = "serial1:921600n8";
+		stdout-path = "serial0:921600n8";
 	};
 
 	aliases {
 		serial0 = &serial0;
 		serial1 = &serial1;
+		serial2 = &serial2;
+		serial3 = &serial3;
 	};
 
-	gic: interrupt-controller@58000000 {
+	gic: interrupt-controller@0x30B00000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
 		#address-cells = <2>;
 		#size-cells = <2>;
 		interrupt-controller;
-		reg = <0x00 0x58000000 0x00 0x10000>,
-			<0x00 0x58040000 0x00 0x100000>;
+		reg = <0x00 0x30B00000 0x00 0x10000>,
+			<0x00 0x30B60000 0x00 0x10000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
-		its: its@50000000 {
+		its: its@30290000 {
 			compatible = "arm,gic-v3-its";
 			msi-controller;
-			reg = <0x0 0x50000000 0x0 0x10000>;
+			reg = <0x0 0x30290000 0x0 0x10000>;
 		};
-	};
-
-	pcie@70000000 {
-		compatible = "pci-host-ecam-generic";
-		device_type = "pci";
-		reg = <0x0 0x59C00000 0x0 0x400000>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges = <0x02000000 0 0x60000000 0 0x60000000 0 0x10000000
-					0x03000000 0x4 0x80000000 0x4 0x80000000 0x1 0x0>;
-		bus-range = <0x0 0xff>;
-		dma-coherent;
-		#interrupt-cells = <1>;
-		msi-parent = <&its>;
-	};
-
-	ethernet@59110000 {
-		compatible = "cdns,macb";
-		reg = <0x0 0x59110000 0x0 0x10000>;
-		interrupts = <0 40 4>;
-		mac-address = [52 55 00 d1 55 01];
 	};
 
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
-	};
-
-	hobot_sci {
-		compatible = "hobot,j5-sci-smccc";
-		arm,smc-id = <0x82000009>;
-		hobot,sci-cmds = <0x3>;
-		ranges;
-
-		#address-cells = <2>;
-		#size-cells = <2>;
-
-		bootflags_soc {
-			compatible = "hobot,j5-sci";
-			reg = <0x0 0x20000d00 0x0 0x300>;
-			hobot,sci-index = <0>;
-		};
-
-		bootflags_board {
-			compatible = "hobot,j5-sci";
-			reg = <0x0 0x20000c00 0x0 0x100>;
-			hobot,sci-index = <1>;
-		};
-
-		bootflags_efuse {
-			compatible = "hobot,j5-sci";
-			reg = <0x00 0x43084000 0x00 0x00000338>;
-			hobot,sci-index = <2>;
-		};
 	};
 
 	soc {
@@ -100,121 +53,9 @@
 		#size-cells = <2>;
 		ranges;
 
-		pinctrl: pinctrl {
-			compatible = "hobot,j5-pinctrl";
-			reg = <0x0 43900000 0x0 0x10000>; // function select
-			hobot,pinctrl-pins = <0x100>;
-			hobot,pinctrl-offset = <0x60>;	// first pin reg offset
-			#address-cells = <2>;
-			#size-cells = <2>;
-			ranges;
-
-			pinctrl0@43910000 {
-				compatible = "hobot,pinctrl-bank";
-				reg = <0x0 0x43910000 0x0 0x10000>; // pin config
-				hobot,pinctrl-pins = <0x2a>;	//42 pins
-				hobot,pinctrl-offset = <0x10>;	// first pin reg offset in bank
-			};
-
-			pinctrl1@43920000 {
-				compatible = "hobot,pinctrl-bank";
-				reg = <0x0 0x43920000 0x0 0x10000>;
-				hobot,pinctrl-pins = <0x27>;	//39 pins
-				hobot,pinctrl-offset = <0x10>;
-			};
-
-			pinctrl2@43930000 {
-				compatible = "hobot,pinctrl-bank";
-				reg = <0x0 0x43930000 0x0 0x10000>;
-				hobot,pinctrl-pins = <0x5e>;	// 94 pins
-				hobot,pinctrl-offset = <0x10>;
-			};
-
-			pinctrl3@43940000 {
-				compatible = "hobot,pinctrl-bank";
-				reg = <0x0 0x43940000 0x0 0x10000>;
-				hobot,pinctrl-pins = <0x51>;	// 81 pins
-				hobot,pinctrl-offset = <0x10>;
-			};
-
-			pcfg_pull_up: pcfg-pull-up {
-				bias-pull-up;
-			};
-
-			pcfg_pull_down: pcfg-pull-down {
-				bias-pull-down;
-			};
-
-			pcfg_pull_none: pcfg-pull-none {
-				bias-disable;
-			};
-
-			pcfg_pull_none_ds2: pcfg-pull-none-ds2 {
-				bias-disable;
-				drive-strength = <2>;
-			};
-
-			pcfg_pull_up_2ma: pcfg-pull-up-2ma {
-				bias-pull-up;
-				drive-strength = <2>;
-			};
-
-			pcfg_pull_up_4ma: pcfg-pull-up-4ma {
-				bias-pull-up;
-				drive-strength = <4>;
-			};
-
-			pcfg_pull_none_4ma: pcfg-pull-none-4ma {
-				bias-disable;
-				drive-strength = <4>;
-			};
-
-			pcfg_pull_down_4ma: pcfg-pull-down-4ma {
-				bias-pull-down;
-				drive-strength = <4>;
-			};
-
-			pcfg_pull_none_8ma: pcfg-pull-none-8ma {
-				bias-disable;
-				drive-strength = <8>;
-			};
-
-			pcfg_pull_up_8ma: pcfg-pull-up-8ma {
-				bias-pull-up;
-				drive-strength = <8>;
-			};
-
-			pcfg_pull_none_12ma: pcfg-pull-none-12ma {
-				bias-disable;
-				drive-strength = <12>;
-			};
-
-			pcfg_pull_up_12ma: pcfg-pull-up-12ma {
-				bias-pull-up;
-				drive-strength = <12>;
-			};
-
-			pcfg_input_high: pcfg-input-high {
-				bias-pull-up;
-				input-enable;
-			};
-
-			pcfg_input: pcfg-input {
-				input-enable;
-			};
-/*
-			i2s0 {
-				i2s0_xfer: i2s0-xfer {
-					hobot,pins = <0 PINCTRL_I2S0_MCLK 0 &pcfg_pull_up>,
-								<0 PINCTRL_I2S0_MCLK 0 &pcfg_pull_up>;
-				};
-			};
-*/
-		};
-
-		mmc0: sdhci@0x48030000 {
+		mmc0: sdhci@0x39030000 {
 			compatible = "cdns,sd4hc";
-			reg = <0x0 0x48030000 0x0 0x10000>;
+			reg = <0x0 0x39030000 0x0 0x10000>;
 			interrupts = <0 120 4>;
 			bus-width = <8>;
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
@@ -234,9 +75,9 @@
 			cdns,phy-dll-delay-sdclk-hsmmc = <45>; /* golden for hs400 */
 		};
 
-		mmc1: sdhci@0x48040000 {
+		mmc1: sdhci@0x39040000 {
 			compatible = "cdns,sd4hc";
-			reg = <0x0 0x48040000 0x0 0x10000>;
+			reg = <0x0 0x39040000 0x0 0x10000>;
 			interrupts = <0 122 4>;
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
 			sdhci-caps = <0x00000070 0x156ac800>;	// for 3.3V SD
@@ -251,32 +92,69 @@
 			cdns,phy-dll-delay-sdclk-hsmmc = <21>;
 		};
 
-		safety: safety-apb@43800000 {
-			compatible = "simple-bus";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0 0 0x43800000 0x400000>;
+		serial0: uart@0x39050000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x39050000 0x0 0x10000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>; //192MHz
+			u-boot,dm-pre-reloc;
+			status = "okay";
+		};
 
-			serial0: uart@380000 {
-				compatible = "snps,dw-apb-uart";
-				reg = <0x380000 0x1000>;
-				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
-				clock-frequency = <192000000>; //192MHz
-				reg-io-width = <4>;
-				reg-shift = <2>;
-				status = "okay";
-			};
+		serial1: uart@0x39060000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x39060000 0x0 0x10000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			status = "okay";
+		};
 
-			serial1: uart@390000 {
-				compatible = "snps,dw-apb-uart";
-				reg = <0x390000 0x1000>;
-				reg-shift = <2>;
-				reg-io-width = <4>;
-				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
-				clock-frequency = <192000000>;
-				u-boot,dm-pre-reloc;
-				status = "okay";
-			};
+		serial2: uart@0x39070000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x39070000 0x0 0x10000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			status = "okay";
+		};
+
+		serial3: uart@0x39080000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x39080000 0x0 0x10000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			status = "okay";
+		};
+
+		pcie@0x34000000 {
+			compatible = "pci-host-ecam-generic";
+			device_type = "pci";
+			reg = <0x0 0x34000000 0x0 0x400000>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			ranges = <0x02000000 0 0x80000000 0 0x80000000 0 0x40000000
+						0x03000000 0x80 0x00000000 0x80 0x00000000 0x80 0x00000000>;
+			bus-range = <0x0 0xff>;
+			dma-coherent;
+			#interrupt-cells = <1>;
+			msi-parent = <&its>;
+		};
+
+		ethernet@0x33380000 {
+			compatible = "cdns,macb";
+			reg = <0x0 0x33380000 0x0 0x10000>;
+			interrupts = <0 40 4>;
+			mac-address = [52 55 00 d1 55 01];
 		};
 	};
 };
