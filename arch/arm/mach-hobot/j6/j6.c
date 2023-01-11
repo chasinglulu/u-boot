@@ -62,6 +62,7 @@ void reset_cpu(ulong addr)
 int dram_init(void)
 {
 	gd->ram_size = SZ_4G * 4;
+
 	return 0;
 }
 
