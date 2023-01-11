@@ -6,7 +6,7 @@ choice
 config TARGET_DVB_J6
 	bool "J6 Development Verification board"
 	help
-	  J5DVB is a development board for Hobot Jounery 6 SoC,
+	  J6DVB is a development board for Hobot Jounery 6 SoC,
 	  with full function and physical connectors support like MIPI,
 	  JTAG, MAC, SD card, CAN, QSPI, PCIe, USB-to-serial...
 
@@ -18,6 +18,14 @@ config SYS_SOC
 
 config SYS_MALLOC_F_LEN
 	default 0x4000
+
+config SYS_DDR_BASE
+	hex "DDR Base Address"
+	default 0x3000000000
+
+config SYS_OCM_BASE
+	hex "On-Chip SRAM Base Address"
+	default 0x04000000
 
 source "board/hobot/j6dvb/Kconfig"
 

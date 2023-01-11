@@ -8,9 +8,6 @@
 
 #define HOBOT_SIP_FUNC_ID	0x82000009
 
-#define CONFIG_DDR_BASE		0x3000000000ULL
-#define CONFIG_OCM_BASE		0x04000000UL
-
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"stdout=serial\0" \
 	"stdin=serial\0" \
