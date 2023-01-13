@@ -26,7 +26,7 @@
 		serial3 = &serial3;
 	};
 
-	gic: interrupt-controller@0x30B00000 {
+	gic: interrupt-controller@30B00000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
 		#address-cells = <2>;
@@ -53,7 +53,7 @@
 		#size-cells = <2>;
 		ranges;
 
-		mmc0: sdhci@0x39030000 {
+		mmc0: sdhci@39030000 {
 			compatible = "cdns,sd4hc";
 			reg = <0x0 0x39030000 0x0 0x10000>;
 			interrupts = <0 120 4>;
@@ -73,9 +73,10 @@
 			cdns,phy-dll-delay-strobe = <33>; /* for hs400 */
 			cdns,phy-dll-delay-sdclk = <45>;
 			cdns,phy-dll-delay-sdclk-hsmmc = <45>; /* golden for hs400 */
+			status = "okay";
 		};
 
-		mmc1: sdhci@0x39040000 {
+		mmc1: sdhci@39040000 {
 			compatible = "cdns,sd4hc";
 			reg = <0x0 0x39040000 0x0 0x10000>;
 			interrupts = <0 122 4>;
@@ -90,9 +91,10 @@
 			cdns,phy-input-delay-mmc-ddr = <3>;
 			cdns,phy-dll-delay-sdclk = <21>;
 			cdns,phy-dll-delay-sdclk-hsmmc = <21>;
+			status = "okay";
 		};
 
-		serial0: uart@0x39050000 {
+		serial0: uart@39050000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x39050000 0x0 0x10000>;
 			reg-shift = <2>;
@@ -103,7 +105,7 @@
 			status = "okay";
 		};
 
-		serial1: uart@0x39060000 {
+		serial1: uart@39060000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x39060000 0x0 0x10000>;
 			reg-shift = <2>;
@@ -114,7 +116,7 @@
 			status = "okay";
 		};
 
-		serial2: uart@0x39070000 {
+		serial2: uart@39070000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x39070000 0x0 0x10000>;
 			reg-shift = <2>;
@@ -125,7 +127,7 @@
 			status = "okay";
 		};
 
-		serial3: uart@0x39080000 {
+		serial3: uart@39080000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x39080000 0x0 0x10000>;
 			reg-shift = <2>;
@@ -136,7 +138,101 @@
 			status = "okay";
 		};
 
-		pcie@0x34000000 {
+		gpio0: gpio@3A120000 {
+			compatible = "snps,dw-apb-gpio";
+			reg = <0x0 0x3A120000 0x0 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			port0_a: gpio0@0 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
+				bank-name = "port0_a";
+			};
+
+			port0_b: gpio0@1 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <1>;
+				bank-name = "port0_b";
+			};
+
+			port0_c: gpio0@2 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <2>;
+				bank-name = "port0_c";
+			};
+
+			port0_d: gpio0@3 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <3>;
+				bank-name = "port0_d";
+			};
+		};
+
+		gpio1: gpio@3A130000 {
+			compatible = "snps,dw-apb-gpio";
+			reg = <0x0 0x3A130000 0x0 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			port1_a: gpio1@0 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
+				bank-name = "port1_a";
+			};
+
+			port1_b: gpio1@1 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <1>;
+				bank-name = "port1_b";
+			};
+
+			port1_c: gpio1@2 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <2>;
+				bank-name = "port1_c";
+			};
+
+			port1_d: gpio1@3 {
+				compatible = "snps,dw-apb-gpio-port";
+				gpio-controller;
+				#gpio-cells = <2>;
+				snps,nr-gpios = <32>;
+				reg = <3>;
+				bank-name = "port1_d";
+			};
+		};
+
+		pcie@34000000 {
 			compatible = "pci-host-ecam-generic";
 			device_type = "pci";
 			reg = <0x0 0x34000000 0x0 0x400000>;
@@ -148,13 +244,15 @@
 			dma-coherent;
 			#interrupt-cells = <1>;
 			msi-parent = <&its>;
+			status = "okay";
 		};
 
-		ethernet@0x33380000 {
+		ethernet@33380000 {
 			compatible = "cdns,macb";
 			reg = <0x0 0x33380000 0x0 0x10000>;
 			interrupts = <0 40 4>;
 			mac-address = [52 55 00 d1 55 01];
+			status = "okay";
 		};
 	};
 };
