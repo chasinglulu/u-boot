@@ -466,6 +466,7 @@ static const struct udevice_id dwc3_glue_ids[] = {
 	{ .compatible = "qcom,dwc3" },
 	{ .compatible = "fsl,imx8mq-dwc3" },
 	{ .compatible = "intel,tangier-dwc3" },
+	{ .compatible = "hobot,sigi-dwc3" },
 	{ }
 };
 
