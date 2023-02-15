@@ -83,8 +83,6 @@ static void sdhci_prepare_dma(struct sdhci_host *host, struct mmc_data *data,
 	else
 		buf = (void *)data->src;
 
-	printf("%s: buffer address: 0x%lx\n", __func__, (unsigned long)buf);
-
 	ctrl = sdhci_readb(host, SDHCI_HOST_CONTROL);
 	ctrl &= ~SDHCI_CTRL_DMA_MASK;
 	if (host->flags & USE_ADMA64)
@@ -290,8 +288,7 @@ static int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 
 		if (data->flags == MMC_DATA_READ)
 			mode |= SDHCI_TRNS_READ;
-		printf("%s: trans_bytes: 0x%x blocksize: 0x%x %x\n", __func__, trans_bytes, data->blocksize,
-							SDHCI_MAKE_BLKSZ(SDHCI_DEFAULT_BOUNDARY_ARG, data->blocksize));
+
 		if (host->flags & USE_DMA) {
 			mode |= SDHCI_TRNS_DMA;
 			sdhci_prepare_dma(host, data, &is_aligned, trans_bytes);
