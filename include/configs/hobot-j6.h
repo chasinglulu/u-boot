@@ -8,9 +8,23 @@
 
 #define HOBOT_SIP_FUNC_ID	0x82000009
 
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	"stdout=serial\0" \
-	"stdin=serial\0" \
-	"stderr=serial\0"
+/* ---------------------------------------------------------------------
+ * Board boot configuration
+ */
+
+#define BOOT_TARGET_DEVICES(func)	\
+	func(MMC, mmc, 0)				\
+	func(MMC, mmc, 1)				\
+	func(DHCP, dhcp, na)			\
+	func(NVME, nvme, 0)				\
+	func(USB, usb, 0)				\
+
+#include <config_distro_bootcmd.h>
+
+#define CONFIG_EXTRA_ENV_SETTINGS		\
+		"stdout=serial\0" 				\
+		"stdin=serial\0" 				\
+		"stderr=serial\0"				\
+		BOOTENV
 
 #endif

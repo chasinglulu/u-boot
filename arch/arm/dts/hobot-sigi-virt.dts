@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
- * Horizon Robotics J6 DVB device tree
+ * Horizon Robotics Sigi Virt Platform device tree
  *
  * Copyright (C) 2023 Horizon Robotics Co,.Ltd.
  */
@@ -9,7 +9,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "Horizon Robotics Journey 6 DVB";
+	model = "Horizon Robotics Journey 6 Virt Board";
 	compatible = "hobot,j6dvb";
 	#address-cells = <2>;
 	#size-cells = <2>;
