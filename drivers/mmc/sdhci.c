@@ -174,7 +174,10 @@ static int sdhci_transfer_data(struct sdhci_host *host, struct mmc_data *data)
 				start_addr += SDHCI_DEFAULT_BOUNDARY_SIZE;
 				start_addr = dev_phys_to_bus(mmc_to_dev(host->mmc),
 							     start_addr);
-				sdhci_writel(host, start_addr, SDHCI_DMA_ADDRESS);
+				sdhci_writel(host, lower_32_bits(start_addr), SDHCI_DMA_ADDRESS);
+				if (host->flags & USE_ADMA64)
+					sdhci_writel(host, upper_32_bits(start_addr),
+									SDHCI_ADMA_ADDRESS_HI);
 			}
 		}
 		if (timeout-- > 0)
