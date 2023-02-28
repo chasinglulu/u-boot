@@ -5,9 +5,11 @@
 
 #include <common.h>
 #include <asm/armv8/mmu.h>
+#include <linux/sizes.h>
+#include <asm/sections.h>
 #include <fdt_support.h>
 #include <init.h>
-#include <linux/sizes.h>
+#include <cpu_func.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -35,7 +37,7 @@ static struct mm_region j6_mem_map[MMAP_END] = {
 	[MMAP_DEVICE_MMIO] = {
 		.virt = MMAP_DEVICE_BASE,
 		.phys = MMAP_DEVICE_BASE,
-		.size = SZ_1G,
+		.size = SZ_2G,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
@@ -43,7 +45,7 @@ static struct mm_region j6_mem_map[MMAP_END] = {
 	[MMAP_DDR_BANK_START] = {
 		.virt = MMAP_DDR_BANK_BASE,
 		.phys = MMAP_DDR_BANK_BASE,
-		.size = SZ_4G * 4,
+		.size = SZ_4G,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			PTE_BLOCK_INNER_SHARE
 	}, {
@@ -54,22 +56,48 @@ static struct mm_region j6_mem_map[MMAP_END] = {
 
 struct mm_region *mem_map = j6_mem_map;
 
-void reset_cpu(ulong addr)
+void reset_cpu(void)
 {
 	return;
 }
 
 int dram_init(void)
 {
-	gd->ram_size = SZ_4G * 4;
+	if (fdtdec_setup_mem_size_base() != 0)
+			return -EINVAL;
 
 	return 0;
 }
 
 int dram_init_banksize(void)
 {
-	gd->bd->bi_dram[0].start = MMAP_DDR_BANK_BASE;
-	gd->bd->bi_dram[0].size = SZ_4G * 4;
+	fdtdec_setup_memory_banksize();
 
 	return 0;
+}
+
+void *board_fdt_blob_setup(int *err)
+{
+	/* QEMU loads a generated DTB for us at the start of RAM. */
+	void *fdt_addr = (void *)CONFIG_SYS_SDRAM_BASE;
+
+	if (!fdt_check_header(fdt_addr)) {
+			*err = 0;
+			return fdt_addr;
+	} else {
+			printf("No valid device tree binary found at %p\n",
+									fdt_addr);
+	}
+
+	/* FDT is at end of image */
+	fdt_addr = (ulong *)&_end;
+	*err = 0;
+
+	return fdt_addr;
+}
+
+void enable_caches(void)
+{
+	icache_enable();
+	dcache_enable();
 }

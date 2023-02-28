@@ -16,7 +16,7 @@
 	interrupt-parent = <&gic>;
 
 	chosen {
-		stdout-path = "serial0:921600n8";
+		stdout-path = "serial0:115200n8";
 	};
 
 	aliases {
