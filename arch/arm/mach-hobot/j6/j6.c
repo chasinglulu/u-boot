@@ -64,7 +64,7 @@ void reset_cpu(void)
 int dram_init(void)
 {
 	if (fdtdec_setup_mem_size_base() != 0)
-			return -EINVAL;
+		return -EINVAL;
 
 	return 0;
 }
@@ -82,11 +82,11 @@ void *board_fdt_blob_setup(int *err)
 	void *fdt_addr = (void *)CONFIG_SYS_SDRAM_BASE;
 
 	if (!fdt_check_header(fdt_addr)) {
-			*err = 0;
-			return fdt_addr;
+		*err = 0;
+		return fdt_addr;
 	} else {
-			printf("No valid device tree binary found at %p\n",
-									fdt_addr);
+		printf("No valid device tree binary found at %p\n",
+								fdt_addr);
 	}
 
 	/* FDT is at end of image */
