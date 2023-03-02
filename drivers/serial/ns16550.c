@@ -206,6 +206,34 @@ static u32 ns16550_getfcr(struct ns16550 *port)
 }
 #endif
 
+#ifdef CONFIG_HOBOT_DW8250
+#define DLF_6BIT		64
+int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
+{
+	const unsigned int mode_x_div = 16;
+
+	return DIV_ROUND_CLOSEST(clock * (DLF_6BIT / mode_x_div), baudrate);
+}
+
+static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
+{
+	/* to keep serial format, read lcr before writing BKSE */
+	int lcr_val = serial_in(&com_port->lcr) & ~UART_LCR_BKSE;
+	int baud_div_i = baud_divisor / DLF_6BIT;
+	int baud_div_f = 0;
+	unsigned int dlf_size = 0;
+
+	serial_out(0xFFFFFFFF, &com_port->dlf);
+	dlf_size = serial_in(&com_port->dlf) + 1;
+	baud_div_f = (baud_divisor % DLF_6BIT) * dlf_size / DLF_6BIT;
+
+	serial_out(UART_LCR_BKSE | lcr_val, &com_port->lcr);
+	serial_out(baud_div_i & 0xff, &com_port->dll);
+	serial_out((baud_div_i >> 8) & 0xff, &com_port->dlm);
+	serial_out(baud_div_f, &com_port->dlf);
+	serial_out(lcr_val, &com_port->lcr);
+}
+#else
 int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 {
 	const unsigned int mode_x_div = 16;
@@ -223,6 +251,7 @@ static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 	serial_out((baud_divisor >> 8) & 0xff, &com_port->dlm);
 	serial_out(lcr_val, &com_port->lcr);
 }
+#endif
 
 void ns16550_init(struct ns16550 *com_port, int baud_divisor)
 {
