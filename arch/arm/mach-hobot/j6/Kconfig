@@ -11,6 +11,14 @@ config TARGET_DVB_J6
 	  JTAG, MAC, SD card, CAN, QSPI, PCIe, USB-to-serial...
 
 
+config TARGET_FPGA_J6
+	bool "J6 FPGA Verification board"
+	select HOBOT_DW8250
+	help
+	  FPGA is a verification board for Hobot Jounery 6 SoC,
+	  with a little function and physical connectors support like UART,
+	  JTAG, eMMC, PCIe, USB-to-serial...
+
 endchoice
 
 config SYS_SOC
@@ -28,5 +36,6 @@ config SYS_OCM_BASE
 	default 0x04000000
 
 source "board/hobot/j6dvb/Kconfig"
+source "board/hobot/fpga/Kconfig"
 
 endif

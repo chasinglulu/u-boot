@@ -17,11 +17,12 @@ ram_base_msb:
 .global save_boot_params
 save_boot_params:
 	adr	x0, ram_base_msb
-    adr x1, _start
-    clz x1, x1
-    mov w2, #0x3f
-    sub w2, w2, w1
+	adr x1, _start
+	clz x1, x1
+	mov w2, #0x3f
+	sub w2, w2, w1
 	str	w2, [x0]
 
-    /* Returns */
+	/* Returns */
 	b save_boot_params_ret
+

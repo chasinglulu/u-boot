@@ -84,9 +84,6 @@ void *board_fdt_blob_setup(int *err)
 	if (!fdt_check_header(fdt_addr)) {
 		*err = 0;
 		return fdt_addr;
-	} else {
-		printf("No valid device tree binary found at %p\n",
-								fdt_addr);
 	}
 
 	/* FDT is at end of image */

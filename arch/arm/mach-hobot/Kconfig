@@ -27,6 +27,9 @@ config HOBOT_J6
 	  Peripherals include Gigabit Ethernet, MIPI, PCIe, eMMC, I2S, UARTs, SPI,
 	  I2C and PWMs.
 
+config HOBOT_DW8250
+	bool
+
 source "arch/arm/mach-hobot/j5/Kconfig"
 source "arch/arm/mach-hobot/j6/Kconfig"
 
