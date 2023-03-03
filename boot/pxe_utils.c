@@ -498,6 +498,7 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 	char mac_str[29] = "";
 	char ip_str[68] = "";
 	char *fit_addr = NULL;
+	char *xen_addr = NULL;
 	int bootm_argc = 2;
 	int zboot_argc = 3;
 	int len = 0;
@@ -600,6 +601,14 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 		}
 		snprintf(fit_addr, len, "%s%s", kernel_addr, label->config);
 		kernel_addr = fit_addr;
+	}
+
+	xen_addr = env_get("xen_addr_r");
+	if (get_relfile_envaddr(ctx, label->xen, "xen_addr_r",
+				NULL) < 0) {
+		printf("Skipping %s for failure retrieving xen\n",
+		       label->name);
+		return 1;
 	}
 
 	/*
@@ -709,7 +718,10 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 		}
 	}
 
-	bootm_argv[1] = kernel_addr;
+	if (xen_addr)
+		bootm_argv[1] = xen_addr;
+	else
+		bootm_argv[1] = kernel_addr;
 	zboot_argv[1] = kernel_addr;
 
 	if (initrd_addr_str) {
@@ -734,7 +746,10 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 	}
 
 	kernel_addr_r = genimg_get_kernel_addr(kernel_addr);
-	buf = map_sysmem(kernel_addr_r, 0);
+	if (xen_addr)
+		buf = map_sysmem(hextoul(xen_addr, NULL), 0);
+	else
+		buf = map_sysmem(kernel_addr_r, 0);
 	/* Try bootm for legacy and FIT format image */
 	if (genimg_get_format(buf) != IMAGE_FORMAT_INVALID)
 		do_bootm(ctx->cmdtp, 0, bootm_argc, bootm_argv);
@@ -765,6 +780,7 @@ enum token_type {
 	T_TITLE,
 	T_TIMEOUT,
 	T_LABEL,
+	T_XEN,
 	T_KERNEL,
 	T_LINUX,
 	T_APPEND,
@@ -797,6 +813,7 @@ static const struct token keywords[] = {
 	{"default", T_DEFAULT},
 	{"prompt", T_PROMPT},
 	{"label", T_LABEL},
+	{"xen", T_XEN},
 	{"kernel", T_KERNEL},
 	{"linux", T_LINUX},
 	{"localboot", T_LOCALBOOT},
@@ -1219,6 +1236,11 @@ static int parse_label(char **c, struct pxe_menu *cfg)
 		case T_KERNEL:
 		case T_LINUX:
 			err = parse_label_kernel(c, label);
+			break;
+
+		case T_XEN:
+			if (!label->xen)
+				err = parse_sliteral(c, &label->xen);
 			break;
 
 		case T_APPEND:
