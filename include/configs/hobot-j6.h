@@ -71,7 +71,8 @@
 		"stdin=serial\0" 				\
 		"stderr=serial\0"				\
 		"scriptaddr=0x3081000000\0"     \
-		"kernel_addr_r=0x3082000000\0"  \
+		"xen_addr_r=0x3082000000\0"		\
+		"kernel_addr_r=0x3085000000\0"  \
 		"ramdisk_addr_r=0x3089000000\0" \
 		"fdt_addr_r=0x3081800000\0"		\
 		BOOTENV
