@@ -603,12 +603,14 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 		kernel_addr = fit_addr;
 	}
 
-	xen_addr = env_get("xen_addr_r");
-	if (get_relfile_envaddr(ctx, label->xen, "xen_addr_r",
-				NULL) < 0) {
-		printf("Skipping %s for failure retrieving xen\n",
-		       label->name);
-		return 1;
+	if (label->xen) {
+		xen_addr = env_get("xen_addr_r");
+		if (get_relfile_envaddr(ctx, label->xen, "xen_addr_r",
+					NULL) < 0) {
+			printf("Skipping %s for failure retrieving xen\n",
+					label->name);
+			return 1;
+		}
 	}
 
 	/*

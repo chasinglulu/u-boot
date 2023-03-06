@@ -19,6 +19,11 @@
 		stdout-path = "serial0:115200n8";
 	};
 
+	memory {
+		reg = <0x00000030 0x00000000 0x00000001 0x00000000>;
+		device_type = "memory";
+	};
+
 	aliases {
 		serial0 = &serial0;
 		serial1 = &serial1;
