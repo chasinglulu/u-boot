@@ -352,6 +352,19 @@ int ns16550_tstc(struct ns16550 *com_port)
 
 #include <debug_uart.h>
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Directly Initialize a serial device in early boot
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static inline void _debug_uart_init(void)
 {
 	struct ns16550 *com_port = (struct ns16550 *)CONFIG_DEBUG_UART_BASE;
@@ -387,6 +400,21 @@ static inline int NS16550_read_baud_divisor(struct ns16550 *com_port)
 	return ret;
 }
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Output a character via writing uart data register
+ *
+ * @param[in] ch: a character to write
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static inline void _debug_uart_putc(int ch)
 {
 	struct ns16550 *com_port = (struct ns16550 *)CONFIG_DEBUG_UART_BASE;
@@ -405,6 +433,25 @@ DEBUG_UART_FUNCS
 #endif
 
 #if CONFIG_IS_ENABLED(DM_SERIAL)
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Output character into uart
+ *
+ * @param[in] dev: device pointer
+ * @param[in] ch: a character to write
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_putc(struct udevice *dev, const char ch)
 {
 	struct ns16550 *const com_port = dev_get_priv(dev);
@@ -425,6 +472,25 @@ static int ns16550_serial_putc(struct udevice *dev, const char ch)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Check whether a character is pending
+ *
+ * @param[in] dev: device pointer to uart platform device
+ * @param[in] input: Flag used to identify whether to input
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_pending(struct udevice *dev, bool input)
 {
 	struct ns16550 *const com_port = dev_get_priv(dev);
@@ -435,6 +501,24 @@ static int ns16550_serial_pending(struct udevice *dev, bool input)
 		return (serial_in(&com_port->lsr) & UART_LSR_THRE) ? 0 : 1;
 }
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Read a character from uart device
+ *
+ * @param[in] dev: device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_getc(struct udevice *dev)
 {
 	struct ns16550 *const com_port = dev_get_priv(dev);
@@ -445,6 +529,25 @@ static int ns16550_serial_getc(struct udevice *dev)
 	return serial_in(&com_port->rbr);
 }
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Configure baudrate for serial device
+ *
+ * @param[in] dev: device pointer
+ * @param[in] baudrate: baudrate for serial device
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read
+ * @data_updated
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_setbrg(struct udevice *dev, int baudrate)
 {
 	struct ns16550 *const com_port = dev_get_priv(dev);
@@ -458,6 +561,25 @@ static int ns16550_serial_setbrg(struct udevice *dev, int baudrate)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Configure parity and stop for serial device
+ *
+ * @param[in] dev: device pointer
+ * @param[in] serial_config: palce parity and stop configuration
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_setconfig(struct udevice *dev, uint serial_config)
 {
 	struct ns16550 *const com_port = dev_get_priv(dev);
@@ -491,6 +613,25 @@ static int ns16550_serial_setconfig(struct udevice *dev, uint serial_config)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Get serial device configuration
+ *
+ * @param[in] dev: device pointer
+ * @param[out] info: Place serial device configuration
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_getinfo(struct udevice *dev,
 				  struct serial_device_info *info)
 {
@@ -526,6 +667,25 @@ static int ns16550_serial_assign_base(struct ns16550_plat *plat, fdt_addr_t base
 	return 0;
 }
 
+
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Initialize the serial device and populate struct ns16550_plat
+ *
+ * @param[in] dev: platform device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 int ns16550_serial_probe(struct udevice *dev)
 {
 	struct ns16550_plat *plat = dev_get_plat(dev);
@@ -563,6 +723,24 @@ enum {
 #endif
 
 #if CONFIG_IS_ENABLED(OF_REAL)
+/**
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ * @brief Parse the serial port configuration from dts file
+ *
+ * @param[in] dev: platform device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 int ns16550_serial_of_to_plat(struct udevice *dev)
 {
 	struct ns16550_plat *plat = dev_get_plat(dev);
