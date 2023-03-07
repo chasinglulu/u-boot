@@ -87,6 +87,26 @@ static const struct sdhci_cdns_phy_cfg sdhci_cdns_phy_cfgs[] = {
 	{ "cdns,phy-dll-delay-strobe", SDHCI_CDNS_PHY_DLY_STROBE, },
 };
 
+/**
+ * @NO{S02E02C06U}
+ * @ASIL{B}
+ * @brief Write value into phy register
+ *
+ * @param[in] plat: sdhci platform data
+ * @param[in] addr: phy register address
+ * @param[in] data: value to write
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int sdhci_cdns_write_phy_reg(struct sdhci_cdns_plat *plat,
 				    u8 addr, u8 data)
 {
@@ -111,6 +131,26 @@ static int sdhci_cdns_write_phy_reg(struct sdhci_cdns_plat *plat,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C06U}
+ * @ASIL{B}
+ * @brief Initialize SDHCI Phy interface
+ *
+ * @param[in] plat: SDHCI controller platform data
+ * @param[in] fdt: device tree blob pointer
+ * @param[in] nodeoffset: node offset from dtb
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int sdhci_cdns_phy_init(struct sdhci_cdns_plat *plat,
 				const void *fdt, int nodeoffset)
 {
@@ -133,6 +173,22 @@ static int sdhci_cdns_phy_init(struct sdhci_cdns_plat *plat,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C06I}
+ * @ASIL{B}
+ * @brief Setup controller register to select speed mode
+ *
+ * @param[in] host: sdhci controller to setup
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static void sdhci_cdns_set_control_reg(struct sdhci_host *host)
 {
 	struct mmc *mmc = host->mmc;
@@ -169,6 +225,25 @@ static const struct sdhci_ops sdhci_cdns_ops = {
 	.set_control_reg = sdhci_cdns_set_control_reg,
 };
 
+/**
+ * @NO{S02E02C06U}
+ * @ASIL{B}
+ * @brief Setup tuning value into SDHCI controller
+ *
+ * @param[in] plat: sdhci platform data
+ * @param[in] val: tuning value
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int sdhci_cdns_set_tune_val(struct sdhci_cdns_plat *plat,
 				   unsigned int val)
 {
@@ -201,6 +276,25 @@ static int sdhci_cdns_set_tune_val(struct sdhci_cdns_plat *plat,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C06U}
+ * @ASIL{B}
+ * @brief Tuning eMMC card timing
+ *
+ * @param[in] dev: device pointer
+ * @param[in] opcode: indicate that tuning mode code to execute
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int __maybe_unused sdhci_cdns_execute_tuning(struct udevice *dev,
 						    unsigned int opcode)
 {
@@ -245,6 +339,24 @@ static int __maybe_unused sdhci_cdns_execute_tuning(struct udevice *dev,
 
 static struct dm_mmc_ops sdhci_cdns_mmc_ops;
 
+/**
+ * @NO{S02E02C06I}
+ * @ASIL{B}
+ * @brief Bind device to sdhci driver
+ *
+ * @param[in] dev: device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int sdhci_cdns_bind(struct udevice *dev)
 {
 	struct sdhci_cdns_plat *plat = dev_get_plat(dev);
@@ -252,6 +364,24 @@ static int sdhci_cdns_bind(struct udevice *dev)
 	return sdhci_bind(dev, &plat->mmc, &plat->cfg);
 }
 
+/**
+ * @NO{S02E02C06I}
+ * @ASIL{B}
+ * @brief Initialize sdhci controller
+ *
+ * @param[in/out] dev:
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int sdhci_cdns_probe(struct udevice *dev)
 {
 	DECLARE_GLOBAL_DATA_PTR;
