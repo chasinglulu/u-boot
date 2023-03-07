@@ -157,6 +157,24 @@ static inline int serial_in_dynamic(struct ns16550_plat *plat, u8 *addr)
 
 #endif /* CONFIG_NS16550_DYNAMIC */
 
+/**
+ * @NO{S02E02C01U}
+ * @ASIL{B}
+ * @brief Write a byte into serial port
+ *
+ * @param[in] port: serial port
+ * @param[in] offset: register offset
+ * @param[in] value: value to write
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static void ns16550_writeb(struct ns16550 *port, int offset, int value)
 {
 	struct ns16550_plat *plat = port->plat;
@@ -171,6 +189,24 @@ static void ns16550_writeb(struct ns16550 *port, int offset, int value)
 		serial_out_shift(addr, plat->reg_shift, value);
 }
 
+/**
+ * @NO{S02E02C01U}
+ * @ASIL{B}
+ * @brief Read a byte form serial port
+ *
+ * @param[in] port: serial port
+ * @param[in] offset: register offset
+ *
+ * @retval byte to read
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_readb(struct ns16550 *port, int offset)
 {
 	struct ns16550_plat *plat = port->plat;
@@ -234,6 +270,25 @@ static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 	serial_out(lcr_val, &com_port->lcr);
 }
 #else
+/**
+ * @NO{S02E02C01U}
+ * @ASIL{B}
+ * @brief Calculat edivisor
+ *
+ * @param[in] port: serial port
+ * @param[in] clock: clock frequency
+ * @param[in] baudrate: baudrate to calculate
+ *
+ * @retval baudrate divisor
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 {
 	const unsigned int mode_x_div = 16;
@@ -241,6 +296,23 @@ int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 	return DIV_ROUND_CLOSEST(clock, mode_x_div * baudrate);
 }
 
+/**
+ * @NO{S02E02C01U}
+ * @ASIL{B}
+ * @brief Setup baudrate divisor into serial port register
+ *
+ * @param[in] com_port: serial port
+ * @param[in] baud_divisor: baudrate divisor to write
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 {
 	/* to keep serial format, read lcr before writing BKSE */
@@ -253,6 +325,23 @@ static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 }
 #endif
 
+/**
+ * @NO{S02E02C01U}
+ * @ASIL{B}
+ * @brief Initialize serial port
+ *
+ * @param[in] com_port: serial port
+ * @param[in] baud_divisor: baudrate divisor
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 void ns16550_init(struct ns16550 *com_port, int baud_divisor)
 {
 #if (defined(CONFIG_SPL_BUILD) && \
@@ -653,6 +742,25 @@ static int ns16550_serial_getinfo(struct udevice *dev,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C01U}
+ * @ASIL{B}
+ * @brief  Assign base address for serial device
+ *
+ * @param[in] plat: platform data
+ * @param[in] base: physical base address
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int ns16550_serial_assign_base(struct ns16550_plat *plat, fdt_addr_t base)
 {
 	if (base == FDT_ADDR_T_NONE)
@@ -739,6 +847,7 @@ enum {
  * @data_updated None
  * @compatibility None
  *
+ * @callgraph
  * @design
  */
 int ns16550_serial_of_to_plat(struct udevice *dev)
