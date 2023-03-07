@@ -49,6 +49,24 @@ static int hobot_reset_free(struct reset_ctl *reset_ctl)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C11}
+ * @ASIL{B}
+ * @brief Assert a reset signal
+ *
+ * @param[in] reset_ctl: The reset signal to assert
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int hobot_reset_assert(struct reset_ctl *reset_ctl)
 {
 	struct hobot_reset_priv *priv = dev_get_priv(reset_ctl->dev);
@@ -64,6 +82,24 @@ static int hobot_reset_assert(struct reset_ctl *reset_ctl)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C11}
+ * @ASIL{B}
+ * @brief Deassert a reset signal
+ *
+ * @param[in/out] reset_ctl: The reset signal to deassert
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int hobot_reset_deassert(struct reset_ctl *reset_ctl)
 {
 	struct hobot_reset_priv *priv = dev_get_priv(reset_ctl->dev);
@@ -86,6 +122,24 @@ struct reset_ops hobot_reset_ops = {
 	.rst_deassert = hobot_reset_deassert,
 };
 
+/**
+ * @NO{S02E02C11}
+ * @ASIL{B}
+ * @brief Initialize reset device
+ *
+ * @param[in] dev: device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @design
+ */
 static int hobot_reset_probe(struct udevice *dev)
 {
 	struct hobot_reset_priv *priv = dev_get_priv(dev);
