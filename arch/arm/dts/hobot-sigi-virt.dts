@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/reset/hobot-sigi-reset.h>
 
 / {
 	model = "Horizon Robotics Journey 6 Virt Board";
@@ -58,6 +59,12 @@
 		#size-cells = <2>;
 		ranges;
 
+		peri_rst: peri-sysreg@39010000 {
+			compatible = "hobot,sigi-reset";
+			reg = <0x0 0x39010000 0x0 0x10000>;
+			#reset-cells = <1>;
+		};
+
 		mmc0: sdhci@39030000 {
 			compatible = "cdns,sd4hc";
 			reg = <0x0 0x39030000 0x0 0x10000>;
@@ -66,6 +73,9 @@
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
 			sdhci-caps = <0x00000070 0x156ac800>;	// for 3.3V SD
 			//sdhci-caps = <0x00000070 0x546ec800>;	// for 1.8V eMMC
+			resets = <&peri_rst SRST_EMMC0_APB>, <&peri_rst SRST_EMMC0_NOC>,
+					 <&peri_rst SRST_EMMC0_SDM>, <&peri_rst SRST_EMMC0_MAIN>;
+			reset-names = "apb", "noc", "sdm", "main";
 			max-frequency = <200000000>;
 			cap-mmc-highspeed;
 			mmc-hs200-1_8v;
@@ -88,6 +98,9 @@
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
 			sdhci-caps = <0x00000070 0x156ac800>;	// for 3.3V SD
 			//sdhci-caps = <0x00000070 0x546ec800>;	// for 1.8V eMMC
+			resets = <&peri_rst SRST_EMMC1_APB>, <&peri_rst SRST_EMMC1_NOC>,
+					 <&peri_rst SRST_EMMC1_SDM>, <&peri_rst SRST_EMMC1_MAIN>;
+			reset-names = "apb", "noc", "sdm", "main";
 			bus-width = <4>;
 			cap-sd-highspeed;
 			no-mmc;
@@ -129,6 +142,8 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&peri_rst SRST_UART0>, <&peri_rst SRST_UART0_APB>;
+			reset-names = "uart", "uart-apb";
 			clock-frequency = <192000000>; //192MHz
 			u-boot,dm-pre-reloc;
 			status = "okay";
@@ -140,6 +155,8 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&peri_rst SRST_UART1>, <&peri_rst SRST_UART1_APB>;
+			reset-names = "uart", "uart-apb";
 			clock-frequency = <192000000>;
 			u-boot,dm-pre-reloc;
 			status = "okay";
@@ -151,6 +168,8 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&peri_rst SRST_UART2>, <&peri_rst SRST_UART2_APB>;
+			reset-names = "uart", "uart-apb";
 			clock-frequency = <192000000>;
 			u-boot,dm-pre-reloc;
 			status = "okay";
@@ -162,6 +181,8 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&peri_rst SRST_UART3>, <&peri_rst SRST_UART3_APB>;
+			reset-names = "uart", "uart-apb";
 			clock-frequency = <192000000>;
 			u-boot,dm-pre-reloc;
 			status = "okay";
@@ -170,6 +191,8 @@
 		gpio0: gpio@3A120000 {
 			compatible = "snps,dw-apb-gpio";
 			reg = <0x0 0x3A120000 0x0 0x400>;
+			resets = <&peri_rst SRST_GPIO0>, <&peri_rst SRST_GPIO0_APB>;
+			reset-names = "gpio", "gpio-apb";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "okay";
