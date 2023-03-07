@@ -212,4 +212,11 @@ config RESET_DRA7
 	help
 	  Support for TI DRA7-RESET subsystem. Basic Assert/Deassert
 	  is supported.
+
+config RESET_HOBOT
+	bool "Support for Hobot Sigi Reset driver"
+	depends on DM_RESET
+	help
+	  Support for Hobot Sigi-RESET subsystem. Basic Assert/Deassert
+	  is supported.
 endmenu
