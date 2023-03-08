@@ -3,6 +3,12 @@
  * (C) Copyright 2022 Beijing Horizon Robotics Co., Ltd
  */
 
+/**
+ * @file reset-hobot.c
+ * @NO{S02E02C11}
+ * @ASIL{B}
+ */
+
 #include <common.h>
 #include <dm.h>
 #include <log.h>
@@ -15,17 +21,21 @@
 #include <asm/arch/peri_sys.h>
 #include <asm/arch/hardware.h>
 
-/*
+/**
+ * @def HOBOT_RESET_NUM_IN_REG
  * Each reg has 32 bits reset signal for devices
  */
  #define HOBOT_RESET_NUM_IN_REG		32
 
+/**
+ * @NO{S02E02C11}
+ * @ASIL{B}
+ * @struct hobot_reset_priv
+ */
 struct hobot_reset_priv {
-	void __iomem *base;
-	/* hobot reset reg locate at peri sysreg unit */
-	u32 reset_reg_offset;
-	/* hobot reset reg number */
-	u32 reset_reg_num;
+	void __iomem *base;	/**< hobot reset reg locate at peri sysreg unit */
+	u32 reset_reg_offset;	/**< hobot reset register offset at peri-sysreg */
+	u32 reset_reg_num;	/**< hobot reset register number */
 };
 
 static int hobot_reset_request(struct reset_ctl *reset_ctl)
