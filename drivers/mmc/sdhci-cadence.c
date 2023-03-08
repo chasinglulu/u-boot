@@ -4,6 +4,12 @@
  *   Author: Masahiro Yamada <yamada.masahiro@socionext.com>
  */
 
+/**
+ * @file sdhci-cadence.c
+ * @NO{S02E02C06}
+ * @ASIL{B}
+ */
+
 #include <common.h>
 #include <dm.h>
 #include <asm/global_data.h>
@@ -19,7 +25,7 @@
 #include <sdhci.h>
 
 /* HRS - Host Register Set (specific to Cadence) */
-#define SDHCI_CDNS_HRS04		0x10		/* PHY access port */
+#define SDHCI_CDNS_HRS04		0x10		/**< PHY access port */
 #define   SDHCI_CDNS_HRS04_ACK			BIT(26)
 #define   SDHCI_CDNS_HRS04_RD			BIT(25)
 #define   SDHCI_CDNS_HRS04_WR			BIT(24)
@@ -27,7 +33,7 @@
 #define   SDHCI_CDNS_HRS04_WDATA		GENMASK(15, 8)
 #define   SDHCI_CDNS_HRS04_ADDR			GENMASK(5, 0)
 
-#define SDHCI_CDNS_HRS06		0x18		/* eMMC control */
+#define SDHCI_CDNS_HRS06		0x18		/**< eMMC control */
 #define   SDHCI_CDNS_HRS06_TUNE_UP		BIT(15)
 #define   SDHCI_CDNS_HRS06_TUNE			GENMASK(13, 8)
 #define   SDHCI_CDNS_HRS06_MODE			GENMASK(2, 0)
@@ -38,11 +44,14 @@
 #define   SDHCI_CDNS_HRS06_MODE_MMC_HS400	0x5
 #define   SDHCI_CDNS_HRS06_MODE_MMC_HS400ES	0x6
 
-/* SRS - Slot Register Set (SDHCI-compatible) */
+/**
+ * @def SDHCI_CDNS_SRS_BASE
+ * SRS - Slot Register Set (SDHCI-compatible)
+ */
 #define SDHCI_CDNS_SRS_BASE		0x200
 
 /* PHY */
-#define SDHCI_CDNS_PHY_DLY_SD_HS	0x00
+#define SDHCI_CDNS_PHY_DLY_SD_HS	0x00	/**< DLY_SD_HS */
 #define SDHCI_CDNS_PHY_DLY_SD_DEFAULT	0x01
 #define SDHCI_CDNS_PHY_DLY_UHS_SDR12	0x02
 #define SDHCI_CDNS_PHY_DLY_UHS_SDR25	0x03
@@ -55,22 +64,34 @@
 #define SDHCI_CDNS_PHY_DLY_HSMMC	0x0c
 #define SDHCI_CDNS_PHY_DLY_STROBE	0x0d
 
-/*
+/**
+ * @def SDHCI_CDNS_MAX_TUNING_LOOP
  * The tuned val register is 6 bit-wide, but not the whole of the range is
  * available.  The range 0-42 seems to be available (then 43 wraps around to 0)
  * but I am not quite sure if it is official.  Use only 0 to 39 for safety.
  */
 #define SDHCI_CDNS_MAX_TUNING_LOOP	40
 
+/**
+ * @NO{S02E02C06}
+ * @struct sdhci_cdns_plat
+ * @brief information about a SDHCI controller
+ *
+ */
 struct sdhci_cdns_plat {
-	struct mmc_config cfg;
-	struct mmc mmc;
-	void __iomem *hrs_addr;
+	struct mmc_config cfg;	/**< mmc device configuration */
+	struct mmc mmc;	/**< mmc device descriptor */
+	void __iomem *hrs_addr;	/**< sdhci controller register base address */
 };
 
+/**
+ * @NO{S02E02C06}
+ * @struct sdhci_cdns_phy_cfg
+ * @brief information about SDHCI PHY
+ */
 struct sdhci_cdns_phy_cfg {
-	const char *property;
-	u8 addr;
+	const char *property;	/**< PHY property */
+	u8 addr;	/**< PHY register address */
 };
 
 static const struct sdhci_cdns_phy_cfg sdhci_cdns_phy_cfgs[] = {
