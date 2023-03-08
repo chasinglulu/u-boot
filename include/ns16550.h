@@ -21,13 +21,21 @@
  * will not allocate storage for arrays of size 0
  */
 
+ /**
+ * @file ns16550.h
+ *
+ * @NO{S02E02C01}
+ * @ASIL{B}
+ */
+
 #ifndef __ns16550_h
 #define __ns16550_h
 
 #include <linux/types.h>
 
 #ifdef CONFIG_DM_SERIAL
-/*
+/**
+ * @def CONFIG_SYS_NS16550_REG_SIZE
  * For driver model we always use one byte per register, and sort out the
  * differences in the driver
  */
@@ -52,14 +60,24 @@
 #endif
 #endif /* CONFIG_NS16550_DYNAMIC */
 
+/**
+ * @enum ns16550_flags
+ * Flags used to indicate IO access
+ * @NO{S02E02C01}
+ */
 enum ns16550_flags {
-	NS16550_FLAG_IO		= 1 << 0, /* Use I/O access (else mem-mapped) */
-	NS16550_FLAG_ENDIAN	= 1 << 1, /* Use out_le/be_32() */
-	NS16550_FLAG_BE		= 1 << 2, /* Big-endian access (else little) */
+	NS16550_FLAG_IO		= 1 << 0, /**< Use I/O access (else mem-mapped) */
+	NS16550_FLAG_ENDIAN	= 1 << 1, /**< Use out_le/be_32() */
+	NS16550_FLAG_BE		= 1 << 2, /**< Big-endian access (else little) */
 };
 
 /**
- * struct ns16550_plat - information about a NS16550 port
+ * @NO{S02E02C01}
+ * @brief information about a NS16550 port
+ * @struct ns16550_plat
+ */
+
+ /* struct ns16550_plat - information about a NS16550 port
  *
  * @base:		Base register address
  * @reg_width:		IO accesses size of registers (in bytes, 1 or 4)
@@ -71,13 +89,13 @@ enum ns16550_flags {
  * @bdf:		PCI slot/function (pci_dev_t)
  */
 struct ns16550_plat {
-	unsigned long base;
-	int reg_width;
-	int reg_shift;
-	int reg_offset;
-	int clock;
-	u32 fcr;
-	int flags;
+	unsigned long base;	/**< Base register address */
+	int reg_width;	/**< IO accesses size of registers (in bytes, 1 or 4) */
+	int reg_shift;	/**< Shift size of registers (0=byte, 1=16bit, 2=32bit...) */
+	int reg_offset;	/**< Offset to start of registers (normally 0) */
+	int clock;	/**< UART base clock speed in Hz */
+	u32 fcr;	/**< Offset of FCR register (normally UART_FCR_DEFVAL) */
+	int flags;	/**< A few flags (enum ns16550_flags) */
 #if defined(CONFIG_PCI) && defined(CONFIG_SPL)
 	int bdf;
 #endif
@@ -159,18 +177,18 @@ struct ns16550 {
 /*
  * These are the definitions for the FIFO Control Register
  */
-#define UART_FCR_FIFO_EN	0x01 /* Fifo enable */
-#define UART_FCR_CLEAR_RCVR	0x02 /* Clear the RCVR FIFO */
-#define UART_FCR_CLEAR_XMIT	0x04 /* Clear the XMIT FIFO */
-#define UART_FCR_DMA_SELECT	0x08 /* For DMA applications */
-#define UART_FCR_TRIGGER_MASK	0xC0 /* Mask for the FIFO trigger range */
-#define UART_FCR_TRIGGER_1	0x00 /* Mask for trigger set at 1 */
-#define UART_FCR_TRIGGER_4	0x40 /* Mask for trigger set at 4 */
-#define UART_FCR_TRIGGER_8	0x80 /* Mask for trigger set at 8 */
-#define UART_FCR_TRIGGER_14	0xC0 /* Mask for trigger set at 14 */
+#define UART_FCR_FIFO_EN	0x01 /**< Fifo enable */
+#define UART_FCR_CLEAR_RCVR	0x02 /**< Clear the RCVR FIFO */
+#define UART_FCR_CLEAR_XMIT	0x04 /**< Clear the XMIT FIFO */
+#define UART_FCR_DMA_SELECT	0x08 /**< For DMA applications */
+#define UART_FCR_TRIGGER_MASK	0xC0 /**< Mask for the FIFO trigger range */
+#define UART_FCR_TRIGGER_1	0x00 /**< Mask for trigger set at 1 */
+#define UART_FCR_TRIGGER_4	0x40 /**< Mask for trigger set at 4 */
+#define UART_FCR_TRIGGER_8	0x80 /**< Mask for trigger set at 8 */
+#define UART_FCR_TRIGGER_14	0xC0 /**< Mask for trigger set at 14 */
 
-#define UART_FCR_RXSR		0x02 /* Receiver soft reset */
-#define UART_FCR_TXSR		0x04 /* Transmitter soft reset */
+#define UART_FCR_RXSR		0x02 /**< Receiver soft reset */
+#define UART_FCR_TXSR		0x04 /**< Transmitter soft reset */
 
 /* Ingenic JZ47xx specific UART-enable bit. */
 #define UART_FCR_UME		0x10
@@ -183,12 +201,12 @@ struct ns16550 {
 /*
  * These are the definitions for the Modem Control Register
  */
-#define UART_MCR_DTR	0x01		/* DTR   */
-#define UART_MCR_RTS	0x02		/* RTS   */
-#define UART_MCR_OUT1	0x04		/* Out 1 */
-#define UART_MCR_OUT2	0x08		/* Out 2 */
-#define UART_MCR_LOOP	0x10		/* Enable loopback test mode */
-#define UART_MCR_AFE	0x20		/* Enable auto-RTS/CTS */
+#define UART_MCR_DTR	0x01		/**< DTR   */
+#define UART_MCR_RTS	0x02		/**< RTS   */
+#define UART_MCR_OUT1	0x04		/**< Out 1 */
+#define UART_MCR_OUT2	0x08		/**< Out 2 */
+#define UART_MCR_LOOP	0x10		/**< Enable loopback test mode */
+#define UART_MCR_AFE	0x20		/**< Enable auto-RTS/CTS */
 
 #define UART_MCR_DMA_EN	0x04
 #define UART_MCR_TX_DFR	0x08
@@ -199,61 +217,60 @@ struct ns16550 {
  * Note: if the word length is 5 bits (UART_LCR_WLEN5), then setting
  * UART_LCR_STOP will select 1.5 stop bits, not 2 stop bits.
  */
-#define UART_LCR_WLS_MSK 0x03		/* character length select mask */
-#define UART_LCR_WLS_5	0x00		/* 5 bit character length */
-#define UART_LCR_WLS_6	0x01		/* 6 bit character length */
-#define UART_LCR_WLS_7	0x02		/* 7 bit character length */
-#define UART_LCR_WLS_8	0x03		/* 8 bit character length */
-#define UART_LCR_STB	0x04		/* # stop Bits, off=1, on=1.5 or 2) */
-#define UART_LCR_PEN	0x08		/* Parity eneble */
-#define UART_LCR_EPS	0x10		/* Even Parity Select */
-#define UART_LCR_STKP	0x20		/* Stick Parity */
-#define UART_LCR_SBRK	0x40		/* Set Break */
-#define UART_LCR_BKSE	0x80		/* Bank select enable */
-#define UART_LCR_DLAB	0x80		/* Divisor latch access bit */
+#define UART_LCR_WLS_MSK 0x03		/**< character length select mask */
+#define UART_LCR_WLS_5	0x00		/**< 5 bit character length */
+#define UART_LCR_WLS_6	0x01		/**< 6 bit character length */
+#define UART_LCR_WLS_7	0x02		/**< 7 bit character length */
+#define UART_LCR_WLS_8	0x03		/**< 8 bit character length */
+#define UART_LCR_STB	0x04		/**< stop Bits, off=1, on=1.5 or 2 */
+#define UART_LCR_PEN	0x08		/**< Parity eneble */
+#define UART_LCR_EPS	0x10		/**< Even Parity Select */
+#define UART_LCR_STKP	0x20		/**< Stick Parity */
+#define UART_LCR_SBRK	0x40		/**< Set Break */
+#define UART_LCR_BKSE	0x80		/**< Bank select enable */
+#define UART_LCR_DLAB	0x80		/**< Divisor latch access bit */
 
 /*
  * These are the definitions for the Line Status Register
  */
-#define UART_LSR_DR	0x01		/* Data ready */
-#define UART_LSR_OE	0x02		/* Overrun */
-#define UART_LSR_PE	0x04		/* Parity error */
-#define UART_LSR_FE	0x08		/* Framing error */
-#define UART_LSR_BI	0x10		/* Break */
-#define UART_LSR_THRE	0x20		/* Xmit holding register empty */
-#define UART_LSR_TEMT	0x40		/* Xmitter empty */
-#define UART_LSR_ERR	0x80		/* Error */
+#define UART_LSR_DR	0x01		/**< Data ready */
+#define UART_LSR_OE	0x02		/**< Overrun */
+#define UART_LSR_PE	0x04		/**< Parity error */
+#define UART_LSR_FE	0x08		/**< Framing error */
+#define UART_LSR_BI	0x10		/**< Break */
+#define UART_LSR_THRE	0x20		/**< Xmit holding register empty */
+#define UART_LSR_TEMT	0x40		/**< Xmitter empty */
+#define UART_LSR_ERR	0x80		/**< Error */
 
-#define UART_MSR_DCD	0x80		/* Data Carrier Detect */
-#define UART_MSR_RI	0x40		/* Ring Indicator */
-#define UART_MSR_DSR	0x20		/* Data Set Ready */
-#define UART_MSR_CTS	0x10		/* Clear to Send */
-#define UART_MSR_DDCD	0x08		/* Delta DCD */
-#define UART_MSR_TERI	0x04		/* Trailing edge ring indicator */
-#define UART_MSR_DDSR	0x02		/* Delta DSR */
-#define UART_MSR_DCTS	0x01		/* Delta CTS */
+#define UART_MSR_DCD	0x80		/**< Data Carrier Detect */
+#define UART_MSR_RI	0x40		/**< Ring Indicator */
+#define UART_MSR_DSR	0x20		/**< Data Set Ready */
+#define UART_MSR_CTS	0x10		/**< Clear to Send */
+#define UART_MSR_DDCD	0x08		/**< Delta DCD */
+#define UART_MSR_TERI	0x04		/**< Trailing edge ring indicator */
+#define UART_MSR_DDSR	0x02		/**< Delta DSR */
+#define UART_MSR_DCTS	0x01		/**< Delta CTS */
 
 /*
  * These are the definitions for the Interrupt Identification Register
  */
-#define UART_IIR_NO_INT	0x01	/* No interrupts pending */
-#define UART_IIR_ID	0x06	/* Mask for the interrupt ID */
+#define UART_IIR_NO_INT	0x01	/**< No interrupts pending */
+#define UART_IIR_ID	0x06	/**< Mask for the interrupt ID */
 
-#define UART_IIR_MSI	0x00	/* Modem status interrupt */
-#define UART_IIR_THRI	0x02	/* Transmitter holding register empty */
-#define UART_IIR_RDI	0x04	/* Receiver data interrupt */
-#define UART_IIR_RLSI	0x06	/* Receiver line status interrupt */
+#define UART_IIR_MSI	0x00	/**< Modem status interrupt */
+#define UART_IIR_THRI	0x02	/**< Transmitter holding register empty */
+#define UART_IIR_RDI	0x04	/**< Receiver data interrupt */
+#define UART_IIR_RLSI	0x06	/**< Receiver line status interrupt */
 
 /*
  * These are the definitions for the Interrupt Enable Register
  */
-#define UART_IER_MSI	0x08	/* Enable Modem status interrupt */
-#define UART_IER_RLSI	0x04	/* Enable receiver line status interrupt */
-#define UART_IER_THRI	0x02	/* Enable Transmitter holding register int. */
-#define UART_IER_RDI	0x01	/* Enable receiver data interrupt */
+#define UART_IER_MSI	0x08	/**< Enable Modem status interrupt */
+#define UART_IER_RLSI	0x04	/**< Enable receiver line status interrupt */
+#define UART_IER_THRI	0x02	/**< Enable Transmitter holding register int. */
+#define UART_IER_RDI	0x01	/**< Enable receiver data interrupt */
 
-/* useful defaults for LCR */
-#define UART_LCR_8N1	0x03
+#define UART_LCR_8N1	0x03	/** useful defaults for LCR */
 
 void ns16550_init(struct ns16550 *com_port, int baud_divisor);
 void ns16550_putc(struct ns16550 *com_port, char c);

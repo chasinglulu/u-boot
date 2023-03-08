@@ -273,13 +273,16 @@ static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 /**
  * @NO{S02E02C01U}
  * @ASIL{B}
- * @brief Calculat edivisor
+ * @brief calculate the divisor given clock and baud rate
  *
- * @param[in] port: serial port
- * @param[in] clock: clock frequency
- * @param[in] baudrate: baudrate to calculate
+ * Given the UART input clock and required baudrate, calculate the divisor
+ * that should be used.
  *
- * @retval baudrate divisor
+ * @param[in] port: UART port
+ * @param[in] clock: UART input clock speed in Hz
+ * @param[in] baudrate: Required baud rate
+ *
+ * @retval baud rate divisor that should be used
  *
  * @data_read None
  * @data_read None
@@ -779,7 +782,9 @@ static int ns16550_serial_assign_base(struct ns16550_plat *plat, fdt_addr_t base
 /**
  * @NO{S02E02C01}
  * @ASIL{B}
- * @brief Initialize the serial device and populate struct ns16550_plat
+ * @brief probe a serial port
+ *
+ * This sets up the serial port ready for use, except for the baud rate
  *
  * @param[in] dev: platform device pointer
  *
@@ -834,12 +839,16 @@ enum {
 /**
  * @NO{S02E02C01}
  * @ASIL{B}
- * @brief Parse the serial port configuration from dts file
+ * @brief convert DT to platform data
  *
- * @param[in] dev: platform device pointer
+ * Decode a device tree node for an ns16550 device. This includes the
+ * register base address and register shift properties. The caller must set
+ * up the clock frequency.
+ *
+ * @param[in] dev: dev to decode platform data for
  *
  * @retval =0: success
- * @retval <0: failure
+ * @retval -EINVAL on error
  *
  * @data_read None
  * @data_read None
