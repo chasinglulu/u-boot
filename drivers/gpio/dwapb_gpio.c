@@ -5,6 +5,13 @@
  * DesignWare APB GPIO driver
  */
 
+/**
+ * @file dwapb_gpio.c
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ *
+ */
+
 #include <common.h>
 #include <log.h>
 #include <malloc.h>
@@ -21,28 +28,57 @@
 #include <reset.h>
 #include <linux/bitops.h>
 
-#define GPIO_SWPORT_DR(p)	(0x00 + (p) * 0xc)
-#define GPIO_SWPORT_DDR(p)	(0x04 + (p) * 0xc)
-#define GPIO_INTEN		0x30
-#define GPIO_INTMASK		0x34
-#define GPIO_INTTYPE_LEVEL	0x38
-#define GPIO_INT_POLARITY	0x3c
-#define GPIO_INTSTATUS		0x40
-#define GPIO_PORTA_DEBOUNCE	0x48
-#define GPIO_PORTA_EOI		0x4c
-#define GPIO_EXT_PORT(p)	(0x50 + (p) * 4)
+#define GPIO_SWPORT_DR(p)	(0x00 + (p) * 0xc)	/**< gpio portx data register */
+#define GPIO_SWPORT_DDR(p)	(0x04 + (p) * 0xc)	/**< gpio portx direction register */
+#define GPIO_INTEN		0x30	/**< interrupt enable register */
+#define GPIO_INTMASK		0x34	/**< interrupt mask register */
+#define GPIO_INTTYPE_LEVEL	0x38	/**< interrupt level register */
+#define GPIO_INT_POLARITY	0x3c	/**< interrupt polarity register */
+#define GPIO_INTSTATUS		0x40	/**< interrupt status register */
+#define GPIO_PORTA_DEBOUNCE	0x48	/**< debounce enable register */
+#define GPIO_PORTA_EOI		0x4c	/**< port A clear interrupt register */
+#define GPIO_EXT_PORT(p)	(0x50 + (p) * 4)	/**< external gpio port register */
 
+/**
+ * @NO{S02E02C08}
+ * @struct gpio_dwapb_priv
+ * @brief Private data for gpio device
+ */
 struct gpio_dwapb_priv {
-	struct reset_ctl_bulk	resets;
+	struct reset_ctl_bulk	resets;	/**< reset signal from dts */
 };
 
+/**
+ * @NO{S02E02C08}
+ * @struct gpio_dwapb_plat
+ * @brief information about gpio device
+ */
 struct gpio_dwapb_plat {
-	const char	*name;
-	int		bank;
-	int		pins;
-	void __iomem	*base;
+	const char	*name;	/**< bank name */
+	int		bank;	/**< bank number */
+	int		pins;	/**< gpio pin number per bank */
+	void __iomem	*base; /**< gpio controller base address */
 };
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Setup gpio pin input direction
+ *
+ * @param[in] dev: gpio device pointer
+ * @param[in] pin: gpio pin
+ *
+ * @retval =0: success
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwapb_gpio_direction_input(struct udevice *dev, unsigned pin)
 {
 	struct gpio_dwapb_plat *plat = dev_get_plat(dev);
@@ -51,6 +87,27 @@ static int dwapb_gpio_direction_input(struct udevice *dev, unsigned pin)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Setup gpio pin output direction and output valid value
+ *
+ * @param[in] dev: gpio device pointer
+ * @param[in] pin: gpio pin
+ * @param[in] val: value to output
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwapb_gpio_direction_output(struct udevice *dev, unsigned pin,
 				     int val)
 {
@@ -66,6 +123,27 @@ static int dwapb_gpio_direction_output(struct udevice *dev, unsigned pin,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Output value into gpio pin
+ *
+ * @param[in] dev: gpio device pointer
+ * @param[in] pin: gpio pin
+ * @param[in] val: value to set
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwapb_gpio_set_value(struct udevice *dev, unsigned pin, int val)
 {
 	struct gpio_dwapb_plat *plat = dev_get_plat(dev);
@@ -78,6 +156,25 @@ static int dwapb_gpio_set_value(struct udevice *dev, unsigned pin, int val)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief get the current function for a GPIO pin
+ *
+ * @param[in] dev: Device to check
+ * @param[in] offset: Offset of device GPIO to check
+ *
+ * @retval function: input or output
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwapb_gpio_get_function(struct udevice *dev, unsigned offset)
 {
 	struct gpio_dwapb_plat *plat = dev_get_plat(dev);
@@ -91,6 +188,25 @@ static int dwapb_gpio_get_function(struct udevice *dev, unsigned offset)
 		return GPIOF_INPUT;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Get value from specific gpio pin
+ *
+ * @param[in] dev: device ponier
+ * @param[in] pin: gpio pin to read
+ *
+ * @retval value : 0 or 1
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwapb_gpio_get_value(struct udevice *dev, unsigned pin)
 {
 	struct gpio_dwapb_plat *plat = dev_get_plat(dev);
@@ -111,6 +227,25 @@ static const struct dm_gpio_ops gpio_dwapb_ops = {
 	.get_function		= dwapb_gpio_get_function,
 };
 
+/**
+ * @NO{S02E02C08U}
+ * @ASIL{B}
+ * @brief Software reset gpio device
+ *
+ * @param[in] dev: device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int gpio_dwapb_reset(struct udevice *dev)
 {
 	int ret;
@@ -138,6 +273,25 @@ static int gpio_dwapb_reset(struct udevice *dev)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Initialize gpio device
+ *
+ * @param[in] dev: device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int gpio_dwapb_probe(struct udevice *dev)
 {
 	struct gpio_dev_priv *priv = dev_get_uclass_priv(dev);
@@ -154,6 +308,25 @@ static int gpio_dwapb_probe(struct udevice *dev)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Bind gpio driver with gpio device
+ *
+ * @param[in/out] dev:
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int gpio_dwapb_bind(struct udevice *dev)
 {
 	struct gpio_dwapb_plat *plat = dev_get_plat(dev);
@@ -213,6 +386,25 @@ static int gpio_dwapb_bind(struct udevice *dev)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C08}
+ * @ASIL{B}
+ * @brief Reset GPIO device via software reset
+ *
+ * @param[in] dev: device pointer
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int gpio_dwapb_remove(struct udevice *dev)
 {
 	struct gpio_dwapb_plat *plat = dev_get_plat(dev);
