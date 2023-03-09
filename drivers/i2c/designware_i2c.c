@@ -4,6 +4,12 @@
  * Vipin Kumar, ST Micoelectronics, vipin.kumar@st.com.
  */
 
+ /**
+ * @file designware_i2c.c
+ * @NO{S02E02C10}
+ * @ASIL{B}
+ */
+
 #include <common.h>
 #include <clk.h>
 #include <dm.h>
@@ -18,12 +24,33 @@
 #include <dm/device_compat.h>
 #include <linux/err.h>
 
-/*
+/**
+ * @def DW_I2C_COMP_TYPE
  * This assigned unique hex value is constant and is derived from the two ASCII
  * letters 'DW' followed by a 16-bit unsigned number
  */
 #define DW_I2C_COMP_TYPE	0x44570140
 
+/**
+ * @NO{S02E02C10U}
+ * @ASIL{B}
+ * @brief Enbale I2C controller
+ *
+ * @param[in] i2c_base: I2C controller register base address
+ * @param[in] enable: enable flags
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dw_i2c_enable(struct i2c_regs *i2c_base, bool enable)
 {
 	u32 ena = enable ? IC_ENABLE_0B : 0;
@@ -48,17 +75,28 @@ static int dw_i2c_enable(struct i2c_regs *i2c_base, bool enable)
 
 /* High and low times in different speed modes (in ns) */
 enum {
-	/* SDA Hold Time */
-	DEFAULT_SDA_HOLD_TIME		= 300,
+	DEFAULT_SDA_HOLD_TIME		= 300,	/**< SDA Hold Time */
 };
 
-/**
- * calc_counts() - Convert a period to a number of IC clk cycles
- *
- * @ic_clk: Input clock in Hz
- * @period_ns: Period to represent, in ns
- * Return: calculated count
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Convert a period to a number of IC clk cycles
+  *
+  * @param[in] ic_clk: Input clock in Hz
+  * @param[in] period_ns: Period to represent, in ns
+  *
+  * @retval >0: calculated count
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static uint calc_counts(uint ic_clk, uint period_ns)
 {
 	return DIV_ROUND_UP(ic_clk / 1000 * period_ns, NANO_TO_KILO);
@@ -76,12 +114,22 @@ static uint calc_counts(uint ic_clk, uint period_ns)
  * @def_rise_time_ns: Default rise time in ns
  * @def_fall_time_ns: Default fall time in ns
  */
+
+/**
+ * @NO{S02E02C10}
+ * @struct i2c_mode_info
+ * @brief Information about an I2C speed mode
+ *
+ * Each speed mode has its own characteristics. This struct holds these to aid
+ * calculations in dw_i2c_calc_timing().
+ *
+ */
 struct i2c_mode_info {
-	int speed;
-	int min_scl_hightime_ns;
-	int min_scl_lowtime_ns;
-	int def_rise_time_ns;
-	int def_fall_time_ns;
+	int speed;		/**< Speed in Hz */
+	int min_scl_hightime_ns;	/**< Minimum value for SCL low period in ns */
+	int min_scl_lowtime_ns;		/**< Minimum value for SCL high period in ns */
+	int def_rise_time_ns;		/**< Default rise time in ns */
+	int def_fall_time_ns;		/**< Default fall time in ns */
 };
 
 static const struct i2c_mode_info info_for_mode[] = {
@@ -115,16 +163,30 @@ static const struct i2c_mode_info info_for_mode[] = {
 	},
 };
 
-/**
- * dw_i2c_calc_timing() - Calculate the timings to use for a bus
- *
- * @priv: Bus private information (NULL if not using driver model)
- * @mode: Speed mode to use
- * @ic_clk: IC clock speed in Hz
- * @spk_cnt: Spike-suppression count
- * @config: Returns value to use
- * Return: 0 if OK, -EINVAL if the calculation failed due to invalid data
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Calculate the timings to use for a bus
+  *
+  * @param[in] priv: Bus private information (NULL if not using driver model)
+  * @param[in] mode: Speed mode to use
+  * @param[in] ic_clk: IC clock speed in Hz
+  * @param[in] spk_cnt: Spike-suppression count
+  * @param[out] config: Returns value to use
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  * @retval -EINVAL: the calculation failed due to invalid data
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int dw_i2c_calc_timing(struct dw_i2c *priv, enum i2c_speed_mode mode,
 			      int ic_clk, int spk_cnt,
 			      struct dw_i2c_speed_config *config)
@@ -194,16 +256,29 @@ static int dw_i2c_calc_timing(struct dw_i2c *priv, enum i2c_speed_mode mode,
 	return 0;
 }
 
-/**
- * calc_bus_speed() - Calculate the config to use for a particular i2c speed
- *
- * @priv: Private information for the driver (NULL if not using driver model)
- * @i2c_base: Registers for the I2C controller
- * @speed: Required i2c speed in Hz
- * @bus_clk: Input clock to the I2C controller in Hz (e.g. IC_CLK)
- * @config: Returns the config to use for this speed
- * Return: 0 if OK, -ve on error
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Calculate the config to use for a particular i2c speed
+  *
+  * @param[in] priv: Private information for the driver (NULL if not using driver model)
+  * @param[in] regs: Registers for the I2C controller
+  * @param[in] speed: Required i2c speed in Hz
+  * @param[in] bus_clk: Input clock to the I2C controller in Hz (e.g. IC_CLK)
+  * @param[out] config: Returns the config to use for this speed
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int calc_bus_speed(struct dw_i2c *priv, struct i2c_regs *regs, int speed,
 			  ulong bus_clk, struct dw_i2c_speed_config *config)
 {
@@ -264,15 +339,28 @@ static int calc_bus_speed(struct dw_i2c *priv, struct i2c_regs *regs, int speed,
 	return 0;
 }
 
-/**
- * _dw_i2c_set_bus_speed() - Set the i2c speed
- *
- * @priv: Private information for the driver (NULL if not using driver model)
- * @i2c_base: Registers for the I2C controller
- * @speed: Required i2c speed in Hz
- * @bus_clk: Input clock to the I2C controller in Hz (e.g. IC_CLK)
- * Return: 0 if OK, -ve on error
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Set the i2c speed
+  *
+  * @param[in] priv: Private information for the driver (NULL if not using driver model)
+  * @param[in] i2c_base: Registers for the I2C controller
+  * @param[in] speed: Required i2c speed in Hz
+  * @param[in] bus_clk: Input clock to the I2C controller in Hz (e.g. IC_CLK)
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int _dw_i2c_set_bus_speed(struct dw_i2c *priv, struct i2c_regs *i2c_base,
 				 unsigned int speed, unsigned int bus_clk)
 {
@@ -352,12 +440,24 @@ int dw_i2c_gen_speed_config(const struct udevice *dev, int speed_hz,
 	return 0;
 }
 
-/*
- * i2c_setaddress - Sets the target slave address
- * @i2c_addr:	target i2c address
- *
- * Sets the target slave address.
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Sets the target slave address
+  *
+  * @param[in] i2c_base: Registers for the I2C controller
+  * @param[in/out] i2c_addr: target i2c address
+  *
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static void i2c_setaddress(struct i2c_regs *i2c_base, unsigned int i2c_addr)
 {
 	/* Disable i2c */
@@ -369,22 +469,50 @@ static void i2c_setaddress(struct i2c_regs *i2c_base, unsigned int i2c_addr)
 	dw_i2c_enable(i2c_base, true);
 }
 
-/*
- * i2c_flush_rxfifo - Flushes the i2c RX FIFO
- *
- * Flushes the i2c RX FIFO
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Flushes the i2c RX FIFO
+  *
+  * @param[in] i2c_base: Registers for the I2C controller
+  *
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static void i2c_flush_rxfifo(struct i2c_regs *i2c_base)
 {
 	while (readl(&i2c_base->ic_status) & IC_STATUS_RFNE)
 		readl(&i2c_base->ic_cmd_data);
 }
 
-/*
- * i2c_wait_for_bb - Waits for bus busy
- *
- * Waits for bus busy
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief i2c_wait_for_bb - Waits for bus busy
+  *
+  * Waits for bus busy
+  *
+  * @param[in] i2c_base: target I2C bus register base address
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int i2c_wait_for_bb(struct i2c_regs *i2c_base)
 {
 	unsigned long start_time_bb = get_timer(0);
@@ -439,16 +567,30 @@ static int i2c_xfer_finish(struct i2c_regs *i2c_base)
 	return 0;
 }
 
-/*
- * i2c_read - Read from i2c memory
- * @chip:	target i2c address
- * @addr:	address to read from
- * @alen:
- * @buffer:	buffer for read data
- * @len:	no of bytes to be read
- *
- * Read from i2c memory.
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Read from i2c memory
+  *
+  * @param[in] i2c_base: i2c bus register base address
+  * @param[in] dev: target i2c device
+  * @param[in] addr: address to read from
+  * @param[in] alen:
+  * @param[out] buffer: buffer for read data
+  * @param[in] len: bytes to be read
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int __dw_i2c_read(struct i2c_regs *i2c_base, u8 dev, uint addr,
 			 int alen, u8 *buffer, int len)
 {
@@ -507,16 +649,30 @@ static int __dw_i2c_read(struct i2c_regs *i2c_base, u8 dev, uint addr,
 	return i2c_xfer_finish(i2c_base);
 }
 
-/*
- * i2c_write - Write to i2c memory
- * @chip:	target i2c address
- * @addr:	address to read from
- * @alen:
- * @buffer:	buffer for read data
- * @len:	no of bytes to be read
- *
- * Write to i2c memory.
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Write to i2c memory.
+  *
+  * @param[in] i2c_base: i2c bus register base address
+  * @param[in] dev: target i2c
+  * @param[in] addr: address to read from
+  * @param[in] alen:
+  * @param[in] buffer: buffer for write data
+  * @param[in] len: bytes to be write
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int __dw_i2c_write(struct i2c_regs *i2c_base, u8 dev, uint addr,
 			  int alen, u8 *buffer, int len)
 {
@@ -566,13 +722,27 @@ static int __dw_i2c_write(struct i2c_regs *i2c_base, u8 dev, uint addr,
 	return i2c_xfer_finish(i2c_base);
 }
 
-/*
- * __dw_i2c_init - Init function
- * @speed:	required i2c speed
- * @slaveaddr:	slave address for the device
- *
- * Initialization function.
- */
+ /**
+  * @NO{S02E02C10U}
+  * @ASIL{B}
+  * @brief Initialization function.
+  *
+  * @param[in] i2c_base: i2c bus register base address
+  * @param[in] speed: required i2c speed
+  * @param[in] slaveaddr: slave address for the device
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int __dw_i2c_init(struct i2c_regs *i2c_base, int speed, int slaveaddr)
 {
 	int ret;
@@ -677,6 +847,30 @@ U_BOOT_I2C_ADAP_COMPLETE(dw_0, dw_i2c_init, dw_i2c_probe, dw_i2c_read,
 #else /* CONFIG_DM_I2C */
 /* The DM I2C functions */
 
+/**
+ * @NO{S02E02C10}
+ * @ASIL{B}
+ * @brief transfer a list of I2C messages
+ *
+ * @param[in] bus: Bus to read from
+ * @param[in] msg: List of messages to transfer
+ * @param[in] nmsgs: Number of messages in the list
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ * @retval -EREMOTEIO: the slave did not ACK a byte
+ * @retval -ECOMM: the speed cannot be supported
+ * @retval -EPROTO: the chip flags cannot be supported
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int designware_i2c_xfer(struct udevice *bus, struct i2c_msg *msg,
 			       int nmsgs)
 {
@@ -702,6 +896,26 @@ static int designware_i2c_xfer(struct udevice *bus, struct i2c_msg *msg,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C10}
+ * @ASIL{B}
+ * @brief set the speed of a bus
+ *
+ * @param[in] bus: Bus to adjust
+ * @param[in] speed: Requested speed in Hz
+ *
+ * @retval =0: success
+ * @retval -EINVAL: invalid values
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int designware_i2c_set_bus_speed(struct udevice *bus, unsigned int speed)
 {
 	struct dw_i2c *i2c = dev_get_priv(bus);
@@ -717,6 +931,29 @@ static int designware_i2c_set_bus_speed(struct udevice *bus, unsigned int speed)
 	return _dw_i2c_set_bus_speed(i2c, i2c->regs, speed, rate);
 }
 
+/**
+ * @NO{S02E02C10}
+ * @ASIL{B}
+ * @brief probe for the presense of a chip address
+ *
+ * @param[in] bus: Bus to probe
+ * @param[in] chip_addr: Chip address to probe
+ * @param[in] chip_flags: Probe flags (enum dm_i2c_chip_flags)
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ * @retval -EREMOTEIO: chip was not found
+ * @retval -ENOSYS: fall back to default probem
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int designware_i2c_probe_chip(struct udevice *bus, uint chip_addr,
 				     uint chip_flags)
 {
@@ -733,6 +970,25 @@ static int designware_i2c_probe_chip(struct udevice *bus, uint chip_addr,
 	return ret;
 }
 
+/**
+ * @NO{S02E02C10}
+ * @ASIL{B}
+ * @brief convert DT to platform data
+ *
+ * @param[in] bus: Bus to prase
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int designware_i2c_of_to_plat(struct udevice *bus)
 {
 	struct dw_i2c *priv = dev_get_priv(bus);
@@ -768,6 +1024,25 @@ int designware_i2c_of_to_plat(struct udevice *bus)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C10}
+ * @ASIL{B}
+ * @brief probe a I2C bus
+ *
+ * @param[in] bus: Bus to probe
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int designware_i2c_probe(struct udevice *bus)
 {
 	struct dw_i2c *priv = dev_get_priv(bus);
