@@ -19,7 +19,7 @@ import pytest
 import u_boot_utils as util
 
 # defauld mmc id
-mmc_dev = 1
+mmc_dev = 0
 temp_addr = 0x90000000
 temp_addr2 = 0x90002000
 
@@ -66,7 +66,7 @@ def test_avb_mmc_uuid(u_boot_console):
             part_list[cur_partname] = guid_to_check[1]
 
     # lets check all guids with avb get_guid
-    for part, guid in part_list.iteritems():
+    for part, guid in part_list.items():
         avb_guid_resp = u_boot_console.run_command('avb get_uuid %s' % part)
         assert guid == avb_guid_resp.split('UUID: ')[1]
 
