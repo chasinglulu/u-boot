@@ -103,19 +103,6 @@ static uint calc_counts(uint ic_clk, uint period_ns)
 }
 
 /**
- * struct i2c_mode_info - Information about an I2C speed mode
- *
- * Each speed mode has its own characteristics. This struct holds these to aid
- * calculations in dw_i2c_calc_timing().
- *
- * @speed: Speed in Hz
- * @min_scl_lowtime_ns: Minimum value for SCL low period in ns
- * @min_scl_hightime_ns: Minimum value for SCL high period in ns
- * @def_rise_time_ns: Default rise time in ns
- * @def_fall_time_ns: Default fall time in ns
- */
-
-/**
  * @NO{S02E02C10}
  * @struct i2c_mode_info
  * @brief Information about an I2C speed mode
@@ -416,6 +403,27 @@ static int _dw_i2c_set_bus_speed(struct dw_i2c *priv, struct i2c_regs *i2c_base,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C10U}
+ * @ASIL{B}
+ * @brief Get the i2c speed
+ *
+ * @param[in] dev: pointer to i2c controller
+ * @param[in] speed_hz: Required i2c speed in Hz
+ * @param[out] config: speed config to place
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int dw_i2c_gen_speed_config(const struct udevice *dev, int speed_hz,
 			    struct dw_i2c_speed_config *config)
 {
@@ -528,6 +536,28 @@ static int i2c_wait_for_bb(struct i2c_regs *i2c_base)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C10U}
+ * @ASIL{B}
+ * @brief Initialize a i2c transmission
+ *
+ * @param[in] i2c_base: Registers for the I2C controller
+ * @param[in/out] chip: target chip address
+ * @param[in/out] addr: target address to read from or write into
+ * @param[in/out] alen: byte length
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int i2c_xfer_init(struct i2c_regs *i2c_base, uchar chip, uint addr,
 			 int alen)
 {
@@ -544,6 +574,25 @@ static int i2c_xfer_init(struct i2c_regs *i2c_base, uchar chip, uint addr,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C10U}
+ * @ASIL{B}
+ * @brief finish a i2c transmission
+ *
+ * @param[in/out] i2c_base: Registers for the I2C controller
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int i2c_xfer_finish(struct i2c_regs *i2c_base)
 {
 	ulong start_stop_det = get_timer(0);
