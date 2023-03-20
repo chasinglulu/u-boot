@@ -38,6 +38,24 @@
 static LIST_HEAD(dwc3_list);
 /* -------------------------------------------------------------------------- */
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief setup mode of DWC3 core
+ *
+ * @param[in] dwc: pointer to our context structure
+ * @param[in] mode: value to write
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_set_mode(struct dwc3 *dwc, u32 mode)
 {
 	u32 reg;
@@ -48,10 +66,24 @@ static void dwc3_set_mode(struct dwc3 *dwc, u32 mode)
 	dwc3_writel(dwc->regs, DWC3_GCTL, reg);
 }
 
-/**
- * dwc3_core_soft_reset - Issues core soft reset and PHY reset
- * @dwc: pointer to our context structure
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Issues core soft reset and PHY reset
+  *
+  * @param[in] dwc: pointer to our context structure
+  *
+  * @retval =0: success
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int dwc3_core_soft_reset(struct dwc3 *dwc)
 {
 	u32		reg;
@@ -93,11 +125,24 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 	return 0;
 }
 
-/*
- * dwc3_frame_length_adjustment - Adjusts frame length if required
- * @dwc3: Pointer to our controller context structure
- * @fladj: Value of GFLADJ_30MHZ to adjust frame length
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Adjusts frame length if required
+  *
+  * @param[in] dwc: Pointer to our controller context structure
+  * @param[in] fladj: Value of GFLADJ_30MHZ to adjust frame length
+  *
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static void dwc3_frame_length_adjustment(struct dwc3 *dwc, u32 fladj)
 {
 	u32 reg;
@@ -114,25 +159,50 @@ static void dwc3_frame_length_adjustment(struct dwc3 *dwc, u32 fladj)
 	dwc3_writel(dwc->regs, DWC3_GFLADJ, reg);
 }
 
-/**
- * dwc3_free_one_event_buffer - Frees one event buffer
- * @dwc: Pointer to our controller context structure
- * @evt: Pointer to event buffer to be freed
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Frees one event buffer
+  *
+  * @param[in] dwc: Pointer to our controller context structure
+  * @param[in] evt: Pointer to event buffer to be freed
+  *
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static void dwc3_free_one_event_buffer(struct dwc3 *dwc,
 		struct dwc3_event_buffer *evt)
 {
 	dma_free_coherent(evt->buf);
 }
 
-/**
- * dwc3_alloc_one_event_buffer - Allocates one event buffer structure
- * @dwc: Pointer to our controller context structure
- * @length: size of the event buffer
- *
- * Returns a pointer to the allocated event buffer structure on success
- * otherwise ERR_PTR(errno).
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Allocates one event buffer structure
+  *
+  * @param[in] dwc: Pointer to our controller context structure
+  * @param[in] length: size of the event buffer
+  *
+  * @retval success: Returns a pointer to the allocated event buffer structure
+  * @retval ERR_PTR: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static struct dwc3_event_buffer *dwc3_alloc_one_event_buffer(struct dwc3 *dwc,
 		unsigned length)
 {
@@ -155,10 +225,23 @@ static struct dwc3_event_buffer *dwc3_alloc_one_event_buffer(struct dwc3 *dwc,
 	return evt;
 }
 
-/**
- * dwc3_free_event_buffers - frees all allocated event buffers
- * @dwc: Pointer to our controller context structure
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief frees all allocated event buffers
+  *
+  * @param[in] dwc: Pointer to our controller context structure
+  *
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static void dwc3_free_event_buffers(struct dwc3 *dwc)
 {
 	struct dwc3_event_buffer	*evt;
@@ -171,14 +254,28 @@ static void dwc3_free_event_buffers(struct dwc3 *dwc)
 	}
 }
 
-/**
- * dwc3_alloc_event_buffers - Allocates @num event buffers of size @length
- * @dwc: pointer to our controller context structure
- * @length: size of event buffer
- *
- * Returns 0 on success otherwise negative errno. In the error case, dwc
- * may contain some buffers allocated but not all which were requested.
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Allocates @num event buffers of size @length
+  *
+  * @param[in] dwc: pointer to our controller context structure
+  * @param[in] length: size of event buffer
+  *
+  * In the error case, dwc may contain some buffers allocated but not all which were requested.
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
 {
 	int			num;
@@ -206,12 +303,25 @@ static int dwc3_alloc_event_buffers(struct dwc3 *dwc, unsigned length)
 	return 0;
 }
 
-/**
- * dwc3_event_buffers_setup - setup our allocated event buffers
- * @dwc: pointer to our controller context structure
- *
- * Returns 0 on success otherwise negative errno.
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief setup our allocated event buffers
+  *
+  * @param[in] dwc: pointer to our controller context structure
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int dwc3_event_buffers_setup(struct dwc3 *dwc)
 {
 	struct dwc3_event_buffer	*evt;
@@ -237,6 +347,23 @@ static int dwc3_event_buffers_setup(struct dwc3 *dwc)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief cleanup our allocated event buffers
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_event_buffers_cleanup(struct dwc3 *dwc)
 {
 	struct dwc3_event_buffer	*evt;
@@ -255,6 +382,25 @@ static void dwc3_event_buffers_cleanup(struct dwc3 *dwc)
 	}
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Allocates scratch buffers
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
 {
 	if (!dwc->has_hibernation)
@@ -271,6 +417,25 @@ static int dwc3_alloc_scratch_buffers(struct dwc3 *dwc)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief setup scratch buffers
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_setup_scratch_buffers(struct dwc3 *dwc)
 {
 	dma_addr_t scratch_addr;
@@ -318,6 +483,23 @@ err0:
 	return ret;
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief free scratch buffers
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
 {
 	if (!dwc->has_hibernation)
@@ -331,6 +513,23 @@ static void dwc3_free_scratch_buffers(struct dwc3 *dwc)
 	kfree(dwc->scratchbuf);
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief setup the number of ep in controller context structure
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_core_num_eps(struct dwc3 *dwc)
 {
 	struct dwc3_hwparams	*parms = &dwc->hwparams;
@@ -342,6 +541,23 @@ static void dwc3_core_num_eps(struct dwc3 *dwc)
 			dwc->num_in_eps, dwc->num_out_eps);
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief setup hwparams in controller context structure
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_cache_hwparams(struct dwc3 *dwc)
 {
 	struct dwc3_hwparams	*parms = &dwc->hwparams;
@@ -357,6 +573,23 @@ static void dwc3_cache_hwparams(struct dwc3 *dwc)
 	parms->hwparams8 = dwc3_readl(dwc->regs, DWC3_GHWPARAMS8);
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Setup USB PHY mode
+ *
+ * @param[in] dwc: pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_hsphy_mode_setup(struct dwc3 *dwc)
 {
 	enum usb_phy_interface hsphy_mode = dwc->hsphy_mode;
@@ -385,10 +618,23 @@ static void dwc3_hsphy_mode_setup(struct dwc3 *dwc)
 	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
 }
 
-/**
- * dwc3_phy_setup - Configure USB PHY Interface of DWC3 Core
- * @dwc: Pointer to our controller context structure
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Configure USB PHY Interface of DWC3 Core
+  *
+  * @param[in] dwc: Pointer to our controller context structure
+  *
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static void dwc3_phy_setup(struct dwc3 *dwc)
 {
 	u32 reg;
@@ -462,7 +708,23 @@ static void dwc3_phy_setup(struct dwc3 *dwc)
 	mdelay(100);
 }
 
-/* set global incr burst type configuration registers */
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief set global incr burst type configuration registers
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_set_incr_burst_type(struct dwc3 *dwc)
 {
 	struct udevice *dev = dwc->dev;
@@ -509,12 +771,25 @@ static void dwc3_set_incr_burst_type(struct dwc3 *dwc)
 	dwc3_writel(dwc->regs, DWC3_GSBUSCFG0, cfg);
 }
 
-/**
- * dwc3_core_init - Low-level initialization of DWC3 Core
- * @dwc: Pointer to our controller context structure
- *
- * Returns 0 on success otherwise negative errno.
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief Low-level initialization of DWC3 Core
+  *
+  * @param[in/out] dwc: Pointer to our controller context structure
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 static int dwc3_core_init(struct dwc3 *dwc)
 {
 	unsigned long		timeout;
@@ -656,6 +931,25 @@ static void dwc3_core_exit(struct dwc3 *dwc)
 	dwc3_free_scratch_buffers(dwc);
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief initialize the mode of DWC3 Core
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_core_init_mode(struct dwc3 *dwc)
 {
 	int ret;
@@ -700,12 +994,46 @@ static int dwc3_core_init_mode(struct dwc3 *dwc)
 	return 0;
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Run the gadget mode USB controller
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_gadget_run(struct dwc3 *dwc)
 {
 	dwc3_writel(dwc->regs, DWC3_DCTL, DWC3_DCTL_RUN_STOP);
 	mdelay(100);
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Stop DWC3 Core
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_core_stop(struct dwc3 *dwc)
 {
 	u32 reg;
@@ -714,6 +1042,23 @@ static void dwc3_core_stop(struct dwc3 *dwc)
 	dwc3_writel(dwc->regs, DWC3_DCTL, reg & ~(DWC3_DCTL_RUN_STOP));
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Exit from DWC3 core in the specified mode
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static void dwc3_core_exit_mode(struct dwc3 *dwc)
 {
 	switch (dwc->dr_mode) {
@@ -742,17 +1087,32 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 
 #define DWC3_ALIGN_MASK		(16 - 1)
 
-/**
- * dwc3_uboot_init - dwc3 core uboot initialization code
- * @dwc3_dev: struct dwc3_device containing initialization data
- *
- * Entry point for dwc3 driver (equivalent to dwc3_probe in linux
- * kernel driver). Pointer to dwc3_device should be passed containing
- * base address and other initialization data. Returns '0' on success and
- * a negative value on failure.
- *
- * Generally called from board_usb_init() implemented in board file.
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief dwc3 core uboot initialization code
+  *
+  * Entry point for dwc3 driver (equivalent to dwc3_probe in linux
+  * kernel driver). Pointer to dwc3_device should be passed containing
+  * base address and other initialization data. Returns '0' on success and
+  * a negative value on failure.
+  *
+  * @param[in] dwc3_dev: struct dwc3_device containing initialization data
+  *
+  * @retval =0: success
+  * @retval <0: failure
+  *
+  * Generally called from board_usb_init() implemented in board file.
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 int dwc3_uboot_init(struct dwc3_device *dwc3_dev)
 {
 	struct dwc3		*dwc;
@@ -880,17 +1240,29 @@ err0:
 	return ret;
 }
 
-/**
- * dwc3_uboot_exit - dwc3 core uboot cleanup code
- * @index: index of this controller
- *
- * Performs cleanup of memory allocated in dwc3_uboot_init and other misc
- * cleanups (equivalent to dwc3_remove in linux). index of _this_ controller
- * should be passed and should match with the index passed in
- * dwc3_device during init.
- *
- * Generally called from board file.
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  *
+  * @brief dwc3 core uboot cleanup code
+  * Performs cleanup of memory allocated in dwc3_uboot_init and other misc
+  * cleanups (equivalent to dwc3_remove in linux). index of _this_ controller
+  * should be passed and should match with the index passed in
+  * dwc3_device during init.
+  *
+  * @param[in] index: index of this controller
+  *
+  * Generally called from board file.
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 void dwc3_uboot_exit(int index)
 {
 	struct dwc3 *dwc;
@@ -909,14 +1281,26 @@ void dwc3_uboot_exit(int index)
 	}
 }
 
-/**
- * dwc3_uboot_handle_interrupt - handle dwc3 core interrupt
- * @index: index of this controller
- *
- * Invokes dwc3 gadget interrupts.
- *
- * Generally called from board file.
- */
+ /**
+  * @NO{S02E02C04U}
+  * @ASIL{B}
+  * @brief handle dwc3 core interrupt
+  *
+  * Invokes dwc3 gadget interrupts.
+  *
+  * @param[in] index: index of this controller
+  *
+  * Generally called from board file.
+  *
+  * @data_read None
+  * @data_read None
+  * @data_updated None
+  * @data_updated None
+  * @compatibility None
+  *
+  * @callgraph
+  * @design
+  */
 void dwc3_uboot_handle_interrupt(int index)
 {
 	struct dwc3 *dwc = NULL;
@@ -966,6 +1350,23 @@ int dwc3_shutdown_phy(struct udevice *dev, struct phy_bulk *phys)
 #endif
 
 #if CONFIG_IS_ENABLED(DM_USB)
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @brief Parse platform data of DWC3 core
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 void dwc3_of_parse(struct dwc3 *dwc)
 {
 	const u8 *tmp;
@@ -1063,6 +1464,25 @@ void dwc3_of_parse(struct dwc3 *dwc)
 	}
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Initialize DWC3 core
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int dwc3_init(struct dwc3 *dwc)
 {
 	int ret;
@@ -1131,6 +1551,23 @@ core_fail:
 	return ret;
 }
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Remove DWC3 USB Controller
+ *
+ * @param[in] dwc: Pointer to our controller context structure
+ *
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 void dwc3_remove(struct dwc3 *dwc)
 {
 	dwc3_core_exit_mode(dwc);

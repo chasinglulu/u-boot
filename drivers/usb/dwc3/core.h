@@ -410,28 +410,25 @@
 
 struct dwc3_trb;
 
-/**
- * struct dwc3_event_buffer - Software event buffer representation
- * @buf: _THE_ buffer
- * @length: size of this buffer
- * @lpos: event offset
- * @count: cache of last read event count register
- * @flags: flags related to this event buffer
- * @dma: dma_addr_t
- * @dwc: pointer to DWC controller
- */
+ /**
+  * @NO{S02E02C04}
+  * @ASIL{B}
+  * @struct dwc3_event_buffer
+  * @brief Software event buffer representation
+  *
+  */
 struct dwc3_event_buffer {
-	void			*buf;
-	unsigned		length;
-	unsigned int		lpos;
-	unsigned int		count;
-	unsigned int		flags;
+	void			*buf;	/**< event buffer */
+	unsigned		length;	/**< size of this buffer */
+	unsigned int		lpos;	/**< event offset */
+	unsigned int		count;	/**< cache of last read event count register */
+	unsigned int		flags;	/**< flags related to this event buffer */
 
 #define DWC3_EVENT_PENDING	(1UL << 0)
 
-	dma_addr_t		dma;
+	dma_addr_t		dma;	/**< dma addr of buffer */
 
-	struct dwc3		*dwc;
+	struct dwc3		*dwc;	/**< pointer to DWC controller */
 };
 
 #define DWC3_EP_FLAG_STALLED	(1 << 0)
@@ -443,42 +440,27 @@ struct dwc3_event_buffer {
 #define DWC3_TRB_NUM		32
 #define DWC3_TRB_MASK		(DWC3_TRB_NUM - 1)
 
-/**
- * struct dwc3_ep - device side endpoint representation
- * @endpoint: usb endpoint
- * @request_list: list of requests for this endpoint
- * @req_queued: list of requests on this ep which have TRBs setup
- * @trb_pool: array of transaction buffers
- * @trb_pool_dma: dma address of @trb_pool
- * @free_slot: next slot which is going to be used
- * @busy_slot: first slot which is owned by HW
- * @desc: usb_endpoint_descriptor pointer
- * @dwc: pointer to DWC controller
- * @saved_state: ep state saved during hibernation
- * @flags: endpoint flags (wedged, stalled, ...)
- * @current_trb: index of current used trb
- * @number: endpoint number (1 - 15)
- * @type: set to bmAttributes & USB_ENDPOINT_XFERTYPE_MASK
- * @resource_index: Resource transfer index
- * @interval: the interval on which the ISOC transfer is started
- * @name: a human readable name e.g. ep1out-bulk
- * @direction: true for TX, false for RX
- * @stream_capable: true when streams are enabled
- */
+ /**
+  * @NO{S02E02C04}
+  * @ASIL{B}
+  * @struct dwc3_ep
+  * @brief  device side endpoint representation
+  *
+  */
 struct dwc3_ep {
-	struct usb_ep		endpoint;
-	struct list_head	request_list;
-	struct list_head	req_queued;
+	struct usb_ep		endpoint;	/**< usb endpoint */
+	struct list_head	request_list;	/**< list of requests for this endpoint */
+	struct list_head	req_queued;	/**< list of requests on this ep which have TRBs setup */
 
-	struct dwc3_trb		*trb_pool;
-	dma_addr_t		trb_pool_dma;
-	u32			free_slot;
-	u32			busy_slot;
-	const struct usb_ss_ep_comp_descriptor *comp_desc;
-	struct dwc3		*dwc;
+	struct dwc3_trb		*trb_pool;	/**< array of transaction buffers */
+	dma_addr_t		trb_pool_dma;	/**< dma address of @trb_pool */
+	u32			free_slot;	/**< next slot which is going to be used */
+	u32			busy_slot;	/**< first slot which is owned by HW */
+	const struct usb_ss_ep_comp_descriptor *comp_desc;	/**< usb_endpoint_descriptor pointer */
+	struct dwc3		*dwc;	/**< pointer to DWC controller */
 
-	u32			saved_state;
-	unsigned		flags;
+	u32			saved_state;	/**< ep state saved during hibernation */
+	unsigned		flags;	/**<  endpoint flags (wedged, stalled, ...) */
 #define DWC3_EP_ENABLED		(1 << 0)
 #define DWC3_EP_STALL		(1 << 1)
 #define DWC3_EP_WEDGE		(1 << 2)
@@ -489,25 +471,35 @@ struct dwc3_ep {
 	/* This last one is specific to EP0 */
 #define DWC3_EP0_DIR_IN		(1 << 31)
 
-	unsigned		current_trb;
+	unsigned		current_trb;	/**< index of current used trb */
 
-	u8			number;
-	u8			type;
-	u8			resource_index;
-	u32			interval;
+	u8			number;	/**< endpoint number (1 - 15) */
+	u8			type;	/**< set to bmAttributes & USB_ENDPOINT_XFERTYPE_MASK */
+	u8			resource_index;	/**< Resource transfer index */
+	u32			interval;	/**< the interval on which the ISOC transfer is started */
 
-	char			name[20];
+	char			name[20];	/**< a human readable name e.g. ep1out-bulk */
 
-	unsigned		direction:1;
-	unsigned		stream_capable:1;
+	unsigned		direction:1;	/**< true for TX, false for RX */
+	unsigned		stream_capable:1;	/**< true when streams are enabled */
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @enum dwc3_phy
+ */
 enum dwc3_phy {
 	DWC3_PHY_UNKNOWN = 0,
 	DWC3_PHY_USB3,
 	DWC3_PHY_USB2,
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @enum dwc3_ep0_next
+ */
 enum dwc3_ep0_next {
 	DWC3_EP0_UNKNOWN = 0,
 	DWC3_EP0_COMPLETE,
@@ -515,6 +507,11 @@ enum dwc3_ep0_next {
 	DWC3_EP0_NRDY_STATUS,
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @enum dwc3_ep0_state
+ */
 enum dwc3_ep0_state {
 	EP0_UNCONNECTED		= 0,
 	EP0_SETUP_PHASE,
@@ -522,6 +519,11 @@ enum dwc3_ep0_state {
 	EP0_STATUS_PHASE,
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @enum dwc3_link_state
+ */
 enum dwc3_link_state {
 	/* In SuperSpeed */
 	DWC3_LINK_STATE_U0		= 0x00, /* in HS, means ON */
@@ -571,42 +573,37 @@ enum dwc3_link_state {
 #define DWC3_TRBCTL_ISOCHRONOUS		DWC3_TRB_CTRL_TRBCTL(7)
 #define DWC3_TRBCTL_LINK_TRB		DWC3_TRB_CTRL_TRBCTL(8)
 
-/**
- * struct dwc3_trb - transfer request block (hw format)
- * @bpl: DW0-3
- * @bph: DW4-7
- * @size: DW8-B
- * @trl: DWC-F
- */
+ /**
+  * @NO{S02E02C04}
+  * @ASIL{B}
+  * @struct dwc3_trb
+  * @brief transfer request block (hw format)
+  *
+  */
 struct dwc3_trb {
-	u32		bpl;
-	u32		bph;
-	u32		size;
-	u32		ctrl;
+	u32		bpl;	/**< DW0-3 */
+	u32		bph;	/**< DW4-7 */
+	u32		size;	/**< DW8-B */
+	u32		ctrl;	/**< DWC-F */
 } __packed;
 
-/**
- * dwc3_hwparams - copy of HWPARAMS registers
- * @hwparams0 - GHWPARAMS0
- * @hwparams1 - GHWPARAMS1
- * @hwparams2 - GHWPARAMS2
- * @hwparams3 - GHWPARAMS3
- * @hwparams4 - GHWPARAMS4
- * @hwparams5 - GHWPARAMS5
- * @hwparams6 - GHWPARAMS6
- * @hwparams7 - GHWPARAMS7
- * @hwparams8 - GHWPARAMS8
- */
+ /**
+  * @NO{S02E02C04}
+  * @ASIL{B}
+  * @struct dwc3_hwparams
+  * @brief copy of HWPARAMS registers
+  *
+  */
 struct dwc3_hwparams {
-	u32	hwparams0;
-	u32	hwparams1;
-	u32	hwparams2;
-	u32	hwparams3;
-	u32	hwparams4;
-	u32	hwparams5;
-	u32	hwparams6;
-	u32	hwparams7;
-	u32	hwparams8;
+	u32	hwparams0;	/**< GHWPARAMS0 */
+	u32	hwparams1;	/**< GHWPARAMS1 */
+	u32	hwparams2;	/**< GHWPARAMS2 */
+	u32	hwparams3;	/**< GHWPARAMS3 */
+	u32	hwparams4;	/**< GHWPARAMS4 */
+	u32	hwparams5;	/**< GHWPARAMS5 */
+	u32	hwparams6;	/**< GHWPARAMS6 */
+	u32	hwparams7;	/**< GHWPARAMS7 */
+	u32	hwparams8;	/**< GHWPARAMS8 */
 };
 
 /* HWPARAMS0 */
@@ -643,10 +640,13 @@ struct dwc3_request {
 	unsigned		queued:1;
 };
 
-/*
- * struct dwc3_scratchpad_array - hibernation scratchpad array
- * (format defined by hw)
- */
+/**
+  * @NO{S02E02C04}
+  * @ASIL{B}
+  * @struct dwc3_scratchpad_array
+  * @brief hibernation scratchpad array (format defined by hw)
+  *
+  */
 struct dwc3_scratchpad_array {
 	__le64	dma_adr[DWC3_MAX_HIBER_SCRATCHBUFS];
 };

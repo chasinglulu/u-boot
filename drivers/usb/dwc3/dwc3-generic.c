@@ -32,23 +32,64 @@ struct dwc3_glue_data {
 	fdt_addr_t regs;
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @struct dwc3_generic_plat
+ * @brief dwc3 generic platform data
+ *
+ */
 struct dwc3_generic_plat {
 	fdt_addr_t base;
 	u32 maximum_speed;
 	enum usb_dr_mode dr_mode;
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @struct dwc3_generic_priv
+ * @brief dwc3 generic private data
+ *
+ */
 struct dwc3_generic_priv {
 	void *base;
 	struct dwc3 dwc3;
 	struct phy_bulk phys;
 };
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @struct dwc3_generic_host_priv
+ * @brief dwc3 generic host mode private data
+ *
+ */
 struct dwc3_generic_host_priv {
 	struct xhci_ctrl xhci_ctrl;
 	struct dwc3_generic_priv gen_priv;
 };
 
+/**
+ * @NO{S02E02C04U}
+ * @ASIL{B}
+ * @brief Initialize platform device of DWC3 USB Controller
+ *
+ * @param[in] dev: Pointer to platform USB controller device
+ * @param[in] priv: Private data for DWC3 contr0ller
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_generic_probe(struct udevice *dev,
 			      struct dwc3_generic_priv *priv)
 {
@@ -105,6 +146,25 @@ static int dwc3_generic_remove(struct udevice *dev,
 	return 0;
 }
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @brief Parse platform data of DWC3 controller
+ *
+ * @param[in] dev: Pointer to platform USB controller device
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_generic_of_to_plat(struct udevice *dev)
 {
 	struct dwc3_generic_plat *plat = dev_get_plat(dev);
@@ -175,6 +235,25 @@ U_BOOT_DRIVER(dwc3_generic_peripheral) = {
 
 #if defined(CONFIG_SPL_USB_HOST) || \
 	!defined(CONFIG_SPL_BUILD) && defined(CONFIG_USB_HOST)
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @brief probe host USB controller
+ *
+ * @param[in] dev: Pointer to platform USB controller device
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_generic_host_probe(struct udevice *dev)
 {
 	struct xhci_hcor *hcor;
@@ -193,6 +272,25 @@ static int dwc3_generic_host_probe(struct udevice *dev)
 	return xhci_register(dev, hccr, hcor);
 }
 
+/**
+ * @NO{S02E02C04}
+ * @ASIL{B}
+ * @brief Remove host USB controller
+ *
+ * @param[in] dev: Pointer to platform USB controller device
+ *
+ * @retval =0: success
+ * @retval <0: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 static int dwc3_generic_host_remove(struct udevice *dev)
 {
 	struct dwc3_generic_host_priv *priv = dev_get_priv(dev);
