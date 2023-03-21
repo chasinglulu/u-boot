@@ -42,6 +42,8 @@ struct pxe_label {
 	char *name;
 	char *menu;
 	char *xen;
+	char *domu[8];
+	int domu_num;
 	char *kernel;
 	char *config;
 	char *append;
