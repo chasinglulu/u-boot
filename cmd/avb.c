@@ -15,6 +15,28 @@
 #define AVB_BOOTARGS	"avb_bootargs"
 static struct AvbOps *avb_ops;
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief initialize avb2
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_init(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	unsigned long mmc_dev;
@@ -36,6 +58,28 @@ int do_avb_init(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  read bytes from partition to buffer
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_read_part(struct cmd_tbl *cmdtp, int flag, int argc,
 		     char *const argv[])
 {
@@ -69,6 +113,28 @@ int do_avb_read_part(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  read bytes from partition to buffer and print to stdout
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_read_part_hex(struct cmd_tbl *cmdtp, int flag, int argc,
 			 char *const argv[])
 {
@@ -115,6 +181,28 @@ int do_avb_read_part_hex(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  write bytes to partition by offset using data from addrress specific buffer
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_write_part(struct cmd_tbl *cmdtp, int flag, int argc,
 		      char *const argv[])
 {
@@ -147,6 +235,28 @@ int do_avb_write_part(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  read rollback index
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_read_rb(struct cmd_tbl *cmdtp, int flag, int argc,
 		   char *const argv[])
 {
@@ -174,6 +284,28 @@ int do_avb_read_rb(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  write rollback index
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_write_rb(struct cmd_tbl *cmdtp, int flag, int argc,
 		    char *const argv[])
 {
@@ -200,6 +332,28 @@ int do_avb_write_rb(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  get part UUID
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_get_uuid(struct cmd_tbl *cmdtp, int flag,
 		    int argc, char *const argv[])
 {
@@ -228,6 +382,28 @@ int do_avb_get_uuid(struct cmd_tbl *cmdtp, int flag,
 	return CMD_RET_FAILURE;
 }
 
+/**
+ * @NO{S02E02C13U}
+ * @ASIL{B}
+ * @brief  run verification process using hash data from vbmeta structure
+ *
+ * @param[in] cmdtp: Command tables
+ * @param[in] flag: flags related to command
+ * @param[in] argc: argument count
+ * @param[in] argv: argument vector
+ *
+ * @retval =0: success
+ * @retval =1: failure
+ *
+ * @data_read None
+ * @data_read None
+ * @data_updated None
+ * @data_updated None
+ * @compatibility None
+ *
+ * @callgraph
+ * @design
+ */
 int do_avb_verify_part(struct cmd_tbl *cmdtp, int flag,
 		       int argc, char *const argv[])
 {
