@@ -76,23 +76,6 @@ int dram_init_banksize(void)
 	return 0;
 }
 
-void *board_fdt_blob_setup(int *err)
-{
-	/* QEMU loads a generated DTB for us at the start of RAM. */
-	void *fdt_addr = (void *)CONFIG_SYS_SDRAM_BASE;
-
-	if (!fdt_check_header(fdt_addr)) {
-		*err = 0;
-		return fdt_addr;
-	}
-
-	/* FDT is at end of image */
-	fdt_addr = (ulong *)&_end;
-	*err = 0;
-
-	return fdt_addr;
-}
-
 void enable_caches(void)
 {
 	icache_enable();

@@ -4,3 +4,4 @@
 
 obj-y	+= j6.o
 obj-y	+= lowlevel_init.o
+obj-y	+= board.o

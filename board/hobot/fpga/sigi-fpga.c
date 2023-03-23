@@ -7,10 +7,8 @@
 #include <dm.h>
 #include <init.h>
 #include <asm/system.h>
-#include <linux/sizes.h>
 #include <asm/io.h>
 
-extern uint32_t ram_base_msb;
 DECLARE_GLOBAL_DATA_PTR;
 
 #define MCUSYS_SYSCNT_BASE_ADDR	0x231a0000
@@ -30,12 +28,4 @@ int board_init(void)
 	writel(0x1, MCUSYS_SYSCNT_BASE_ADDR);
 
 	return 0;
-}
-
-ulong board_get_usable_ram_top(ulong total_size)
-{
-	if (ram_base_msb >= 32)
-		return CONFIG_SYS_DDR_BASE + gd->ram_size;
-	else
-		return CONFIG_SYS_OCM_BASE + SZ_32M;
 }

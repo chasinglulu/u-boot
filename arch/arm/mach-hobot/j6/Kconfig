@@ -10,6 +10,12 @@ config TARGET_DVB_J6
 	  with full function and physical connectors support like MIPI,
 	  JTAG, MAC, SD card, CAN, QSPI, PCIe, USB-to-serial...
 
+config TARGET_VIRT_SIGI
+	bool "Virtual Sigi Development board"
+	help
+	  Virt-Sigi is a virtual development board for Hobot sigi SoC based on QEMU,
+	  with a few part of function and physical connectors support
+	  like eMMC, MAC, SDIO, GPIO, I2C, PCIe, USB...
 
 config TARGET_FPGA_J6
 	bool "J6 FPGA Verification board"
@@ -36,6 +42,7 @@ config SYS_OCM_BASE
 	default 0x04000000
 
 source "board/hobot/j6dvb/Kconfig"
+source "board/hobot/virt-sigi/Kconfig"
 source "board/hobot/fpga/Kconfig"
 
 endif
