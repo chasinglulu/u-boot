@@ -5,6 +5,7 @@
 
 #include <linux/list.h>
 
+#define MAX_DOMU	8
 /*
  * A note on the pxe file parser.
  *
@@ -42,8 +43,10 @@ struct pxe_label {
 	char *name;
 	char *menu;
 	char *xen;
-	char *domu[8];
+	char *domu[MAX_DOMU];
+	char *domu_initrd[MAX_DOMU];
 	int domu_num;
+	int domu_initrd_num;
 	char *kernel;
 	char *config;
 	char *append;

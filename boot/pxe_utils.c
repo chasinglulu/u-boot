@@ -616,9 +616,18 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 
 	for (i = 0; i < label->domu_num; i++) {
 		char varname[32];
-		snprintf(varname, 32, "domu%d_addr_r", i+1);
-		if (get_relfile_envaddr(ctx, label->xen, varname, NULL) < 0) {
-			printf("Skipping %s for failure retrieving domU%d\n", label->name, i);
+		snprintf(varname, sizeof(varname) - 1, "domu%d_addr_r", i+1);
+		if (get_relfile_envaddr(ctx, label->domu[i], varname, NULL) < 0) {
+			printf("Skipping %s for failure retrieving domU%d\n", label->name, i+1);
+			return 1;
+		}
+	}
+
+	for (i = 0; i < label->domu_initrd_num; i++) {
+		char varname[32];
+		snprintf(varname, sizeof(varname) - 1, "domu%d_ramdisk_addr_r", i+1);
+		if (get_relfile_envaddr(ctx, label->domu_initrd[i], varname, NULL) < 0) {
+			printf("Skipping %s for failure retrieving domU%d initrd\n", label->name, i+1);
 			return 1;
 		}
 	}
@@ -794,6 +803,7 @@ enum token_type {
 	T_LABEL,
 	T_XEN,
 	T_DOMU,
+	T_DOMU_INITRD,
 	T_KERNEL,
 	T_LINUX,
 	T_APPEND,
@@ -828,6 +838,7 @@ static const struct token keywords[] = {
 	{"label", T_LABEL},
 	{"xen", T_XEN},
 	{"domu", T_DOMU},
+	{"domuinitrd", T_DOMU_INITRD},
 	{"kernel", T_KERNEL},
 	{"linux", T_LINUX},
 	{"localboot", T_LOCALBOOT},
@@ -1259,6 +1270,10 @@ static int parse_label(char **c, struct pxe_menu *cfg)
 
 		case T_DOMU:
 			err = parse_sliteral(c, &label->domu[label->domu_num++]);
+			break;
+
+		case T_DOMU_INITRD:
+			err = parse_sliteral(c, &label->domu_initrd[label->domu_initrd_num++]);
 			break;
 
 		case T_APPEND:
