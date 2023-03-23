@@ -75,6 +75,8 @@
 		"kernel_addr_r=0x3085000000\0"  \
 		"ramdisk_addr_r=0x3089000000\0" \
 		"fdt_addr_r=0x3081800000\0"		\
+		"domu1_addr_r=0x3087000000\0"	\
+		"domu1_ramdisk_addr_r=0x3090000000\0"	\
 		BOOTENV
 
 #endif
