@@ -516,8 +516,8 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 		return 0;
 	}
 
-	if (!label->kernel) {
-		printf("No kernel given, skipping %s\n",
+	if (!label->kernel && !label->xen) {
+		printf("No kernel or hypervisor given, skipping %s\n",
 		       label->name);
 		return 1;
 	}
@@ -540,11 +540,13 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 		strncat(initrd_str, initrd_filesize, 9);
 	}
 
-	if (get_relfile_envaddr(ctx, label->kernel, "kernel_addr_r",
-				NULL) < 0) {
-		printf("Skipping %s for failure retrieving kernel\n",
-		       label->name);
-		return 1;
+	if (label->kernel) {
+		if (get_relfile_envaddr(ctx, label->kernel, "kernel_addr_r",
+					NULL) < 0) {
+			printf("Skipping %s for failure retrieving kernel\n",
+				label->name);
+			return 1;
+		}
 	}
 
 	if (label->ipappend & 0x1) {

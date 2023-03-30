@@ -77,6 +77,8 @@
 		"fdt_addr_r=0x3081800000\0"		\
 		"domu1_addr_r=0x3087000000\0"	\
 		"domu1_ramdisk_addr_r=0x3090000000\0"	\
+		"domu2_addr_r=0x3092000000\0"	\
+		"domu2_ramdisk_addr_r=0x3094000000\0"	\
 		BOOTENV
 
 #endif

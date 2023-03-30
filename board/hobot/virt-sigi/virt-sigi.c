@@ -35,7 +35,7 @@ int ft_system_setup(void *blob, struct bd_info *bd)
 #ifdef CONFIG_OF_BOARD_SETUP
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
-
+	return 0;
 }
 #endif
 #endif
