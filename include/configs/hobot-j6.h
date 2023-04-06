@@ -8,10 +8,6 @@
 
 #define HOBOT_SIP_FUNC_ID	0x82000009
 
-/* Physical memory map */
-
-#define CONFIG_SYS_SDRAM_BASE	0x3000000000
-
 /* ---------------------------------------------------------------------
  * Board boot configuration
  */
