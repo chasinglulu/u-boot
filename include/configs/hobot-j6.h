@@ -67,11 +67,11 @@
 		"stdin=serial\0" 				\
 		"stderr=serial\0"				\
 		"scriptaddr=0x3081000000\0"     \
+		"fdt_addr_r=0x3081800000\0"		\
 		"xen_addr_r=0x3082000000\0"		\
 		"kernel_addr_r=0x3085000000\0"  \
-		"ramdisk_addr_r=0x3089000000\0" \
-		"fdt_addr_r=0x3081800000\0"		\
 		"domu1_addr_r=0x3087000000\0"	\
+		"ramdisk_addr_r=0x3089000000\0" \
 		"domu1_ramdisk_addr_r=0x3090000000\0"	\
 		"domu2_addr_r=0x3092000000\0"	\
 		"domu2_ramdisk_addr_r=0x3094000000\0"	\
