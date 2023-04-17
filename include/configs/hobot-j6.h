@@ -13,6 +13,9 @@
  */
 /* Environment options */
 
+#define FASTBOOT_USB_CMD "fastboot_usb_cmd=fastboot usb 0\0"
+#define FASTBOOT_NET_CMD "fastboot_net_cmd=fastboot net\0"
+
 #if CONFIG_IS_ENABLED(CMD_MMC)
 # define BOOT_TARGET_MMC(func) func(MMC, mmc, 0)
 # define BOOT_TARGET_MMC1(func) func(MMC, mmc, 1)

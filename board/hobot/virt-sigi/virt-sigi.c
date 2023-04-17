@@ -25,13 +25,6 @@ int board_init(void)
 }
 
 #ifdef CONFIG_OF_LIBFDT
-#ifdef CONFIG_OF_SYSTEM_SETUP
-int ft_system_setup(void *blob, struct bd_info *bd)
-{
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_OF_BOARD_SETUP
 int ft_board_setup(void *blob, struct bd_info *bd)
 {

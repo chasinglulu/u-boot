@@ -606,6 +606,7 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 		kernel_addr = fit_addr;
 	}
 
+	env_set("boot_xen", "no");
 	if (label->xen) {
 		xen_addr = env_get("xen_addr_r");
 		if (get_relfile_envaddr(ctx, label->xen, "xen_addr_r",
@@ -614,6 +615,7 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 					label->name);
 			return 1;
 		}
+		env_set("boot_xen", "yes");
 	}
 
 	for (i = 0; i < label->domu_num; i++) {
