@@ -33,6 +33,8 @@ config SYS_SOC
 config SYS_MALLOC_F_LEN
 	default 0x4000
 
+menu "Horizon Robotics Journey 6 SoC features"
+
 config SYS_NON_INTER_DDR_BASE
 	hex "Non-interleave DDR Base Address"
 	default 0x3000000000
@@ -44,6 +46,15 @@ config SYS_INTERLEAVE_DDR_BASE
 config SYS_OCM_BASE
 	hex "On-Chip SRAM Base Address"
 	default 0x04000000
+
+config HOBOT_SWITCH_TO_EL2
+	bool "Force switch to EL2"
+	help
+	  This option is used to switch CPU into EL2 state. When verifying on the FPGA,
+	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
+	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
+
+endmenu
 
 source "board/hobot/j6dvb/Kconfig"
 source "board/hobot/virt-sigi/Kconfig"
