@@ -55,6 +55,13 @@ static void run_ucmd(char *, char *);
 static void run_acmd(char *, char *);
 #endif
 
+#if CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_BOOTDEVICE)
+static void oem_bootdevice(char *, char *);
+#endif
+#if CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_DEVNUM)
+static void oem_devnum(char *, char *);
+#endif
+
 static const struct {
 	const char *command;
 	void (*dispatch)(char *cmd_parameter, char *response);
@@ -131,6 +138,18 @@ static const struct {
 	[FASTBOOT_COMMAND_ACMD] = {
 		.command = "ACmd",
 		.dispatch = run_acmd,
+	},
+#endif
+#if CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_BOOTDEVICE)
+	[FASTBOOT_COMMAND_OEM_BOOTDEVICE] = {
+		.command = "oem bootdevice",
+		.dispatch = oem_bootdevice,
+	},
+#endif
+#if CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_DEVNUM)
+	[FASTBOOT_COMMAND_OEM_DEVNUM] = {
+		.command = "oem devnum",
+		.dispatch = oem_devnum,
 	},
 #endif
 };
@@ -518,6 +537,60 @@ static void oem_bootbus(char *cmd_parameter, char *response)
 	printf("Execute: %s\n", cmdbuf);
 	if (run_command(cmdbuf, 0))
 		fastboot_fail("Cannot set oem bootbus", response);
+	else
+		fastboot_okay(NULL, response);
+}
+#endif
+
+#if CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_BOOTDEVICE)
+/**
+ * oem_bootdevice() - Execute the OEM bootdevice command
+ *
+ * @cmd_parameter: Pointer to command parameter
+ * @response: Pointer to fastboot response buffer
+ */
+static void oem_bootdevice(char *cmd_parameter, char *response)
+{
+	char cmdbuf[32];
+
+	if (!cmd_parameter) {
+		fastboot_fail("Expected command parameter", response);
+		return;
+	}
+
+	/* execute 'setenv fastboot.bootdevice' command with cmd_parameter arguments*/
+	snprintf(cmdbuf, sizeof(cmdbuf), "setenv fastboot.bootdevice %s",
+			 cmd_parameter);
+	printf("Execute: %s\n", cmdbuf);
+	if (run_command(cmdbuf, 0))
+		fastboot_fail("Cannot setup oem bootdevice", response);
+	else
+		fastboot_okay(NULL, response);
+}
+#endif
+
+#if CONFIG_IS_ENABLED(FASTBOOT_CMD_OEM_DEVNUM)
+/**
+ * oem_devnum() - Execute the OEM devnum command
+ *
+ * @cmd_parameter: Pointer to command parameter
+ * @response: Pointer to fastboot response buffer
+ */
+static void oem_devnum(char *cmd_parameter, char *response)
+{
+	char cmdbuf[32];
+
+	if (!cmd_parameter) {
+		fastboot_fail("Expected command parameter", response);
+		return;
+	}
+
+	/* execute 'setenv fastboot.devnum' command with cmd_parameter arguments*/
+	snprintf(cmdbuf, sizeof(cmdbuf), "setenv fastboot.devnum %s",
+			 cmd_parameter);
+	printf("Execute: %s\n", cmdbuf);
+	if (run_command(cmdbuf, 0))
+		fastboot_fail("Cannot setup oem devnum", response);
 	else
 		fastboot_okay(NULL, response);
 }

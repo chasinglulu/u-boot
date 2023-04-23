@@ -9,6 +9,7 @@
 #include <fastboot-internal.h>
 #include <fb_mmc.h>
 #include <fb_nand.h>
+#include <fb_generic.h>
 #include <fs.h>
 #include <part.h>
 #include <version.h>
@@ -24,7 +25,7 @@ static void getvar_current_slot(char *var_parameter, char *response);
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH)
 static void getvar_has_slot(char *var_parameter, char *response);
 #endif
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC) || CONFIG_IS_ENABLED(FASTBOOT_FLASH_GENERIC)
 static void getvar_partition_type(char *part_name, char *response);
 #endif
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH)
@@ -68,7 +69,7 @@ static const struct {
 		.variable = "has-slot",
 		.dispatch = getvar_has_slot
 #endif
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC) || CONFIG_IS_ENABLED(FASTBOOT_FLASH_GENERIC)
 	}, {
 		.variable = "partition-type",
 		.dispatch = getvar_partition_type
@@ -102,7 +103,15 @@ static int getvar_get_part_info(const char *part_name, char *response,
 				size_t *size)
 {
 	int r;
-# if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
+# if CONFIG_IS_ENABLED(FASTBOOT_FLASH_GENERIC)
+	struct blk_desc *dev_desc;
+	struct disk_partition part_info;
+
+	r = fastboot_generic_get_part_info(part_name, &dev_desc, &part_info,
+				       response);
+	if (r >= 0 && size)
+		*size = part_info.size * part_info.blksz;
+# elif CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
 	struct blk_desc *dev_desc;
 	struct disk_partition part_info;
 
@@ -215,15 +224,20 @@ fail:
 }
 #endif
 
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH)
 static void getvar_partition_type(char *part_name, char *response)
 {
 	int r;
 	struct blk_desc *dev_desc;
 	struct disk_partition part_info;
 
+#ifdef CONFIG_FASTBOOT_FLASH_MMC
 	r = fastboot_mmc_get_part_info(part_name, &dev_desc, &part_info,
 				       response);
+#elif defined (CONFIG_FASTBOOT_FLASH_GENERIC)
+	r = fastboot_generic_get_part_info(part_name, &dev_desc, &part_info,
+				       response);
+#endif
 	if (r >= 0) {
 		r = fs_set_blk_dev_with_part(dev_desc, r);
 		if (r < 0)
