@@ -72,7 +72,7 @@ config FASTBOOT_USB_DEV
 config FASTBOOT_FLASH
 	bool "Enable FASTBOOT FLASH command"
 	default y if ARCH_SUNXI || ARCH_ROCKCHIP
-	depends on MMC || (MTD_RAW_NAND && CMD_MTDPARTS)
+	depends on MMC || (MTD_RAW_NAND && CMD_MTDPARTS) || BLK
 	select IMAGE_SPARSE
 	help
 	  The fastboot protocol includes a "flash" command for writing
@@ -99,6 +99,10 @@ config FASTBOOT_FLASH_NAND
 	bool "FASTBOOT on NAND"
 	depends on MTD_RAW_NAND && CMD_MTDPARTS
 
+config FASTBOOT_FLASH_GENERIC
+	bool "FASTBOOT on generic block device"
+	depends on BLK
+
 endchoice
 
 config FASTBOOT_FLASH_MMC_DEV
@@ -112,6 +116,24 @@ config FASTBOOT_FLASH_MMC_DEV
 	  regarding the non-volatile storage device. Define this to
 	  the eMMC device that fastboot should use to store the image.
 
+config FASTBOOT_FLASH_GENERIC_IFNAME
+	string "Define FASTBOOT FLASH default interface name"
+	depends on FASTBOOT_FLASH_GENERIC
+	default "mmc" if ARCH_HOBOT
+	help
+	  The fastboot "flash" command requires additional information
+	  regarding the non-volatile storage device. Define this to
+	  the block device that fastboot should use to store the image.
+
+config FASTBOOT_FLASH_GENERIC_DEV
+	int "Define FASTBOOT FLASH default generic block device"
+	depends on FASTBOOT_FLASH_GENERIC
+	default 0 if ARCH_HOBOT
+	help
+	  The fastboot "flash" command requires additional information
+	  regarding the non-volatile storage device. Define this to
+	  the block device that fastboot should use to store the image.
+
 config FASTBOOT_FLASH_NAND_TRIMFFS
 	bool "Skip empty pages when flashing NAND"
 	depends on FASTBOOT_FLASH_NAND
@@ -121,7 +143,7 @@ config FASTBOOT_FLASH_NAND_TRIMFFS
 
 config FASTBOOT_MMC_BOOT_SUPPORT
 	bool "Enable EMMC_BOOT flash/erase"
-	depends on FASTBOOT_FLASH_MMC
+	depends on FASTBOOT_FLASH_MMC || FASTBOOT_FLASH_GENERIC
 	help
 	  The fastboot "flash" and "erase" commands normally does operations
 	  on eMMC userdata. Define this to enable the special commands to
@@ -153,7 +175,7 @@ config FASTBOOT_MMC_BOOT2_NAME
 
 config FASTBOOT_MMC_USER_SUPPORT
 	bool "Enable eMMC userdata partition flash/erase"
-	depends on FASTBOOT_FLASH_MMC
+	depends on FASTBOOT_FLASH_MMC || FASTBOOT_FLASH_GENERIC
 	help
 	  Define this to enable the support "flash" and "erase" command on
 	  eMMC userdata. The "flash" command only update the MBR and GPT
@@ -175,7 +197,7 @@ config FASTBOOT_MMC_USER_NAME
 
 config FASTBOOT_GPT_NAME
 	string "Target name for updating GPT"
-	depends on FASTBOOT_FLASH_MMC && EFI_PARTITION
+	depends on (FASTBOOT_FLASH_MMC || FASTBOOT_FLASH_GENERIC) && EFI_PARTITION
 	default "gpt"
 	help
 	  The fastboot "flash" command supports writing the downloaded
