@@ -16,6 +16,7 @@ DECLARE_GLOBAL_DATA_PTR;
 typedef enum mmap_region_type {
 	MMAP_START,
 	MMAP_SRAM = 0,
+	MMAP_FLASH,
 	MMAP_DEVICE_MMIO,
 	MMAP_DDR_BANK_START,
 	MMAP_INTER_DDR_START,
@@ -24,16 +25,24 @@ typedef enum mmap_region_type {
 } mmap_region_t;
 
 #define MMAP_SRAM_BASE		0x04000000UL
+#define MMAP_FLASH_BASE		0x18000000UL
 #define MMAP_DEVICE_BASE	0x20000000UL
 #define MMAP_INTER_DDR_BASE	0x1000000000UL
 #define MMAP_DDR_BANK_BASE	0x3000000000UL
-#define DDR_SIZE	(SZ_4G)
+#define DDR_SIZE		(SZ_4G)
 
 static struct mm_region j6_mem_map[MMAP_END] = {
 	[MMAP_SRAM] = {
 		.virt = MMAP_SRAM_BASE,
 		.phys = MMAP_SRAM_BASE,
 		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL_NC) |
+			PTE_BLOCK_INNER_SHARE
+	},
+	[MMAP_FLASH] = {
+		.virt = MMAP_FLASH_BASE,
+		.phys = MMAP_FLASH_BASE,
+		.size = SZ_128M,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL_NC) |
 			PTE_BLOCK_INNER_SHARE
 	},

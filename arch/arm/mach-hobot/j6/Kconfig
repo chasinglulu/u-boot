@@ -54,6 +54,8 @@ config HOBOT_SWITCH_TO_EL2
 	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
 	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
 
+source "board/hobot/common/Kconfig"
+
 endmenu
 
 source "board/hobot/j6dvb/Kconfig"
