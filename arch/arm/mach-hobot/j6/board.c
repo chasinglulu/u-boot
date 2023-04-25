@@ -89,6 +89,7 @@ void fixup_addr_env(void)
 	char buf[32];
 	ulong addr;
 	const char *env_name[] = {
+		"scriptaddr",
 		"xen_addr_r",
 		"kernel_addr_r",
 		"fdt_addr_r",
