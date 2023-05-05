@@ -74,6 +74,7 @@ ulong board_get_usable_ram_top(ulong total_size)
 		else
 			return CONFIG_SYS_NON_INTER_DDR_BASE + gd->ram_size;
 	} else {
+		/* TODO: detect OCM size dynamically */
 		return CONFIG_SYS_OCM_BASE + SZ_32M;
 	}
 
