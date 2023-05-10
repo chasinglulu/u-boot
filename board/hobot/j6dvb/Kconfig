@@ -1,12 +1,9 @@
-if TARGET_DVB_J6
+if TARGET_DVB
 
 config SYS_BOARD
 	default "j6dvb"
 
 config SYS_VENDOR
 	default "hobot"
-
-config SYS_CONFIG_NAME
-	default "hobot-j6"
 
 endif

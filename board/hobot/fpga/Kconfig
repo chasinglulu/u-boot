@@ -1,12 +1,7 @@
-if TARGET_FPGA_J6
-
+if TARGET_FPGA
 config SYS_BOARD
 	default "fpga"
 
 config SYS_VENDOR
 	default "hobot"
-
-config SYS_CONFIG_NAME
-	default "hobot-j6"
-
 endif

@@ -3,29 +3,78 @@ if HOBOT_J6
 choice
 	prompt "Hobot Jounery 6 board select"
 
-config TARGET_DVB_J6
-	bool "J6 Development Verification board"
+config TARGET_DVB_J6P
+	bool "J6P Development Verification board"
+	select HOBOT_J6P
+	select TARGET_DVB
 	help
-	  J6DVB is a development board for Hobot Jounery 6 SoC,
+	  J6PDVB is a development board for Hobot Jounery 6 Pro SoC,
 	  with full function and physical connectors support like MIPI,
 	  JTAG, MAC, SD card, CAN, QSPI, PCIe, USB-to-serial...
 
-config TARGET_VIRT_SIGI
-	bool "Virtual Sigi Development board"
+config TARGET_VIRT_SIGIP
+	bool "Virtual SigiP Development board"
+	select HOBOT_J6P
+	select TARGET_VIRT
 	help
-	  Virt-Sigi is a virtual development board for Hobot sigi SoC based on QEMU,
+	  Virt-Sigi is a virtual development board for Hobot sigip SoC based on QEMU,
 	  with a few part of function and physical connectors support
 	  like eMMC, MAC, SDIO, GPIO, I2C, PCIe, USB...
 
-config TARGET_FPGA_J6
-	bool "J6 FPGA Verification board"
+config TARGET_FPGA_J6P
+	bool "J6P FPGA Verification board"
 	select HOBOT_DW8250
+	select HOBOT_J6P
+	select TARGET_FPGA
 	help
-	  FPGA is a verification board for Hobot Jounery 6 SoC,
+	  FPGA is a verification board for Hobot Jounery 6 Pro SoC,
+	  with a little function and physical connectors support like UART,
+	  JTAG, eMMC, PCIe, USB-to-serial...
+
+config TARGET_DVB_J6E
+	bool "J6E Development Verification board"
+	select HOBOT_J6E
+	select TARGET_DVB
+	help
+	  J6EDVB is a development board for Hobot Jounery 6 Edition SoC,
+	  with full function and physical connectors support like MIPI,
+	  JTAG, MAC, SD card, CAN, QSPI, PCIe, USB-to-serial...
+
+config TARGET_VIRT_SIGIE
+	bool "Virtual SigiE Development board"
+	select HOBOT_J6E
+	select TARGET_VIRT
+	help
+	  Virt-SigiE is a virtual development board for Hobot sigie SoC based on QEMU,
+	  with a few part of function and physical connectors support
+	  like eMMC, MAC, SDIO, GPIO, I2C, PCIe, USB...
+
+config TARGET_FPGA_J6E
+	bool "J6E FPGA Verification board"
+	select HOBOT_DW8250
+	select HOBOT_J6E
+	select TARGET_FPGA
+	help
+	  FPGA is a verification board for Hobot Jounery 6 Edition SoC,
 	  with a little function and physical connectors support like UART,
 	  JTAG, eMMC, PCIe, USB-to-serial...
 
 endchoice
+
+config HOBOT_J6P
+	bool
+
+config HOBOT_J6E
+	bool
+
+config TARGET_FPGA
+	bool
+
+config TARGET_DVB
+	bool
+
+config TARGET_VIRT
+	bool
 
 config SYS_SOC
 	default "hobot"
@@ -33,19 +82,33 @@ config SYS_SOC
 config SYS_MALLOC_F_LEN
 	default 0x4000
 
+
 menu "Horizon Robotics Journey 6 SoC features"
 
 config SYS_NON_INTER_DDR_BASE
 	hex "Non-interleave DDR Base Address"
+	depends on HOBOT_J6P
 	default 0x3000000000
 
 config SYS_INTERLEAVE_DDR_BASE
 	hex "Interleave DDR Base Address"
+	depends on HOBOT_J6P
 	default 0x1000000000
 
 config SYS_OCM_BASE
 	hex "On-Chip SRAM Base Address"
+	depends on HOBOT_J6P
 	default 0x04000000
+
+config SYS_J6E_LOW_DDR_BASE
+	hex "J6E Low DDR Base Address"
+	depends on HOBOT_J6E
+	default 0x80000000
+
+config SYS_J6E_HIGH_DDR_BASE
+	hex "J6E High DDR Base Address"
+	depends on HOBOT_J6E
+	default 0x400000000
 
 config HOBOT_SWITCH_TO_EL2
 	bool "Force switch to EL2"
@@ -57,6 +120,10 @@ config HOBOT_SWITCH_TO_EL2
 source "board/hobot/common/Kconfig"
 
 endmenu
+
+config SYS_CONFIG_NAME
+	default "hobot-j6e" if HOBOT_J6E
+	default "hobot-j6" if HOBOT_J6P
 
 source "board/hobot/j6dvb/Kconfig"
 source "board/hobot/virt-sigi/Kconfig"

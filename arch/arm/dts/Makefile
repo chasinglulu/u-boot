@@ -1216,9 +1216,10 @@ dtb-$(CONFIG_TARGET_EA_LPC3250DEVKITV2) += lpc3250-ea3250.dtb
 dtb-$(CONFIG_ARCH_QEMU) += qemu-arm.dtb qemu-arm64.dtb
 
 dtb-$(CONFIG_HOBOT_J5)	+= hobot-j5dvb.dtb
-dtb-$(CONFIG_HOBOT_J6)	+= hobot-sigi-virt.dtb \
+dtb-$(CONFIG_HOBOT_J6P)	+= hobot-sigi-virt.dtb \
 			hobot-j6dvb.dtb \
 			hobot-sigi-fpga.dtb
+dtb-$(CONFIG_HOBOT_J6E) += hobot-j6e-virt.dtb
 
 include $(srctree)/scripts/Makefile.dts
 

@@ -1,12 +1,9 @@
-if TARGET_VIRT_SIGI
+if TARGET_VIRT
 
 config SYS_BOARD
 	default "virt-sigi"
 
 config SYS_VENDOR
 	default "hobot"
-
-config SYS_CONFIG_NAME
-	default "hobot-j6"
 
 endif

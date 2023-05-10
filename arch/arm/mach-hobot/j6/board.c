@@ -16,6 +16,7 @@
 extern uint64_t boot_start_addr;
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_HOBOT_J6P
 bool inline is_dram_addr(ulong addr)
 {
 	int high = (addr >> 32) & 0xF0;
@@ -35,6 +36,16 @@ bool inline is_interleave_dram_addr(ulong addr)
 	else
 		return false;
 }
+#elif defined (CONFIG_HOBOT_J6E)
+bool inline is_high_dram_addr(ulong addr)
+{
+	int high = (addr >> 32) & 0xF0;
+	if (high)
+		return true;
+	else
+		return false;
+}
+#endif	/* CONFIG_HOBOT_J6P */
 
 #ifdef CONFIG_OF_BOARD
 void *board_fdt_blob_setup(int *err)
@@ -42,10 +53,17 @@ void *board_fdt_blob_setup(int *err)
 	/* QEMU loads a generated DTB for us at the start of RAM. */
 	void *fdt_addr = NULL;
 
+#ifdef CONFIG_HOBOT_J6P
 	if (is_interleave_dram_addr(boot_start_addr))
 		fdt_addr = (void *)CONFIG_SYS_INTERLEAVE_DDR_BASE;
 	else
 		fdt_addr = (void *)CONFIG_SYS_NON_INTER_DDR_BASE;
+#elif defined (CONFIG_HOBOT_J6E)
+	if (is_high_dram_addr(boot_start_addr))
+		fdt_addr = (void*)CONFIG_SYS_J6E_HIGH_DDR_BASE;
+	else
+		fdt_addr = (void*)CONFIG_SYS_J6E_LOW_DDR_BASE;
+#endif
 
 	if (!fdt_check_header(fdt_addr)) {
 		*err = 0;
@@ -67,7 +85,7 @@ void *board_fdt_blob_setup(int *err)
  */
 ulong board_get_usable_ram_top(ulong total_size)
 {
-
+#ifdef CONFIG_HOBOT_J6P
 	if (is_dram_addr(boot_start_addr)) {
 		if (is_interleave_dram_addr(boot_start_addr))
 			return CONFIG_SYS_INTERLEAVE_DDR_BASE + gd->ram_size;
@@ -77,11 +95,16 @@ ulong board_get_usable_ram_top(ulong total_size)
 		/* TODO: detect OCM size dynamically */
 		return CONFIG_SYS_OCM_BASE + SZ_32M;
 	}
+#elif defined (CONFIG_HOBOT_J6E)
+	/* TODO: detect size dynamically */
+	return CONFIG_SYS_J6E_LOW_DDR_BASE + SZ_2G - 1;
+#endif
 
 	/* Never reach here */
 	return 0;
 }
 
+#ifdef CONFIG_HOBOT_J6P
 #ifdef CONFIG_LAST_STAGE_INIT
 void fixup_addr_env(void)
 {
@@ -138,8 +161,7 @@ int last_stage_init(void)
 }
 #endif
 
-#ifdef CONFIG_OF_LIBFDT
-#ifdef CONFIG_OF_SYSTEM_SETUP
+#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_SYSTEM_SETUP)
 void fdt_fixup_xen(void *fdt_blob)
 {
 	uint64_t addr, size;
@@ -201,15 +223,31 @@ int ft_system_setup(void *blob, struct bd_info *bd)
 	return 0;
 }
 #endif
+#elif defined (CONFIG_HOBOT_J6E)
+#ifdef CONFIG_LAST_STAGE_INIT
+int last_stage_init(void)
+{
+    return 0;
+}
 #endif
+
+#if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_SYSTEM_SETUP)
+int ft_system_setup(void *blob, struct bd_info *bd)
+{
+	return 0;
+}
+#endif
+#endif	/* CONFIG_HOBOT_J6P */
 
 int dram_init(void)
 {
 	if (fdtdec_setup_mem_size_base() != 0)
 		return -EINVAL;
 
+#ifdef CONFIG_HOBOT_J6P
 	if (is_interleave_dram_addr(boot_start_addr))
 		gd->ram_base = CONFIG_SYS_INTERLEAVE_DDR_BASE;
+#endif
 
 	return 0;
 }
@@ -218,8 +256,10 @@ int dram_init_banksize(void)
 {
 	fdtdec_setup_memory_banksize();
 
+#ifdef CONFIG_HOBOT_J6P
 	if (is_interleave_dram_addr(boot_start_addr))
 		gd->bd->bi_dram[0].start = CONFIG_SYS_INTERLEAVE_DDR_BASE;
+#endif
 
 	return 0;
 }
