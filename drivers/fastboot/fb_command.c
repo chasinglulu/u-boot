@@ -10,6 +10,7 @@
 #include <fastboot-internal.h>
 #include <fb_mmc.h>
 #include <fb_generic.h>
+#include <fb_mtd.h>
 #include <fb_nand.h>
 #include <flash.h>
 #include <part.h>
@@ -336,6 +337,10 @@ static void flash(char *cmd_parameter, char *response)
 	fastboot_generic_flash_write(cmd_parameter, fastboot_buf_addr, image_size,
 				 response);
 #endif
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MTD)
+	fastboot_mtd_flash_write(cmd_parameter, fastboot_buf_addr, image_size,
+				 response);
+#endif
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
 	fastboot_mmc_flash_write(cmd_parameter, fastboot_buf_addr, image_size,
 				 response);
@@ -362,6 +367,9 @@ static void erase(char *cmd_parameter, char *response)
 #endif
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC)
 	fastboot_mmc_erase(cmd_parameter, response);
+#endif
+#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MTD)
+	fastboot_mtd_erase(cmd_parameter, response);
 #endif
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH_NAND)
 	fastboot_nand_erase(cmd_parameter, response);

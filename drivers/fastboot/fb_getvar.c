@@ -10,6 +10,7 @@
 #include <fb_mmc.h>
 #include <fb_nand.h>
 #include <fb_generic.h>
+#include <fb_mtd.h>
 #include <fs.h>
 #include <part.h>
 #include <version.h>
@@ -25,7 +26,7 @@ static void getvar_current_slot(char *var_parameter, char *response);
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH)
 static void getvar_has_slot(char *var_parameter, char *response);
 #endif
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC) || CONFIG_IS_ENABLED(FASTBOOT_FLASH_GENERIC)
+#if defined (CONFIG_FASTBOOT_FLASH) && !defined (CONFIG_FASTBOOT_FLASH_MTD)
 static void getvar_partition_type(char *part_name, char *response);
 #endif
 #if CONFIG_IS_ENABLED(FASTBOOT_FLASH)
@@ -69,7 +70,7 @@ static const struct {
 		.variable = "has-slot",
 		.dispatch = getvar_has_slot
 #endif
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH_MMC) || CONFIG_IS_ENABLED(FASTBOOT_FLASH_GENERIC)
+#if defined (CONFIG_FASTBOOT_FLASH) && !defined (CONFIG_FASTBOOT_FLASH_MTD)
 	}, {
 		.variable = "partition-type",
 		.dispatch = getvar_partition_type
@@ -123,6 +124,12 @@ static int getvar_get_part_info(const char *part_name, char *response,
 	struct part_info *part_info;
 
 	r = fastboot_nand_get_part_info(part_name, &part_info, response);
+	if (r >= 0 && size)
+		*size = part_info->size;
+# elif CONFIG_IS_ENABLED(FASTBOOT_FLASH_MTD)
+	struct part_info *part_info;
+
+	r = fastboot_mtd_get_part_info(part_name, &part_info, response);
 	if (r >= 0 && size)
 		*size = part_info->size;
 # else
@@ -224,7 +231,7 @@ fail:
 }
 #endif
 
-#if CONFIG_IS_ENABLED(FASTBOOT_FLASH)
+#if defined(CONFIG_FASTBOOT_FLASH) && !defined (CONFIG_FASTBOOT_FLASH_MTD)
 static void getvar_partition_type(char *part_name, char *response)
 {
 	int r;

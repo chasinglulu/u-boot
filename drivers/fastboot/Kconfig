@@ -103,6 +103,11 @@ config FASTBOOT_FLASH_GENERIC
 	bool "FASTBOOT on generic block device"
 	depends on BLK
 
+config FASTBOOT_FLASH_MTD
+	bool "FASTBOOT on MTD"
+	depends on DM_MTD
+	depends on CMD_MTDPARTS
+
 endchoice
 
 config FASTBOOT_FLASH_MMC_DEV
@@ -242,14 +247,14 @@ config FASTBOOT_CMD_OEM_BOOTBUS
 
 config FASTBOOT_CMD_OEM_BOOTDEVICE
 	bool "Enable the 'oem bootdevice' command"
-	depends on FASTBOOT_FLASH_GENERIC
+	depends on FASTBOOT_FLASH_GENERIC || FASTBOOT_FLASH_MTD
 	help
 	  Add support for the "oem bootdevice" command from a client. This set
 	  the boot device configuration for the selecting block device.
 
 config FASTBOOT_CMD_OEM_DEVNUM
 	bool "Enable the 'oem devnum' command"
-	depends on FASTBOOT_FLASH_GENERIC
+	depends on FASTBOOT_FLASH_GENERIC || FASTBOOT_FLASH_MTD
 	help
 	  Add support for the "oem devnum" command from a client. This set
 	  the boot device configuration for the selecting block device.

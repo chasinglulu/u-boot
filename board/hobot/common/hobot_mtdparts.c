@@ -51,7 +51,6 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	memset(parts, 0, sizeof(parts));
 	memset(ids, 0, sizeof(ids));
 
-	/* Currently mtdparts is needed on Qemu ARM64 for capsule updates */
 	if (IS_ENABLED(CONFIG_HOBOT_J6)) {
 		/* probe all MTD devices */
 		for (uclass_first_device(UCLASS_MTD, &dev); dev;
