@@ -799,6 +799,10 @@ KBUILD_CPPFLAGS += $(KCPPFLAGS)
 KBUILD_AFLAGS += $(KAFLAGS)
 KBUILD_CFLAGS += $(KCFLAGS)
 
+ifdef CONFIG_WERROR
+KBUILD_CFLAGS += -Werror
+endif
+
 KBUILD_HOSTCFLAGS += $(if $(CONFIG_TOOLS_DEBUG),-g)
 
 # Use UBOOTINCLUDE when you must reference the include/ directory.
