@@ -10,6 +10,7 @@
 #include <fdt_support.h>
 #include <init.h>
 #include <cpu_func.h>
+#include <console.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -84,4 +85,13 @@ void enable_caches(void)
 {
 	icache_enable();
 	dcache_enable();
+}
+
+int mach_cpu_init(void)
+{
+#ifdef CONFIG_CONSOLE_RECORD
+	console_record_reset_enable();
+#endif
+
+	return 0;
 }
