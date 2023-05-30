@@ -32,7 +32,7 @@
 		mmc0 = &mmc0;
 	};
 
-	gic: interrupt-controller@30B00000 {
+	gic: interrupt-controller@30800000 {
 		compatible = "arm,gic-v3";
 		#interrupt-cells = <3>;
 		#address-cells = <2>;
@@ -54,9 +54,9 @@
 		#size-cells = <2>;
 		ranges;
 
-		mmc0: sdhci@39030000 {
+		mmc0: sdhci@3A0E0000 {
 			compatible = "cdns,sd4hc";
-			reg = <0x0 0x39030000 0x0 0x10000>;
+			reg = <0x0 0x3A0E0000 0x0 0x10000>;
 			interrupts = <0 120 4>;
 			bus-width = <8>;
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
@@ -84,9 +84,9 @@
 			#size-cells = <2>;
 			ranges;
 
-			dwc3_0: usb@3A820000 {
+			dwc3_0: usb@3A8A0000 {
 				compatible = "snps,dwc3";
-				reg = <0x0 0x3A820000 0x0 0x10000>;
+				reg = <0x0 0x3A8A0000 0x0 0x10000>;
 				interrupts = <0 132 4>;
 				interrupt-names = "dwc_usb3";
 				#stream-id-cells = <1>;
