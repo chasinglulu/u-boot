@@ -282,7 +282,7 @@ static int do_mmcrpmb_counter(struct cmd_tbl *cmdtp, int flag,
 
 	if (mmc_rpmb_get_counter(mmc, &counter))
 		return CMD_RET_FAILURE;
-	printf("RPMB Write counter= %lx\n", counter);
+	printf("RPMB Write counter = 0x%lx\n", counter);
 	return CMD_RET_SUCCESS;
 }
 
@@ -322,6 +322,10 @@ static int do_mmcrpmb(struct cmd_tbl *cmdtp, int flag,
 	}
 	if (mmc->version < MMC_VERSION_4_41) {
 		printf("RPMB not supported before version 4.41\n");
+		return CMD_RET_FAILURE;
+	}
+	if (!mmc->capacity_rpmb) {
+		printf("No RPMB partition.\n");
 		return CMD_RET_FAILURE;
 	}
 	/* Switch to the RPMB partition */
