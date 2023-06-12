@@ -1128,6 +1128,13 @@ config CMD_MMC_RPMB
 	  Enable the commands for reading, writing and programming the
 	  key for the Replay Protection Memory Block partition in eMMC.
 
+config CMD_MMC_RPMB_REQ
+	bool "Enable RPMB commands for OPTEE"
+	depends on CMD_MMC_RPMB
+	help
+	  Enable the commands for reading, writing and programming the
+	  key for the Replay Protection Memory Block partition in OPTEE.
+
 config CMD_MMC_SWRITE
 	bool "mmc swrite"
 	depends on MMC_WRITE

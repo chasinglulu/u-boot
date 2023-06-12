@@ -199,6 +199,96 @@ static int confirm_key_prog(void)
 	return 0;
 }
 
+#ifdef CONFIG_CMD_MMC_RPMB_REQ
+static int do_mmcrpmb_key_req(struct cmd_tbl *cmdtp, int flag,
+			  int argc, char *const argv[])
+{
+	void *key_addr;
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	key_addr = (void *)hextoul(argv[1], NULL);
+	if (!confirm_key_prog())
+		return CMD_RET_FAILURE;
+	if (mmc_rpmb_set_key_req(mmc, key_addr)) {
+		printf("ERROR - Key already programmed ?\n");
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
+}
+
+static int do_mmcrpmb_read_req(struct cmd_tbl *cmdtp, int flag,
+			   int argc, char *const argv[])
+{
+	u16 blk, cnt;
+	void *addr;
+	int n;
+	void *key_addr = NULL;
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	if (argc < 4)
+		return CMD_RET_USAGE;
+
+	addr = (void *)hextoul(argv[1], NULL);
+	blk = hextoul(argv[2], NULL);
+	cnt = hextoul(argv[3], NULL);
+
+	if (argc == 5)
+		key_addr = (void *)hextoul(argv[4], NULL);
+
+	printf("\nMMC RPMB read_req: dev # %d, block # %d, count %d ... ",
+	       curr_device, blk, cnt);
+	n =  mmc_rpmb_read_req(mmc, addr, blk, cnt, key_addr);
+
+	printf("%d RPMB blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+	if (n != cnt)
+		return CMD_RET_FAILURE;
+	return CMD_RET_SUCCESS;
+}
+
+static int do_mmcrpmb_write_req(struct cmd_tbl *cmdtp, int flag,
+			    int argc, char *const argv[])
+{
+	u16 blk, cnt;
+	void *addr;
+	int n;
+	void *key_addr;
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	if (argc != 5)
+		return CMD_RET_USAGE;
+
+	addr = (void *)hextoul(argv[1], NULL);
+	blk = hextoul(argv[2], NULL);
+	cnt = hextoul(argv[3], NULL);
+	key_addr = (void *)hextoul(argv[4], NULL);
+
+	printf("\nMMC RPMB write_req: dev # %d, block # %d, count %d ... ",
+	       curr_device, blk, cnt);
+	n = mmc_rpmb_write_req(mmc, addr, blk, cnt, key_addr);
+
+	printf("%d RPMB blocks written: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+	if (n != cnt)
+		return CMD_RET_FAILURE;
+	return CMD_RET_SUCCESS;
+}
+
+static int do_mmcrpmb_counter_req(struct cmd_tbl *cmdtp, int flag,
+			      int argc, char *const argv[])
+{
+	unsigned long counter;
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	if (mmc_rpmb_get_counter_req(mmc, &counter))
+		return CMD_RET_FAILURE;
+	printf("RPMB Write counter = 0x%lx\n", counter);
+	return CMD_RET_SUCCESS;
+}
+#endif
+
 static int do_mmcrpmb_key(struct cmd_tbl *cmdtp, int flag,
 			  int argc, char *const argv[])
 {
@@ -291,6 +381,12 @@ static struct cmd_tbl cmd_rpmb[] = {
 	U_BOOT_CMD_MKENT(read, 5, 1, do_mmcrpmb_read, "", ""),
 	U_BOOT_CMD_MKENT(write, 5, 0, do_mmcrpmb_write, "", ""),
 	U_BOOT_CMD_MKENT(counter, 1, 1, do_mmcrpmb_counter, "", ""),
+#if CONFIG_IS_ENABLED(CMD_MMC_RPMB_REQ)
+	U_BOOT_CMD_MKENT(key_req, 2, 0, do_mmcrpmb_key_req, "", ""),
+	U_BOOT_CMD_MKENT(read_req, 5, 1, do_mmcrpmb_read_req, "", ""),
+	U_BOOT_CMD_MKENT(write_req, 5, 0, do_mmcrpmb_write_req, "", ""),
+	U_BOOT_CMD_MKENT(counter_req, 1, 1, do_mmcrpmb_counter_req, "", ""),
+#endif
 };
 
 static int do_mmcrpmb(struct cmd_tbl *cmdtp, int flag,
@@ -1172,6 +1268,12 @@ U_BOOT_CMD(
 	"mmc rpmb write addr blk# cnt <address of auth-key> - block size is 256 bytes\n"
 	"mmc rpmb key <address of auth-key> - program the RPMB authentication key.\n"
 	"mmc rpmb counter - read the value of the write counter\n"
+#if CONFIG_IS_ENABLED(CMD_MMC_RPMB_REQ)
+	"mmc rpmb read_req addr blk# cnt [address of auth-key] - block size is 256 bytes\n"
+	"mmc rpmb write_req addr blk# cnt <address of auth-key> - block size is 256 bytes\n"
+	"mmc rpmb key_req <address of auth-key> - program the RPMB authentication key.\n"
+	"mmc rpmb counter_req - read the value of the write counter\n"
+#endif
 #endif
 	"mmc setdsr <value> - set DSR register value\n"
 #ifdef CONFIG_CMD_BKOPS_ENABLE

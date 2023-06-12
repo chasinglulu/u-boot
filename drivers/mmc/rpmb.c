@@ -328,6 +328,156 @@ int mmc_rpmb_write(struct mmc *mmc, void *addr, unsigned short blk,
 	return i;
 }
 
+#ifdef CONFIG_CMD_MMC_RPMB_REQ
+int mmc_rpmb_get_counter_req(struct mmc *mmc, unsigned long *pcounter)
+{
+	int ret;
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_req, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_rsp, 1);
+
+	/* Fill the request */
+	memset(rpmb_req, 0, sizeof(struct s_rpmb));
+	rpmb_req->request = cpu_to_be16(RPMB_REQ_WCOUNTER);
+
+	memset(rpmb_rsp, 0, sizeof(struct s_rpmb));
+
+	ret = mmc_rpmb_route_frames(mmc, rpmb_req,
+					sizeof(struct s_rpmb), rpmb_rsp,
+					sizeof(struct s_rpmb));
+	if (ret) {
+		printf("Failed to route read counter frames [ret=%d]\n", ret);
+		return -EIO;
+	}
+
+	ret = be16_to_cpu(rpmb_rsp->result);
+	if (ret) {
+		printf("%s\n", rpmb_err_msg[ret & RPMB_ERR_MSK]);
+		return ret;
+	}
+
+	*pcounter = be32_to_cpu(rpmb_rsp->write_counter);
+	return 0;
+}
+
+int mmc_rpmb_set_key_req(struct mmc *mmc, void *key)
+{
+	int ret;
+
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_req, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_rsp, 1);
+
+	/* Fill the request */
+	memset(rpmb_req, 0, sizeof(struct s_rpmb));
+	rpmb_req->request = cpu_to_be16(RPMB_REQ_KEY);
+	memcpy(rpmb_req->mac, key, RPMB_SZ_MAC);
+
+	memset(rpmb_rsp, 0, sizeof(struct s_rpmb));
+
+	ret = mmc_rpmb_route_frames(mmc, rpmb_req,
+					sizeof(struct s_rpmb), rpmb_rsp,
+					sizeof(struct s_rpmb));
+	if (ret) {
+		printf("Failed to route key frames [ret=%d]\n", ret);
+		return -EIO;
+	}
+
+	ret = be16_to_cpu(rpmb_rsp->result);
+	if (ret)
+		printf("%s\n", rpmb_err_msg[ret & RPMB_ERR_MSK]);
+
+	return ret;
+}
+
+int mmc_rpmb_read_req(struct mmc *mmc, void *addr, unsigned short blk,
+		  unsigned short cnt, unsigned char *key)
+{
+	int ret, i;
+
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_req, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_rsp, cnt);
+
+	memset(rpmb_req, 0, sizeof(struct s_rpmb));
+	rpmb_req->address = cpu_to_be16(blk);
+	rpmb_req->request = cpu_to_be16(RPMB_REQ_READ_DATA);
+	rpmb_req->block_count = cpu_to_be16(cnt);
+
+	memset(rpmb_rsp, 0, cnt * sizeof(struct s_rpmb));
+
+	ret = mmc_rpmb_route_frames(mmc, rpmb_req,
+					sizeof(struct s_rpmb), rpmb_rsp,
+					cnt * sizeof(struct s_rpmb));
+	if (ret) {
+		printf("Failed to route read frames [ret=%d]\n", ret);
+		return -EIO;
+	}
+
+	for (i = 0; i < cnt; i++, rpmb_rsp++) {
+		if (be16_to_cpu(rpmb_rsp->request) !=
+				RPMB_RESP_READ_DATA)
+			break;
+
+		/* Check the HMAC if key is provided */
+		if (key) {
+			unsigned char ret_hmac[RPMB_SZ_MAC];
+
+			rpmb_hmac(key, rpmb_rsp->data, 284, ret_hmac);
+			if (memcmp(ret_hmac, rpmb_rsp->mac, RPMB_SZ_MAC)) {
+				printf("MAC error on block #%d\n", i);
+				break;
+			}
+		}
+
+		memcpy(addr + i * RPMB_SZ_DATA, rpmb_rsp->data, RPMB_SZ_DATA);
+	}
+
+	return i;
+}
+
+int mmc_rpmb_write_req(struct mmc *mmc, void *addr, unsigned short blk,
+		  unsigned short cnt, unsigned char *key)
+{
+	struct s_rpmb *tmp;
+	unsigned long wcount, count;
+	int i, ret;
+
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_req, cnt);
+	ALLOC_CACHE_ALIGN_BUFFER(struct s_rpmb, rpmb_rsp, 1);
+
+	if (mmc_rpmb_get_counter(mmc, &wcount)) {
+		printf("Cannot read RPMB write counter\n");
+		return -EIO;
+	}
+	count = wcount;
+
+	/* Fill the request */
+	memset(rpmb_req, 0, cnt * sizeof(struct s_rpmb));
+	for (i = 0, tmp = rpmb_req; i < cnt; i++, tmp++, count++) {
+		memcpy(tmp->data, addr + i * RPMB_SZ_DATA, RPMB_SZ_DATA);
+		tmp->address = cpu_to_be16(blk + i);
+		tmp->block_count = cpu_to_be16(1);
+		tmp->write_counter = cpu_to_be32(count);
+		tmp->request = cpu_to_be16(RPMB_REQ_WRITE_DATA);
+		/* Computes HMAC */
+		rpmb_hmac(key, tmp->data, 284, tmp->mac);
+	}
+	memset(rpmb_rsp, 0, sizeof(struct s_rpmb));
+
+	ret = mmc_rpmb_route_frames(mmc, rpmb_req,
+					cnt * sizeof(struct s_rpmb), rpmb_rsp,
+					sizeof(struct s_rpmb));
+	if (ret) {
+		printf("Failed to route write frames [ret=%d]\n", ret);
+		return -EIO;
+	}
+
+	ret = be16_to_cpu(rpmb_rsp->result);
+	if (ret)
+		printf("%s\n", rpmb_err_msg[ret & RPMB_ERR_MSK]);
+
+	return be32_to_cpu(rpmb_rsp->write_counter) - wcount;
+}
+#endif
+
 static int send_write_mult_block(struct mmc *mmc, const struct s_rpmb *frm,
 				 unsigned short cnt)
 {
@@ -458,7 +608,7 @@ static int rpmb_route_frames(struct mmc *mmc, struct s_rpmb *req,
 		return rpmb_route_read_req(mmc, req, req_cnt, rsp, rsp_cnt);
 
 	case RPMB_REQ_READ_DATA:
-		if (req_cnt != 1 || !req_cnt)
+		if (req_cnt != 1 || !rsp_cnt)
 			return -EINVAL;
 		return rpmb_route_read_req(mmc, req, req_cnt, rsp, rsp_cnt);
 

@@ -869,6 +869,15 @@ int mmc_rpmb_read(struct mmc *mmc, void *addr, unsigned short blk,
 int mmc_rpmb_write(struct mmc *mmc, void *addr, unsigned short blk,
 		   unsigned short cnt, unsigned char *key);
 
+#if CONFIG_IS_ENABLED(CMD_MMC_RPMB_REQ)
+int mmc_rpmb_get_counter_req(struct mmc *mmc, unsigned long *counter);
+int mmc_rpmb_set_key_req(struct mmc *mmc, void *key);
+int mmc_rpmb_read_req(struct mmc *mmc, void *addr, unsigned short blk,
+		  unsigned short cnt, unsigned char *key);
+int mmc_rpmb_write_req(struct mmc *mmc, void *addr, unsigned short blk,
+		   unsigned short cnt, unsigned char *key);
+#endif
+
 /**
  * mmc_rpmb_route_frames() - route RPMB data frames
  * @mmc		Pointer to a MMC device struct
