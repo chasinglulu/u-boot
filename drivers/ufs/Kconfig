@@ -20,4 +20,11 @@ config TI_J721E_UFS
 	  This selects the glue layer driver for Cadence controller
 	  present on TI's J721E devices.
 
+config PCI_UFS
+	bool "UFS PCI device support"
+	depends on UFS
+	depends on PCI
+	help
+	  This option enables support for UFS PCI devices.
+
 endmenu
