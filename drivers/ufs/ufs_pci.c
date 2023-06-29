@@ -4,36 +4,32 @@
  */
 
 #include <common.h>
+#include <ufs.h>
 #include <dm.h>
 #include <pci.h>
+#include <dm/device_compat.h>
+
 #include "ufs.h"
 
 static int ufs_pci_bind(struct udevice *udev)
 {
 	static int ndev_num;
 	char name[20];
-
-    printf("%s\n", __func__);
+	struct udevice *scsi_dev;
 
 	sprintf(name, "ufs#%d", ndev_num++);
+	device_set_name(udev, name);
 
-	return device_set_name(udev, name);
+	return ufs_scsi_bind(udev, &scsi_dev);
 }
 
 static int ufs_pci_probe(struct udevice *udev)
 {
-    printf("%s\n", __func__);
-	// struct nvme_dev *ndev = dev_get_priv(udev);
-	// struct pci_child_plat *pplat;
+	int err = ufshcd_probe(udev, NULL);
+	if (err)
+		dev_err(udev, "ufshcd_probe() failed %d\n", err);
 
-	// pplat = dev_get_parent_plat(udev);
-	// sprintf(ndev->vendor, "0x%.4x", pplat->vendor);
-
-	// ndev->instance = trailing_strtol(udev->name);
-	// ndev->bar = dm_pci_map_bar(udev, PCI_BASE_ADDRESS_0,
-	// 		PCI_REGION_MEM);
-	// return nvme_init(udev);
-    return 0;
+	return err;
 }
 
 U_BOOT_DRIVER(ufs_pci) = {

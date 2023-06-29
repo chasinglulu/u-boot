@@ -12,6 +12,7 @@
 #include <common.h>
 #include <dm.h>
 #include <log.h>
+#include <pci.h>
 #include <dm/device_compat.h>
 #include <dm/devres.h>
 #include <dm/lists.h>
@@ -1880,7 +1881,12 @@ int ufshcd_probe(struct udevice *ufs_dev, struct ufs_hba_ops *hba_ops)
 
 	hba->dev = ufs_dev;
 	hba->ops = hba_ops;
+#if defined(CONFIG_PCI_UFS)
+	hba->mmio_base = dm_pci_map_bar(ufs_dev, PCI_BASE_ADDRESS_0,
+						PCI_REGION_MEM);
+#else
 	hba->mmio_base = (void *)dev_read_addr(ufs_dev);
+#endif
 
 	/* Set descriptor lengths to specification defaults */
 	ufshcd_def_desc_sizes(hba);
@@ -1895,7 +1901,8 @@ int ufshcd_probe(struct udevice *ufs_dev, struct ufs_hba_ops *hba_ops)
 	if (hba->version != UFSHCI_VERSION_10 &&
 	    hba->version != UFSHCI_VERSION_11 &&
 	    hba->version != UFSHCI_VERSION_20 &&
-	    hba->version != UFSHCI_VERSION_21)
+	    hba->version != UFSHCI_VERSION_21 &&
+		hba->version != UFSHCI_VERSION_31)
 		dev_err(hba->dev, "invalid UFS version 0x%x\n",
 			hba->version);
 
