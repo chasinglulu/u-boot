@@ -28,6 +28,7 @@ typedef enum mmap_region_type {
 #define MMAP_SRAM_BASE		0x04000000UL
 #define MMAP_FLASH_BASE		0x18000000UL
 #define MMAP_DEVICE_BASE	0x20000000UL
+#define MMAP_DEVICE_BASE1	0xA0000000UL
 #define MMAP_INTER_DDR_BASE	0x1000000000UL
 #define MMAP_DDR_BANK_BASE	0x3000000000UL
 #define DDR_SIZE		(SZ_4G)
@@ -68,6 +69,14 @@ static struct mm_region j6_mem_map[MMAP_END] = {
 		.size = DDR_SIZE,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			PTE_BLOCK_INNER_SHARE
+	},
+	[5] = {
+		.virt = MMAP_DEVICE_BASE1,
+		.phys = MMAP_DEVICE_BASE1,
+		.size = SZ_2G,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
 	}, {
 		/* List terminator */
 		0,
