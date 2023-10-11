@@ -1,0 +1,6 @@
+if TARGET_LMT_VIRT
+
+config SYS_BOARD
+	default "qemu-virt"
+
+endif

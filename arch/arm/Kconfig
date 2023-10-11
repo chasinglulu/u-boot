@@ -2004,6 +2004,16 @@ config ARCH_ROCKCHIP
 	imply TPL_SYSRESET
 	imply USB_FUNCTION_FASTBOOT
 
+config ARCH_AXERA
+	bool "Support Axera SoCs"
+	select BLK
+	select DM
+	select DM_GPIO
+	select DM_MMC
+	select DM_SERIAL
+	select OF_CONTROL
+	select SYS_MALLOC_F
+
 config ARCH_OCTEONTX
 	bool "Support OcteonTX SoCs"
 	select CLK
@@ -2295,6 +2305,8 @@ source "arch/arm/mach-imx/Kconfig"
 source "arch/arm/mach-nexell/Kconfig"
 
 source "arch/arm/mach-npcm/Kconfig"
+
+source "arch/arm/mach-axera/Kconfig"
 
 source "board/armltd/total_compute/Kconfig"
 source "board/armltd/corstone1000/Kconfig"

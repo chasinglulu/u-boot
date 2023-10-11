@@ -1,0 +1,22 @@
+if ARCH_AXERA
+
+config AXERA_LMT
+	bool "Support Axera Lambert SoC"
+	select ARM64
+	select DM_ETH
+	select SUPPORT_SPL
+	select SPL
+	help
+	  The Lambert SoC is a ARM-based SoC with a eight-core Cortex-A76
+	  and dual-core NPU.
+	  including 2M SRAM, 128K L2 cache per core, 2M L3 cache, dual-core
+	  lockstep RISC-V and DSP, two DDR5 controller and video codec support.
+	  Peripherals include Gigabit Ethernet, MIPI, PCIe, eMMC, I2S, UARTs, SPI,
+	  I2C and PWMs.
+
+config LMT_DW8250
+	bool
+
+source "arch/arm/mach-axera/lambert/Kconfig"
+
+endif
