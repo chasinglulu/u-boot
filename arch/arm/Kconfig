@@ -1927,6 +1927,16 @@ config ARCH_ROCKCHIP
 	imply TPL_SYSRESET
 	imply USB_FUNCTION_FASTBOOT
 
+config ARCH_AXERA
+	bool "Support Axera SoCs"
+	select BLK
+	select DM
+	select DM_GPIO
+	select DM_MMC
+	select DM_SERIAL
+	select OF_CONTROL
+	select SYS_MALLOC_F
+
 config ARCH_HOBOT
 	bool "Support Horizon Jounery SoCs"
 	select BLK
@@ -2205,6 +2215,8 @@ source "arch/arm/cpu/armv8/Kconfig"
 source "arch/arm/mach-imx/Kconfig"
 
 source "arch/arm/mach-nexell/Kconfig"
+
+source "arch/arm/mach-axera/Kconfig"
 
 source "arch/arm/mach-hobot/Kconfig"
 

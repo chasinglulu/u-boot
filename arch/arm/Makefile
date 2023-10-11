@@ -93,6 +93,7 @@ machine-$(CONFIG_ARCH_ZYNQ)		+= zynq
 machine-$(CONFIG_ARCH_ZYNQMP)		+= zynqmp
 machine-$(CONFIG_ARCH_ZYNQMP_R5)	+= zynqmp-r5
 machine-$(CONFIG_ARCH_HOBOT)		+= hobot
+machine-$(CONFIG_ARCH_AXERA)		+= axera
 
 machdirs := $(patsubst %,arch/arm/mach-%/,$(machine-y))
 
