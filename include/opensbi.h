@@ -21,6 +21,7 @@
 enum sbi_scratch_options {
 	/** Disable prints during boot */
 	SBI_SCRATCH_NO_BOOT_PRINTS = (1 << 0),
+	SBI_SCRATCH_DEBUG_PRINTS = (1 << 1),
 };
 
 /** Representation dynamic info passed by previous booting stage */
