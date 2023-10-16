@@ -390,10 +390,14 @@ static int spl_fit_append_fdt(struct spl_image_info *spl_image,
 		/*
 		 * U-Boot did not find a device tree inside the FIT image. Use
 		 * the U-Boot device tree instead.
+		 *
+		 * The device tree must be at an 8-byte aligned address.
 		 */
-		if (gd->fdt_blob)
+		if (gd->fdt_blob) {
+			image_info.load_addr = ALIGN(image_info.load_addr, 8);
 			memcpy((void *)image_info.load_addr, gd->fdt_blob,
 			       fdt_totalsize(gd->fdt_blob));
+		}
 		else
 			return node;
 	} else {
