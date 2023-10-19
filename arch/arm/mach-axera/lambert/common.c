@@ -20,7 +20,7 @@ DECLARE_GLOBAL_DATA_PTR;
 void *board_fdt_blob_setup(int *err)
 {
 	/* QEMU loads a generated DTB for us at the start of RAM. */
-	void *fdt_addr = (void *)CONFIG_SYS_DDR_BASE;
+	void *fdt_addr = (void *)CONFIG_LMT_DRAM_BASE;
 
 	if (!fdt_check_header(fdt_addr)) {
 		*err = 0;
@@ -42,7 +42,7 @@ void *board_fdt_blob_setup(int *err)
 ulong board_get_usable_ram_top(ulong total_size)
 {
 	/* TODO: detect size dynamically */
-	return CONFIG_SYS_DDR_BASE + SZ_4G - 1;
+	return CONFIG_LMT_DRAM_BASE + SZ_4G - 1;
 }
 
 #ifdef CONFIG_LAST_STAGE_INIT
