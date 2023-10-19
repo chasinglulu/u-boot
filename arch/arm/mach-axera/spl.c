@@ -6,6 +6,7 @@
 #include <common.h>
 #include <debug_uart.h>
 #include <asm/system.h>
+#include <semihosting.h>
 #include <hang.h>
 #include <image.h>
 #include <init.h>
@@ -14,7 +15,17 @@
 
 u32 spl_boot_device(void)
 {
+	if (semihosting_enabled())
+		return BOOT_DEVICE_SMH;
+
 	return BOOT_DEVICE_RAM;
+}
+
+void board_boot_order(u32 *spl_boot_list)
+{
+	spl_boot_list[0] = spl_boot_device();
+	if (spl_boot_list[0] == BOOT_DEVICE_SMH)
+		spl_boot_list[1] = BOOT_DEVICE_RAM;
 }
 
 struct image_header *spl_get_load_buffer(ssize_t offset, size_t size)

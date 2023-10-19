@@ -36,12 +36,32 @@ config LMT_SOC
 config SYS_MALLOC_F_LEN
 	default 0x4000
 
-menu "Axera Lambert SoC features"
+menu "Lambert SoC features"
 
-config SYS_DDR_BASE
-	hex "DDR Base Address"
+config LMT_DRAM_BASE
+	hex "Lamert DRAM Address Space Base"
 	depends on LMT_SOC
 	default 0x400000000
+
+config LMT_SCRIPT_LOAD_ADDR
+	hex "Boot script load address"
+	depends on LMT_SOC
+	default 0x40f000000
+
+config LMT_KERNEL_LOAD_ADDR
+	hex "Kernel image load address"
+	depends on LMT_SOC
+	default 0x410000000
+
+config LMT_FDT_LOAD_ADDR
+	hex "DTB image load address"
+	depends on LMT_SOC
+	default 0x418000000
+
+config LMT_RAMDISK_LOAD_ADDR
+	hex "initramfs image load address"
+	depends on LMT_SOC
+	default 0x419000000
 
 config LMT_SWITCH_TO_EL2
 	bool "Force switch to EL2"
