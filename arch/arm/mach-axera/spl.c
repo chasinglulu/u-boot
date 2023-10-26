@@ -33,6 +33,22 @@ struct image_header *spl_get_load_buffer(ssize_t offset, size_t size)
 	return (struct image_header *)(CONFIG_SYS_LOAD_ADDR);
 }
 
+int spl_parse_board_header(struct spl_image_info *spl_image,
+				  const struct spl_boot_device *bootdev,
+				  const void *image_header, size_t size)
+{
+	if (IS_ENABLED(CONFIG_SPL_ATF) &&
+		    bootdev->boot_device == BOOT_DEVICE_RAM
+		    && current_el() == 3) {
+		spl_image->entry_point = CONFIG_LMT_SPL_ATF_LOAD_ADDR;
+		spl_image->load_addr = CONFIG_LMT_SPL_ATF_LOAD_ADDR;
+
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
@@ -54,8 +70,19 @@ void spl_display_print(void)
 {
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
 
-	printf("EL level: %x\n", current_el());
+	printf("EL level: EL%x\n", current_el());
 	printf("Boot SPL on physical CPU 0x%010lx [0x%08lx]\n",
 				mpidr, read_midr());
 }
 #endif
+
+void spl_perform_fixups(struct spl_image_info *spl_image)
+{
+	if (IS_ENABLED(CONFIG_SPL_ATF) &&
+		    spl_image->boot_device == BOOT_DEVICE_RAM
+		    && !(spl_image->flags & SPL_FIT_FOUND)
+		    && (current_el() == 3)) {
+		spl_image->os = IH_OS_ARM_TRUSTED_FIRMWARE;
+		spl_image->name = "ARM Trusted Firmware";
+	}
+}

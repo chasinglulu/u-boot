@@ -116,7 +116,7 @@
 		BOOTENV
 
 /* SPL support */
-#define CONFIG_SYS_UBOOT_START    CONFIG_SYS_TEXT_BASE
+#define CONFIG_SYS_MONITOR_LEN    (1 << 20)
 #define CONFIG_SPL_STACK          0x1ec00
 #define CONFIG_SPL_BSS_START_ADDR 0x1f000
 

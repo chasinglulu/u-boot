@@ -43,6 +43,16 @@ config LMT_DRAM_BASE
 	depends on LMT_SOC
 	default 0x400000000
 
+config LMT_SPL_ATF_LOAD_ADDR
+	hex "ATF firmware load address"
+	depends on LMT_SOC
+	default 0x400104000
+
+config LMT_SPL_OPTEE_LOAD_ADDR
+	hex "OP-TEE firmware load address"
+	depends on LMT_SOC
+	default 0x404000000
+
 config LMT_SCRIPT_LOAD_ADDR
 	hex "Boot script load address"
 	depends on LMT_SOC
