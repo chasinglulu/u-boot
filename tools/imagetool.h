@@ -60,8 +60,8 @@ struct image_tool_params {
 	int type;
 	int comp;
 	char *dtc;
-	unsigned int addr;
-	unsigned int ep;
+	unsigned long addr;
+	unsigned long ep;
 	char *imagename;
 	char *imagename2;
 	char *datafile;

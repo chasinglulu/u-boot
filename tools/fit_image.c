@@ -259,8 +259,8 @@ static int fit_write_images(struct image_tool_params *params, char *fdt)
 			    genimg_get_os_short_name(params->os));
 	fdt_property_string(fdt, FIT_COMP_PROP,
 			    genimg_get_comp_short_name(params->comp));
-	fdt_property_u32(fdt, FIT_LOAD_PROP, params->addr);
-	fdt_property_u32(fdt, FIT_ENTRY_PROP, params->ep);
+	fdt_property_u64(fdt, FIT_LOAD_PROP, params->addr);
+	fdt_property_u64(fdt, FIT_ENTRY_PROP, params->ep);
 
 	/*
 	 * Put data last since it is large. SPL may only load the first part
