@@ -21,6 +21,50 @@ static int smh_read_full(long fd, void *memp, size_t len)
 	return 0;
 }
 
+#if CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+static int spl_smh_load_fit_image(struct spl_image_info *spl_image,
+                    struct spl_boot_device *bootdev, long fd,
+                    struct image_header *header)
+{
+	int ret;
+	struct fdt_header *fit = (struct fdt_header *)header;
+	long len;
+
+	ret = smh_seek(fd, 0);
+	if (ret) {
+		log_debug("could not seek to start of image: %d\n", ret);
+		return 0;
+	}
+
+	ret = smh_read_full(fd, fit, sizeof(struct fdt_header));
+	if (ret) {
+		log_debug("could not read FIT header: %d\n", ret);
+		return ret;
+	}
+	len = fdt_totalsize(fit);
+
+	ret = smh_seek(fd, 0);
+	if (ret) {
+		log_debug("could not seek to start of image: %d\n", ret);
+		return 0;
+	}
+
+	ret = smh_read_full(fd, fit, len);
+	if (ret) {
+		log_debug("could not read FIT image: %d\n", ret);
+		return ret;
+	}
+
+	ret = spl_parse_image_header(spl_image, bootdev, header);
+	if (ret) {
+		log_debug("failed to parse image header: %d\n", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
 static int spl_smh_load_image(struct spl_image_info *spl_image,
 			      struct spl_boot_device *bootdev)
 {
@@ -48,6 +92,18 @@ static int spl_smh_load_image(struct spl_image_info *spl_image,
 		log_debug("could not read image header: %d\n", ret);
 		goto out;
 	}
+
+#if CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+	if (image_get_magic(header) == FDT_MAGIC) {
+
+		debug("Found FIT Image\n");
+		ret = spl_smh_load_fit_image(spl_image, bootdev, fd, header);
+		if (ret)
+			log_debug("could not read fit image: %d\n", ret);
+
+		goto out;
+	}
+#endif
 
 	ret = spl_parse_image_header(spl_image, bootdev, header);
 	if (ret) {
