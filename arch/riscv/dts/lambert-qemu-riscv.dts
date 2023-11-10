@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: GPL-2.0+
+/*
+ * Copyright (C) 2023, Charleye <wangkart@aliyun.com>
+ */
+
+
+/dts-v1/;
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "lambert-qemu-riscv-virt";
+	model = "riscv-virt,qemu";
+
+	binman {
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &serial0;
+		serial1 = &serial1;
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x60e00000 0x0 0x400000>;
+	};
+
+	clint@2000000 {
+		compatible = "riscv,clint0";
+		reg = <0x0 0x60d24000 0x0 0x1000>;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		serial0: uart@60d42000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x60d42000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			// interrupts = <GIC_SPI 0x10 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>; //192MHz
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+		};
+
+		serial1: uart@60d43000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x60d43000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			// interrupts = <GIC_SPI 0x11 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+		};
+	};
+};

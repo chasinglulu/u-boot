@@ -1,0 +1,38 @@
+if TARGET_LMT_RISCV_VIRT
+
+config SYS_BOARD
+	default "riscv-virt"
+
+config SYS_VENDOR
+	default "axera"
+
+config SYS_CPU
+	default "generic"
+
+config SYS_CONFIG_NAME
+	default "lmt-riscv-virt"
+
+config SYS_TEXT_BASE
+	default 0x60e00000
+
+config SPL_TEXT_BASE
+	default 0x60c00000
+
+config SPL_OPENSBI_LOAD_ADDR
+	hex
+	default 0x60f00000
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+	def_bool y
+	select GENERIC_RISCV
+	select SUPPORT_SPL
+	select CPU
+	select SPL
+	imply SMP
+	imply BOARD_LATE_INIT
+	imply SPL_RAM_SUPPORT
+	imply SPL_RAM_DEVICE
+	imply SYS_NS16550
+	imply SIFIVE_SERIAL
+
+endif

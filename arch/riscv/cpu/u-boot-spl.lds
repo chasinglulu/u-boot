@@ -17,6 +17,7 @@ SECTIONS
 {
 	. = ALIGN(4);
 	.text : {
+		__image_copy_start = .;
 		arch/riscv/cpu/start.o	(.text)
 		*(.text*)
 	} > .spl_mem
