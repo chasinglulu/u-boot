@@ -255,6 +255,24 @@ spl_call_board_init_r:
  */
 .globl relocate_code
 relocate_code:
+	LREG	t0, GD_FLAGS(gp)
+	li	t1, 2048
+	and	t1, t0, t1
+	beqz	t1, no_skip
+	LREG	a0, GD_NEW_FDT(gp)
+	LREG	a1, GD_FDT_BLOB(gp)
+	LREG	a2, GD_FDT_SIZE(gp)
+	la	t5, memcpy
+	jalr	t5
+	SREG	a0, GD_FDT_BLOB(gp)
+	LREG	t5, GD_NEW_GD(gp)
+	SREG	a0, GD_FDT_BLOB(t5)
+
+	li		t2, 0
+	and		t6, t1, t2
+	LREG	s3, GD_NEW_GD(gp)
+	jal		clear_bss
+no_skip:
 	mv	s2, a0			/* save addr_sp */
 	mv	s3, a1			/* save addr of gd */
 	mv	s4, a2			/* save addr of destination */

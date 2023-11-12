@@ -19,6 +19,11 @@ int main(void)
 #ifndef CONFIG_XIP
 	DEFINE(GD_AVAILABLE_HARTS, offsetof(gd_t, arch.available_harts));
 #endif
+	DEFINE(GD_FLAGS, offsetof(gd_t, flags));
+	DEFINE(GD_NEW_GD, offsetof(gd_t, new_gd));
+	DEFINE(GD_NEW_FDT, offsetof(gd_t, new_fdt));
+	DEFINE(GD_FDT_BLOB, offsetof(gd_t, fdt_blob));
+	DEFINE(GD_FDT_SIZE, offsetof(gd_t, fdt_size));
 
 	return 0;
 }

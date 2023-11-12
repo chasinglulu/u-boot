@@ -20,6 +20,14 @@ int board_init(void)
 	return 0;
 }
 
+#if CONFIG_IS_ENABLED(LMT_RISCV_NO_DRAM)
+int mach_cpu_init(void)
+{
+	gd->flags |= GD_FLG_SKIP_RELOC;
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_SPL
 u32 spl_boot_device(void)
 {
