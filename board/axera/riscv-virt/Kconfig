@@ -19,6 +19,9 @@ config SYS_MALLOC_LEN
 config ENV_SIZE
 	default 0x10000 if LMT_RISCV_NO_DRAM
 
+config SYS_LOAD_ADDR
+	default SYS_TEXT_BASE
+
 config SYS_TEXT_BASE
 	default 0x60c20000 if LMT_RISCV_NO_DRAM
 	default 0x60e00000 if !LMT_RISCV_NO_DRAM
