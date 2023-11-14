@@ -5,6 +5,7 @@
 
 
 /dts-v1/;
+#include <config.h>
 
 / {
 	#address-cells = <2>;
@@ -13,10 +14,24 @@
 	model = "riscv-virt,qemu";
 
 	binman {
+#ifdef CONFIG_LMT_RISCV_NO_DRAM
+		filename = "u-boot-with-spl.bin";
+		pad-byte = <0x00>;
+		u-boot-spl-expanded {
+			size = <0x20000>;
+		};
+
+		u-boot {
+		};
+
+		fdtmap {
+		};
+#endif
 	};
 
 	chosen {
 		stdout-path = "serial0:115200n8";
+		tick-timer = &timer0;
 	};
 
 	aliases {
@@ -24,14 +39,55 @@
 		serial1 = &serial1;
 	};
 
-	memory {
-		device_type = "memory";
-		reg = <0x0 0x60e00000 0x0 0x400000>;
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <7800000>;
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafdgc";
+			i-cache-block-size = <64>;
+			i-cache-size = <0x8000>;
+			d-cache-block-size = <64>;
+			d-cache-size = <0x8000>;
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			};
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <1>;
+			riscv,isa = "rv32imafdgc";
+			i-cache-block-size = <64>;
+			i-cache-size = <0x8000>;
+			d-cache-block-size = <64>;
+			d-cache-size = <0x8000>;
+			cpu1_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			};
+		};
 	};
 
-	clint@2000000 {
+	memory {
+		device_type = "memory";
+#ifdef CONFIG_LMT_RISCV_NO_DRAM
+		reg = <0x0 0x60c00000 0x0 0x80000>;
+#else
+		reg = <0x0 0x60e00000 0x0 0x400000>;
+#endif
+	};
+
+	timer0: clint@60c80000 {
 		compatible = "riscv,clint0";
-		reg = <0x0 0x60d24000 0x0 0x1000>;
+		reg = <0x0 0x60c80000 0x0 0x80000>;
 	};
 
 	soc {

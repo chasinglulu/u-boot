@@ -9,6 +9,15 @@
 
 #include <linux/sizes.h>
 
+#ifdef CONFIG_LMT_RISCV_NO_DRAM
+
+#ifdef CONFIG_SPL
+#define CONFIG_SPL_STACK            0x60c1c000
+#endif
+
+#define CONFIG_STANDALONE_LOAD_ADDR 0x60c20000
+
+#else
 #ifdef CONFIG_SPL
 
 #define CONFIG_SPL_STACK            0x60c3d000
@@ -16,6 +25,8 @@
 #endif
 
 #define CONFIG_STANDALONE_LOAD_ADDR	0x60e00000
+
+#endif /* CONFIG_LMT_RISCV_NO_DRAM */
 
 #define RISCV_MMODE_TIMERBASE		0x2000000
 #define RISCV_MMODE_TIMER_FREQ		1000000
