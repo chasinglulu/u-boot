@@ -244,8 +244,10 @@ static int do_smhload(struct cmd_tbl *cmdtp, int flag, int argc,
 			return -1;
 
 		ret = smh_load_file(argv[1], load_addr, &end_addr);
-		if (ret < 0)
+		if (ret < 0) {
+			printf("Failed to load %s (ret = %d)\n", argv[1], ret);
 			return CMD_RET_FAILURE;
+		}
 
 		/* Optionally save returned end to the environment */
 		if (argc == 4) {
