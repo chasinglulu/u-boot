@@ -34,6 +34,9 @@ int print_cpuinfo(void)
 {
 	printf("Reset cause: %s\n", get_reset_cause());
 
+#ifdef CONFIG_LMT_ENABLE_GICV2
+	printf("GICv2: enabled\n");
+#endif
 	return 0;
 }
 #endif

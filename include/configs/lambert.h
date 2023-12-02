@@ -11,6 +11,11 @@
  */
 /* Environment options */
 
+#ifdef CONFIG_LMT_ENABLE_GICV2
+#define GICD_BASE 0x00449000
+#define GICC_BASE 0x0044a000
+#endif
+
 #define FASTBOOT_NET_CMD "fastboot_net_cmd=fastboot net\0"
 
 #if CONFIG_IS_ENABLED(CMD_MMC)
@@ -96,9 +101,9 @@
 #endif
 
 #define EXTRA_ENV_NAMES                                                    \
-		"kernel_name=Image\0"                                              \
-		"ramdisk_name=rootfs.cpio.lz4\0"                                   \
-		"fdtfile=lambert-virt.dtb\0"                                            \
+		"kernel_name=" __stringify(CONFIG_LMT_KERNEL_LOAD_NAME)"\0"        \
+		"ramdisk_name=" __stringify(CONFIG_LMT_RAMDISK_LOAD_NAME)"\0"      \
+		"fdtfile=" __stringify(CONFIG_LMT_FDT_LOAD_NAME)"\0"               \
 		"boot_name=boot.img\0"                                             \
 		"boot_addr_r=" __stringify(CONFIG_LMT_KERNEL_LOAD_ADDR) "\0"
 
