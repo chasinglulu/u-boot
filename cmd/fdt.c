@@ -674,7 +674,7 @@ static int do_fdt(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 		if (argc == 4) {
 			initrd_start = hextoul(argv[2], NULL);
-			initrd_end = initrd_start + hextoul(argv[3], NULL) - 1;
+			initrd_end = initrd_start + hextoul(argv[3], NULL);
 		}
 
 		fdt_chosen(working_fdt);
