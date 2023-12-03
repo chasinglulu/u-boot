@@ -42,24 +42,24 @@
  * Boot by loading an Android image, or kernel, initrd and FDT through
  * semihosting into DRAM.
  */
-#define BOOTENV_DEV_SMH(devtypeu, devtypel, instance) \
-	"bootcmd_smh= " 						\
-		"if load hostfs - ${boot_addr_r} ${boot_name}; then"		\
-		"  setenv bootargs;"					\
-		"  abootimg addr ${boot_addr_r};"			\
-		"  abootimg get dtb --index=0 fdt_addr_r;"		\
-		"  bootm ${boot_addr_r} ${boot_addr_r} ${fdt_addr_r};"	\
-		"else"							\
-		"  if load hostfs - ${kernel_addr_r} ${kernel_name}; then"	\
-		"    setenv fdt_high 0xffffffffffffffff;"		\
-		"    setenv initrd_high 0xffffffffffffffff;"		\
-		"    load hostfs - ${fdt_addr_r} ${fdtfile};"			\
-		"    load hostfs - ${ramdisk_addr_r} ${ramdisk_name};" \
-		"    fdt addr ${fdt_addr_r};"				\
-		"    fdt resize;"					\
-		"    fdt chosen ${ramdisk_addr_r} ${filesize};"	\
-		"    booti $kernel_addr_r - $fdt_addr_r;"		\
-		"  fi;"							\
+#define BOOTENV_DEV_SMH(devtypeu, devtypel, instance)               \
+	"bootcmd_smh= "                                                 \
+		"if load hostfs - ${boot_addr_r} ${boot_name}; then "       \
+		"  setenv bootargs;"                                        \
+		"  abootimg addr ${boot_addr_r};"                           \
+		"  abootimg get dtb --index=0 fdt_addr_r;"                  \
+		"  bootm ${boot_addr_r} ${boot_addr_r} ${fdt_addr_r};"      \
+		"else "                                                     \
+		"  if load hostfs - ${kernel_addr_r} ${kernel_name}; then"  \
+		"    setenv fdt_high 0xffffffffffffffff;"                   \
+		"    setenv initrd_high 0xffffffffffffffff;"                \
+		"    load hostfs - ${fdt_addr_r} ${fdtfile};"               \
+		"    load hostfs - ${ramdisk_addr_r} ${ramdisk_name};"      \
+		"    fdt addr ${fdt_addr_r};"                               \
+		"    fdt resize;"                                           \
+		"    fdt chosen ${ramdisk_addr_r} ${filesize};"             \
+		"    booti $kernel_addr_r - $fdt_addr_r;"                   \
+		"  fi;"                                                     \
 		"fi\0"
 #define BOOTENV_DEV_NAME_SMH(devtypeu, devtypel, instance) "smh "
 
@@ -70,18 +70,31 @@
 #endif
 
 /* Boot by executing a U-Boot script pre-loaded into DRAM. */
-#define BOOTENV_DEV_MEM(devtypeu, devtypel, instance) \
-	"bootcmd_mem= " \
-		"source ${scriptaddr}; " \
-		"if test $? -eq 1; then " \
-		"  env import -t ${scriptaddr}; " \
-		"  if test -n $uenvcmd; then " \
-		"    echo Running uenvcmd ...; " \
-		"    run uenvcmd; " \
-		"  fi; " \
+#define BOOTENV_DEV_MEM(devtypeu, devtypel, instance)  \
+	"bootcmd_mem= "                                    \
+		"source ${scriptaddr}; "                       \
+		"if test $? -eq 1; then "                      \
+		"  env import -t ${scriptaddr}; "              \
+		"  if test -n $uenvcmd; then "                 \
+		"    echo Running uenvcmd ...; "               \
+		"    run uenvcmd; "                            \
+		"  fi; "                                       \
 		"fi\0"
 #define BOOTENV_DEV_NAME_MEM(devtypeu, devtypel, instance) "mem "
 #define BOOT_TARGET_MEM(func) func(MEM, mem, na)
+
+#define BOOTENV_DEV_FPGA(devtypeu, devtypel, instance)      \
+	"bootcmd_fpga= "                                        \
+		"if test -n ${ramdisk_size}; then "                 \
+		"  fdt addr ${fdt_addr_r}; "                        \
+		"  fdt resize; "                                    \
+		"  fdt chosen ${ramdisk_addr_r} ${ramdisk_size}; "  \
+		"  booti ${kernel_addr_r} - ${fdt_addr_r}; "        \
+		"else"                                              \
+		"  echo ramdisk_size not set; "                     \
+		"fi\0"
+#define BOOTENV_DEV_NAME_FPGA(devtypeu, devtypel, instance) "fpga "
+#define BOOT_TARGET_FPGA(func) func(FPGA, fpga, na)
 
 #ifdef CONFIG_TARGET_LMT_VIRT
 #define BOOT_TARGET_DEVICES(func)   \
@@ -91,6 +104,7 @@
 		BOOT_TARGET_DHCP(func)
 #elif defined(CONFIG_TARGET_LMT_FPGA)
 #define BOOT_TARGET_DEVICES(func)   \
+		BOOT_TARGET_FPGA(func)      \
 		BOOT_TARGET_MEM(func)       \
 		BOOT_TARGET_DHCP(func)
 #else
