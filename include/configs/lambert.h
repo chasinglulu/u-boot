@@ -123,15 +123,17 @@
 
 #include <config_distro_bootcmd.h>
 
-#define CONFIG_EXTRA_ENV_SETTINGS                                          \
-		"stdout=serial\0"                                                  \
-		"stdin=serial\0"                                                   \
-		"stderr=serial\0"                                                  \
-		"scriptaddr=" __stringify(CONFIG_LMT_SCRIPT_LOAD_ADDR) "\0"        \
-		"fdt_addr_r=" __stringify(CONFIG_LMT_FDT_LOAD_ADDR) "\0"           \
-		"kernel_addr_r=" __stringify(CONFIG_LMT_KERNEL_LOAD_ADDR) "\0"     \
-		"ramdisk_addr_r=" __stringify(CONFIG_LMT_RAMDISK_LOAD_ADDR) "\0"   \
-		EXTRA_ENV_NAMES                                                    \
+#define CONFIG_EXTRA_ENV_SETTINGS                                             \
+		"stdout=serial\0"                                                     \
+		"stdin=serial\0"                                                      \
+		"stderr=serial\0"                                                     \
+		"scriptaddr=" __stringify(CONFIG_LMT_SCRIPT_LOAD_ADDR) "\0"           \
+		"fdt_addr_r=" __stringify(CONFIG_LMT_FDT_LOAD_ADDR) "\0"              \
+		"kernel_addr_r=" __stringify(CONFIG_LMT_KERNEL_LOAD_ADDR) "\0"        \
+		"ramdisk_addr_r=" __stringify(CONFIG_LMT_RAMDISK_LOAD_ADDR) "\0"      \
+		"kernel_comp_addr_r=" __stringify(CONFIG_LMT_KERNEL_COMP_ADDR) "\0"   \
+		"kernel_comp_size=" __stringify(CONFIG_LMT_KERNEL_COMP_SIZE) "\0"     \
+		EXTRA_ENV_NAMES                                                       \
 		BOOTENV
 
 /* SPL support */

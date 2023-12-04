@@ -71,6 +71,14 @@ config LMT_KERNEL_LOAD_ADDR
 	depends on LMT_SOC
 	default 0x410000000
 
+config LMT_KERNEL_COMP_ADDR
+	hex "Kernel image decompression address"
+	default 0x420000000
+
+config LMT_KERNEL_COMP_SIZE
+	hex "Kernel image decompression buffer size"
+	default 0x04000000
+
 config LMT_FDT_LOAD_NAME
 	string "FDT image name"
 	default "lambert-qemu-virt.dtb"
