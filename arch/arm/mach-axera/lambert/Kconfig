@@ -44,14 +44,16 @@ config LMT_DRAM_BASE
 	default 0x400000000
 
 menu "SPL Load Images"
+	depends on SPL
+
 config LMT_SPL_ATF_LOAD_ADDR
 	hex "ATF firmware load address"
-	depends on LMT_SOC && SPL
+	depends on LMT_SOC
 	default 0x400104000
 
 config LMT_SPL_OPTEE_LOAD_ADDR
 	hex "OP-TEE firmware load address"
-	depends on LMT_SOC && SPL
+	depends on LMT_SOC
 	default 0x404000000
 
 endmenu
@@ -81,7 +83,7 @@ config LMT_KERNEL_COMP_SIZE
 
 config LMT_FDT_LOAD_NAME
 	string "FDT image name"
-	default "lambert-qemu-virt.dtb"
+	default "lambert-virt.dtb"
 
 config LMT_FDT_LOAD_ADDR
 	hex "DTB image load address"
