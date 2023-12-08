@@ -1669,6 +1669,12 @@ static const struct udevice_id eqos_ids[] = {
 		.data = (ulong)&eqos_imx_config
 	},
 #endif
+#if IS_ENABLED(CONFIG_DWC_ETH_QOS_LMT)
+	{
+		.compatible = "snps,lmt-dwmac-eqos",
+		.data = (ulong)&eqos_lmt_config
+	},
+#endif
 
 	{ }
 };
