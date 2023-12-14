@@ -15,12 +15,14 @@ DECLARE_GLOBAL_DATA_PTR;
 
 typedef enum mmap_region_type {
 	MMAP_DEVICE_MMIO,
+	MMAP_PIPESYS_MMIO,
 	MMAP_IRAM_SAFETY,
 	MMAP_HIGH_DDR,
 	MMAP_END,
 } mmap_region_t;
 
 #define MMAP_DEVICE_BASE       0x00020000UL
+#define MMAP_PIPESYS_BASE      0x20000000UL
 #define MMAP_IRAM_SAFETY_BASE  0x60c00000UL
 #define MMAP_HIGH_DDR_BASE     0x400000000UL
 
@@ -29,6 +31,14 @@ static struct mm_region lmt_mem_map[] = {
 		.virt = MMAP_DEVICE_BASE,
 		.phys = MMAP_DEVICE_BASE,
 		.size = SZ_1G,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	[MMAP_PIPESYS_MMIO] = {
+		.virt = MMAP_PIPESYS_BASE,
+		.phys = MMAP_PIPESYS_BASE,
+		.size = (SZ_1G + SZ_256M),
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
