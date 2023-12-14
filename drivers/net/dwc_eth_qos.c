@@ -52,6 +52,7 @@
 #include <asm/mach-imx/sys_proto.h>
 #endif
 #include <linux/delay.h>
+#include <hexdump.h>
 
 #include "dwc_eth_qos.h"
 
@@ -748,6 +749,7 @@ static int eqos_start(struct udevice *dev)
 	u32 val, tx_fifo_sz, rx_fifo_sz, tqs, rqs, pbl;
 	ulong last_rx_desc;
 	ulong desc_pad;
+	ulong desc_addr;
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
@@ -1012,6 +1014,7 @@ static int eqos_start(struct udevice *dev)
 		struct eqos_desc *rx_desc = eqos_get_desc(eqos, i, true);
 		rx_desc->des0 = (u32)(ulong)(eqos->rx_dma_buf +
 					     (i * EQOS_MAX_PACKET_SIZE));
+		rx_desc->des1 = (u32)((ulong)eqos->rx_dma_buf >> 32);
 		rx_desc->des3 = EQOS_DESC3_OWN | EQOS_DESC3_BUF1V;
 		mb();
 		eqos->config->ops->eqos_flush_desc(rx_desc);
@@ -1020,15 +1023,16 @@ static int eqos_start(struct udevice *dev)
 						EQOS_MAX_PACKET_SIZE);
 	}
 
-	writel(0, &eqos->dma_regs->ch0_txdesc_list_haddress);
-	writel((ulong)eqos_get_desc(eqos, 0, false),
-		&eqos->dma_regs->ch0_txdesc_list_address);
+	desc_addr = (ulong)eqos_get_desc(eqos, 0, false);
+	printf("%s: desc_addr: 0x%lx, high: 0x%lx\n", __func__, desc_addr, (desc_addr >> 32) & 0xFFFF);
+	writel(((desc_addr >> 32) & 0xFFFF), &eqos->dma_regs->ch0_txdesc_list_haddress);
+	writel((desc_addr & ~0), &eqos->dma_regs->ch0_txdesc_list_address);
 	writel(EQOS_DESCRIPTORS_TX - 1,
 	       &eqos->dma_regs->ch0_txdesc_ring_length);
 
-	writel(0, &eqos->dma_regs->ch0_rxdesc_list_haddress);
-	writel((ulong)eqos_get_desc(eqos, 0, true),
-		&eqos->dma_regs->ch0_rxdesc_list_address);
+	desc_addr = (ulong)eqos_get_desc(eqos, 0, true);
+	writel(((desc_addr >> 32) & 0xFFFF), &eqos->dma_regs->ch0_rxdesc_list_haddress);
+	writel((desc_addr & ~0), &eqos->dma_regs->ch0_rxdesc_list_address);
 	writel(EQOS_DESCRIPTORS_RX - 1,
 	       &eqos->dma_regs->ch0_rxdesc_ring_length);
 
@@ -1128,13 +1132,15 @@ static int eqos_send(struct udevice *dev, void *packet, int length)
 
 	memcpy(eqos->tx_dma_buf, packet, length);
 	eqos->config->ops->eqos_flush_buffer(eqos->tx_dma_buf, length);
+	print_hex_dump("uboot ", DUMP_PREFIX_OFFSET, 32, 4, eqos->tx_dma_buf, length, false);
 
 	tx_desc = eqos_get_desc(eqos, eqos->tx_desc_idx, false);
+	printf("current tx_desc: 0x%lx\n", (ulong)tx_desc);
 	eqos->tx_desc_idx++;
 	eqos->tx_desc_idx %= EQOS_DESCRIPTORS_TX;
 
 	tx_desc->des0 = (ulong)eqos->tx_dma_buf;
-	tx_desc->des1 = 0;
+	tx_desc->des1 = ((ulong)eqos->tx_dma_buf >> 32) & 0xFFFF;
 	tx_desc->des2 = length;
 	/*
 	 * Make sure that if HW sees the _OWN write below, it will see all the
@@ -1144,6 +1150,7 @@ static int eqos_send(struct udevice *dev, void *packet, int length)
 	tx_desc->des3 = EQOS_DESC3_OWN | EQOS_DESC3_FD | EQOS_DESC3_LD | length;
 	eqos->config->ops->eqos_flush_desc(tx_desc);
 
+	printf("tail pointer: 0x%lx\n", (ulong)eqos_get_desc(eqos, eqos->tx_desc_idx, false));
 	writel((ulong)eqos_get_desc(eqos, eqos->tx_desc_idx, false),
 		&eqos->dma_regs->ch0_txdesc_tail_pointer);
 
@@ -1671,7 +1678,7 @@ static const struct udevice_id eqos_ids[] = {
 #endif
 #if IS_ENABLED(CONFIG_DWC_ETH_QOS_LMT)
 	{
-		.compatible = "snps,lmt-dwmac-eqos",
+		.compatible = "ax,lmt-dwmac-eqos",
 		.data = (ulong)&eqos_lmt_config
 	},
 #endif
