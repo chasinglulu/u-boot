@@ -1024,7 +1024,6 @@ static int eqos_start(struct udevice *dev)
 	}
 
 	desc_addr = (ulong)eqos_get_desc(eqos, 0, false);
-	printf("%s: desc_addr: 0x%lx, high: 0x%lx\n", __func__, desc_addr, (desc_addr >> 32) & 0xFFFF);
 	writel(((desc_addr >> 32) & 0xFFFF), &eqos->dma_regs->ch0_txdesc_list_haddress);
 	writel((desc_addr & ~0), &eqos->dma_regs->ch0_txdesc_list_address);
 	writel(EQOS_DESCRIPTORS_TX - 1,
@@ -1132,10 +1131,8 @@ static int eqos_send(struct udevice *dev, void *packet, int length)
 
 	memcpy(eqos->tx_dma_buf, packet, length);
 	eqos->config->ops->eqos_flush_buffer(eqos->tx_dma_buf, length);
-	print_hex_dump("uboot ", DUMP_PREFIX_OFFSET, 32, 4, eqos->tx_dma_buf, length, false);
 
 	tx_desc = eqos_get_desc(eqos, eqos->tx_desc_idx, false);
-	printf("current tx_desc: 0x%lx\n", (ulong)tx_desc);
 	eqos->tx_desc_idx++;
 	eqos->tx_desc_idx %= EQOS_DESCRIPTORS_TX;
 
@@ -1150,7 +1147,6 @@ static int eqos_send(struct udevice *dev, void *packet, int length)
 	tx_desc->des3 = EQOS_DESC3_OWN | EQOS_DESC3_FD | EQOS_DESC3_LD | length;
 	eqos->config->ops->eqos_flush_desc(tx_desc);
 
-	printf("tail pointer: 0x%lx\n", (ulong)eqos_get_desc(eqos, eqos->tx_desc_idx, false));
 	writel((ulong)eqos_get_desc(eqos, eqos->tx_desc_idx, false),
 		&eqos->dma_regs->ch0_txdesc_tail_pointer);
 
@@ -1216,7 +1212,7 @@ static int eqos_free_pkt(struct udevice *dev, uchar *packet, int length)
 	eqos->config->ops->eqos_flush_desc(rx_desc);
 	eqos->config->ops->eqos_inval_buffer(packet, length);
 	rx_desc->des0 = (u32)(ulong)packet;
-	rx_desc->des1 = 0;
+	rx_desc->des1 = (u32)((ulong)packet >> 32);
 	rx_desc->des2 = 0;
 	/*
 	 * Make sure that if HW sees the _OWN write below, it will see all the

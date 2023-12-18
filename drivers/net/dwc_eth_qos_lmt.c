@@ -92,9 +92,19 @@ static int eqos_set_tx_clk_speed_lmt(struct udevice *dev)
 
 static int eqos_get_enetaddr_lmt(struct udevice *dev)
 {
-	// struct eth_pdata *pdata = dev_get_plat(dev);
+	struct eth_pdata *pdata = dev_get_plat(dev);
+	struct eqos_priv *eqos = dev_get_priv(dev);
+	uint32_t val;
 
-	// lmt_get_mac_from_fuse(dev_seq(dev), pdata->enetaddr);
+	val = readl(&eqos->mac_regs->address0_high);
+	pdata->enetaddr[4] = val & 0xFF;
+	pdata->enetaddr[5] = (val >> 8) & 0xFF;
+
+	val = readl(&eqos->mac_regs->address0_low);
+	pdata->enetaddr[0] = val & 0xFF;
+	pdata->enetaddr[1] = (val >> 8) & 0xFF;
+	pdata->enetaddr[2] = (val >> 16) & 0xFF;
+	pdata->enetaddr[3] = (val >> 24) & 0xFF;
 
 	return 0;
 }
