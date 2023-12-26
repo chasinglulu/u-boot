@@ -100,6 +100,7 @@
 #define BOOT_TARGET_DEVICES(func)   \
 		BOOT_TARGET_SMH(func)       \
 		BOOT_TARGET_MEM(func)       \
+		BOOT_TARGET_MMC(func)       \
 		BOOT_TARGET_VIRTIO(func)    \
 		BOOT_TARGET_DHCP(func)
 #elif defined(CONFIG_TARGET_LMT_FPGA)
@@ -127,6 +128,7 @@
 		"stdout=serial\0"                                                     \
 		"stdin=serial\0"                                                      \
 		"stderr=serial\0"                                                     \
+		"ipaddr=10.0.2.15\0"                                                  \
 		"scriptaddr=" __stringify(CONFIG_LMT_SCRIPT_LOAD_ADDR) "\0"           \
 		"fdt_addr_r=" __stringify(CONFIG_LMT_FDT_LOAD_ADDR) "\0"              \
 		"kernel_addr_r=" __stringify(CONFIG_LMT_KERNEL_LOAD_ADDR) "\0"        \
