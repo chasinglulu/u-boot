@@ -75,6 +75,34 @@
 			status = "okay";
 		};
 
+		mmc0: mmc@10620000 {
+			compatible = "ax,lambert-sdhci";
+			reg = <0x0 0x10620000 0x0 0x1000>;
+			interrupts = <0x0 0x9 0x4>;
+			max-frequency = <200000000>;
+			sdhci-caps-mask = <0xffffffff 0xffffffff>;
+			sdhci-caps = <0x00000070 0x156ecc02>;
+			bus-width = <8>;
+			cap-mmc-highspeed;
+			mmc-ddr-1_8v;
+			mmc-hs200-1_8v;
+			non-removable;
+			no-sdio;
+			no-sd;
+			status = "okay";
+		};
+
+		mmc1: mmc@10621000 {
+			compatible = "ax,lambert-sdhci";
+			reg = <0x0 0x10621000 0x0 0x1000>;
+			interrupts = <0x0 0xa 0x4>;
+			max-frequency = <200000000>;
+			bus-width = <8>;
+			mmc-ddr-1_8v;
+			mmc-hs200-1_8v;
+			status = "disabled";
+		};
+
 		eth0: ethernet@60824000 {
 			// clock-names = "phy_ref_clk", "apb_pclk";
 			// clocks = <&clkc 17>, <&clkc 15>;
