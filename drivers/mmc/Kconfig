@@ -748,6 +748,14 @@ config ZYNQ_HISPD_BROKEN
 	help
 	  Set if high speed mode is broken.
 
+config MMC_SDHCI_LMT
+	bool "Lambert SDHCI controller support"
+	depends on DM_MMC && OF_CONTROL && BLK
+	depends on MMC_SDHCI
+	depends on ARCH_AXERA
+	help
+	  Support for Sysnopsys SDHCI host controller on Lambert ARM SoCs platform
+
 config MMC_SUNXI
 	bool "Allwinner sunxi SD/MMC Host Controller support"
 	depends on ARCH_SUNXI
