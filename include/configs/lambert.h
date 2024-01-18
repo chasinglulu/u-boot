@@ -90,7 +90,7 @@
 		"  fdt resize; "                                    \
 		"  fdt chosen ${ramdisk_addr_r} ${ramdisk_size}; "  \
 		"  booti ${kernel_addr_r} - ${fdt_addr_r}; "        \
-		"else"                                              \
+		"else "                                             \
 		"  echo ramdisk_size not set; "                     \
 		"fi\0"
 #define BOOTENV_DEV_NAME_FPGA(devtypeu, devtypel, instance) "fpga "
@@ -115,12 +115,30 @@
 		BOOT_TARGET_DHCP(func)
 #endif
 
-#define EXTRA_ENV_NAMES                                                    \
-		"kernel_name=" __stringify(CONFIG_LMT_KERNEL_LOAD_NAME)"\0"        \
-		"ramdisk_name=" __stringify(CONFIG_LMT_RAMDISK_LOAD_NAME)"\0"      \
-		"fdtfile=" __stringify(CONFIG_LMT_FDT_LOAD_NAME)"\0"               \
-		"boot_name=boot.img\0"                                             \
-		"boot_addr_r=" __stringify(CONFIG_LMT_KERNEL_LOAD_ADDR) "\0"
+#define SAFETY_BOOT                                                      \
+		"bootcmd_safety= "                                               \
+		"echo Try loading ${safety_name} from semihosting; "             \
+		"load hostfs - ${safety_addr_r} ${safety_name}; "                \
+		"if test $? -ne 0;then "                                         \
+		"  load mmc 0:5 ${safety_addr_r} ${safety_name}; "               \
+		"  if test $? -ne 0;then "                                       \
+		"    echo Failed to load ${safety_name} from MMC; "              \
+		"    exit 1; "                                                   \
+		"  fi; "                                                         \
+		"fi; "                                                           \
+		"cp.b ${safety_addr_r} ${safety_run_addr_r} ${filesize}; "       \
+		"mw 0x60d24004 ${safety_run_addr_r}; "                           \
+		"mw 0x60d24000 1\0"
+
+#define EXTRA_ENV_NAMES                                                       \
+		"kernel_name=" __stringify(CONFIG_LMT_KERNEL_LOAD_NAME)"\0"           \
+		"ramdisk_name=" __stringify(CONFIG_LMT_RAMDISK_LOAD_NAME)"\0"         \
+		"fdtfile=" __stringify(CONFIG_LMT_FDT_LOAD_NAME)"\0"                  \
+		"boot_name=boot.img\0"                                                \
+		"boot_addr_r=" __stringify(CONFIG_LMT_KERNEL_LOAD_ADDR)"\0"           \
+		"safety_addr_r=" __stringify(CONFIG_LMT_SPL_SAFETY_LOAD_ADDR)"\0"     \
+		"safety_name=" __stringify(CONFIG_LMT_SPL_SAFETY_LOAD_NAME)"\0"       \
+		"safety_run_addr_r=" __stringify(CONFIG_LMT_SAFETY_RUN_ADDR)"\0"      \
 
 #include <config_distro_bootcmd.h>
 
@@ -136,6 +154,7 @@
 		"kernel_comp_addr_r=" __stringify(CONFIG_LMT_KERNEL_COMP_ADDR) "\0"   \
 		"kernel_comp_size=" __stringify(CONFIG_LMT_KERNEL_COMP_SIZE) "\0"     \
 		EXTRA_ENV_NAMES                                                       \
+		SAFETY_BOOT                                                           \
 		BOOTENV
 
 /* SPL support */

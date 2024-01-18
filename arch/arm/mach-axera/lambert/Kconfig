@@ -56,6 +56,19 @@ config LMT_SPL_OPTEE_LOAD_ADDR
 	depends on LMT_SOC
 	default 0x404000000
 
+config LMT_SPL_SAFETY_LOAD_ADDR
+	hex "Safety Island firmware load address"
+	depends on LMT_SOC
+	default 0x406000000
+
+config LMT_SPL_SAFETY_LOAD_NAME
+	string "Safety Island firmware name"
+	default u-boot-with-spl.bin
+
+config LMT_SAFETY_RUN_ADDR
+	string "Safety Island firmware run address"
+	default 0x60c00000
+
 endmenu
 
 menu "U-Boot Load Images"
