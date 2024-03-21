@@ -240,6 +240,7 @@
 /* #define DUMP_MSGS */
 
 #include <config.h>
+#include <div64.h>
 #include <hexdump.h>
 #include <log.h>
 #include <malloc.h>
@@ -764,8 +765,8 @@ static int do_read(struct fsg_common *common)
 
 		/* Perform the read */
 		rc = ums[common->lun].read_sector(&ums[common->lun],
-				      file_offset / curlun->blksize,
-				      amount / curlun->blksize,
+				      lldiv(file_offset, curlun->blksize),
+				      lldiv(amount, curlun->blksize),
 				      (char __user *)bh->buf);
 		if (!rc)
 			return -EIO;
@@ -938,8 +939,8 @@ static int do_write(struct fsg_common *common)
 
 			/* Perform the write */
 			rc = ums[common->lun].write_sector(&ums[common->lun],
-					       file_offset / curlun->blksize,
-					       amount / curlun->blksize,
+					       lldiv(file_offset, curlun->blksize),
+					       lldiv(amount, curlun->blksize),
 					       (char __user *)bh->buf);
 			if (!rc)
 				return -EIO;
@@ -1054,8 +1055,8 @@ static int do_verify(struct fsg_common *common)
 
 		/* Perform the read */
 		rc = ums[common->lun].read_sector(&ums[common->lun],
-				      file_offset / curlun->blksize,
-				      amount / curlun->blksize,
+				      lldiv(file_offset, curlun->blksize),
+				      lldiv(amount, curlun->blksize),
 				      (char __user *)bh->buf);
 		if (!rc)
 			return -EIO;
