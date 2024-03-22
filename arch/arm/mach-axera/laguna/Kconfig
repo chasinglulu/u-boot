@@ -1,0 +1,135 @@
+if AXERA_LUA
+
+choice
+	prompt "Axera Luguna SoC board select"
+
+config TARGET_LUA_DVB
+	bool "Laguna SoC Development Verification board"
+	select LUA_SOC
+	help
+	  Laguna DVB is a development board for Axera Laguna SoC,
+	  with full function and physical connectors support like MIPI,
+	  JTAG, MAC, SD card, CAN, QSPI, USB-to-serial...
+
+config TARGET_LUA_VIRT
+	bool "Laguna Virtual Qemu Development board"
+	select LUA_SOC
+	help
+	  lmt-virt is a virtual development board for Axera Laguna SoC based on QEMU,
+	  with a few part of function and physical connectors support
+	  like eMMC, MAC, SDIO, GPIO, I2C...
+
+config TARGET_LUA_FPGA
+	bool "Laguna FPGA Verification board"
+	select LUA_SOC
+	help
+	  FPGA is a verification board for Axera Laguna SoC,
+	  with a little function and physical connectors support like UART,
+	  JTAG, eMMC, USB-to-serial...
+
+endchoice
+
+config LUA_SOC
+	bool
+
+config SYS_MALLOC_F_LEN
+	default 0x4000
+
+menu "Laguna SoC features"
+
+config LUA_DRAM_BASE
+	hex "Laguna DRAM Address Space Base"
+	depends on LUA_SOC
+	default 0x100000000
+
+menu "SPL Loading Images"
+	depends on SPL
+
+config LUA_SPL_ATF_LOAD_ADDR
+	hex "ATF firmware loaded address"
+	depends on LUA_SOC
+	default 0x100104000
+
+config LUA_SPL_OPTEE_LOAD_ADDR
+	hex "OP-TEE firmware loaded address"
+	depends on LUA_SOC
+	default 0x104000000
+
+endmenu
+
+menu "U-Boot Loading Images"
+config LUA_SCRIPT_LOAD_ADDR
+	hex "Boot script load address"
+	depends on LUA_SOC
+	default 0x10f000000
+
+config LUA_KERNEL_LOAD_NAME
+	string "Kernel image name"
+	default Image
+
+config LUA_KERNEL_LOAD_ADDR
+	hex "Kernel image loaded address"
+	depends on LUA_SOC
+	default 0x110000000
+
+config LUA_KERNEL_COMP_ADDR
+	hex "Kernel image decompression address"
+	default 0x120000000
+
+config LUA_KERNEL_COMP_SIZE
+	hex "Kernel image decompression buffer size"
+	default 0x04000000
+
+config LUA_FDT_LOAD_NAME
+	string "FDT image name"
+	default "laguna-virt.dtb"
+
+config LUA_FDT_LOAD_ADDR
+	hex "DTB image loaded address"
+	depends on LUA_SOC
+	default 0x118000000
+
+config LUA_RAMDISK_LOAD_NAME
+	string "initramfs image name"
+	default "rootfs.cpio.gz"
+
+config LUA_RAMDISK_LOAD_ADDR
+	hex "initramfs image loaded address"
+	depends on LUA_SOC
+	default 0x119000000
+
+endmenu
+
+config LUA_SWITCH_TO_EL2
+	bool "Force switch to EL2"
+	help
+	  This option is used to switch CPU into EL2 state. When verifying on the FPGA,
+	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
+	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
+
+config LUA_ENABLE_GICV2
+	bool "Enable GICv2"
+	select GICV2
+	help
+	  This option enables GIC-400. When running on an FPGA alone,
+	  we can initialize GIC without BL31, configure security related settings,
+	  and complete the same initialization configuration of GIC as BL31.
+
+source "board/axera/common/laguna/Kconfig"
+
+endmenu
+
+config SYS_SOC
+	default "laguna"
+
+config SYS_CONFIG_NAME
+	default "laguna"
+
+config SYS_VENDOR
+	default "axera"
+
+source "board/axera/dvb/laguna/Kconfig"
+source "board/axera/qemu-virt/laguna/Kconfig"
+source "board/axera/fpga/laguna/Kconfig"
+
+endif

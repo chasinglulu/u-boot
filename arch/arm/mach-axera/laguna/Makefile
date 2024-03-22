@@ -2,7 +2,6 @@
 #
 # Copyright (C) 2024 Charleye <wangkart@aliyun.com>
 #
-#
 
-obj-$(CONFIG_TARGET_LMT_VIRT) += lambert/
-obj-$(CONFIG_TARGET_LUA_VIRT) += laguna/
+obj-y += common.o laguna.o cpu.o
+obj-$(CONFIG_SPL_BUILD) += spl.o

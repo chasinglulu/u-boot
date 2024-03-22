@@ -3,4 +3,5 @@
 # Copyright (C) 2023 Charleye <wangkart@aliyun.com>
 #
 
-obj-$(CONFIG_AXERA_LMT)	+= lambert/
+obj-$(CONFIG_AXERA_LMT) += lambert/
+obj-$(CONFIG_TARGET_LUA_VIRT) += laguna/

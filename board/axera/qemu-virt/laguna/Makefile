@@ -4,5 +4,4 @@
 #
 #
 
-obj-$(CONFIG_TARGET_LMT_VIRT) += lambert/
-obj-$(CONFIG_TARGET_LUA_VIRT) += laguna/
+obj-y += qemu-virt.o

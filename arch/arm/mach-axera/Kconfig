@@ -14,6 +14,20 @@ config AXERA_LMT
 	  Peripherals include Gigabit Ethernet, MIPI, PCIe, eMMC, I2S, UARTs, SPI,
 	  I2C and PWMs.
 
+config AXERA_LUA
+	bool "Support Laguna SoC"
+	select ARM64
+	select DM_ETH
+	select SUPPORT_SPL
+	select SPL
+	help
+	  The Laguna SoC is a ARM-based SoC with a quad-core Cortex-A55
+	  and dual-core NPU. including 2M SRAM, 128K L2 cache per core,
+	  2M L3 cache, dual-core lockstep Cortex-R5f, two DDR5 controller
+	  and video codec support. Peripherals include Gigabit Ethernet,
+	  MIPI, eMMC, I2S, UARTs, SPI, I2C and PWMs.
+
 source "arch/arm/mach-axera/lambert/Kconfig"
+source "arch/arm/mach-axera/laguna/Kconfig"
 
 endif
