@@ -57,12 +57,13 @@ static int lmt_sdhci_bind(struct udevice *dev)
 }
 
 static const struct udevice_id lmt_sdhci_ids[] = {
-	{ .compatible = "ax,lambert-sdhci" },
+	{ .compatible = "axera,lmt-dwcmshc" },
+	{ .compatible = "axera,lua-dwcmshc" },
 	{ }
 };
 
 U_BOOT_DRIVER(lmt_sdhci_drv) = {
-	.name		= "lmt_sdhci",
+	.name		= "axera_sdhci_5_1",
 	.id		= UCLASS_MMC,
 	.of_match	= lmt_sdhci_ids,
 	.ops		= &sdhci_ops,
