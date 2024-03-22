@@ -129,7 +129,7 @@ config LMT_ENABLE_GICV2
 	  we can initialize GIC without BL31, configure security related settings,
 	  and complete the same initialization configuration of GIC as BL31.
 
-source "board/axera/common/Kconfig"
+source "board/axera/common/lambert/Kconfig"
 
 endmenu
 
@@ -142,8 +142,8 @@ config SYS_CONFIG_NAME
 config SYS_VENDOR
 	default "axera"
 
-source "board/axera/dvb/Kconfig"
-source "board/axera/qemu-virt/Kconfig"
-source "board/axera/fpga/Kconfig"
+source "board/axera/dvb/lambert/Kconfig"
+source "board/axera/qemu-virt/lambert/Kconfig"
+source "board/axera/fpga/lambert/Kconfig"
 
 endif

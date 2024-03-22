@@ -1,8 +1,8 @@
-
 config LMT_MTDPARTS_NOR0
 	string "mtd boot partition for nor0"
 	default "64m(u-boot)" if !TFABOOT
 	depends on SYS_MTDPARTS_RUNTIME
+	depends on AXERA_LMT
 	help
 	  This define the partition of nor0 used to build mtparts dynamically
 	  for boot from nor0.
@@ -11,6 +11,7 @@ config LMT_MTDPARTS_NOR1
 	string "mtd boot partition for nor1"
 	default "64m(u-boot-env)" if !TFABOOT
 	depends on SYS_MTDPARTS_RUNTIME
+	depends on AXERA_LMT
 	help
 	  This define the partition of nor1 used to build mtparts dynamically
 	  for boot from nor1.

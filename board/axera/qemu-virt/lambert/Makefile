@@ -2,5 +2,6 @@
 #
 # Copyright (C) 2023 Charleye <wangkart@aliyun.com>
 #
+#
 
-obj-$(CONFIG_AXERA_LMT)	+= lambert/
+obj-y	+= qemu-virt.o

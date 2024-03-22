@@ -1298,6 +1298,8 @@ dtb-$(CONFIG_ARCH_QEMU) += qemu-arm.dtb qemu-arm64.dtb
 dtb-$(CONFIG_TARGET_CORSTONE1000) += corstone1000-mps3.dtb \
 				corstone1000-fvp.dtb
 
+dtb-$(CONFIG_TARGET_LMT_VIRT) += lambert-qemu-virt.dtb
+
 include $(srctree)/scripts/Makefile.dts
 
 targets += $(dtb-y)

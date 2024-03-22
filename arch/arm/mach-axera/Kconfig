@@ -1,7 +1,7 @@
 if ARCH_AXERA
 
 config AXERA_LMT
-	bool "Support Axera Lambert SoC"
+	bool "Support Lambert SoC"
 	select ARM64
 	select DM_ETH
 	select SUPPORT_SPL
@@ -13,9 +13,6 @@ config AXERA_LMT
 	  lockstep RISC-V and DSP, two DDR5 controller and video codec support.
 	  Peripherals include Gigabit Ethernet, MIPI, PCIe, eMMC, I2S, UARTs, SPI,
 	  I2C and PWMs.
-
-config LMT_DW8250
-	bool
 
 source "arch/arm/mach-axera/lambert/Kconfig"
 

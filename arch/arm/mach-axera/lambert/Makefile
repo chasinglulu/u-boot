@@ -3,6 +3,5 @@
 # Copyright (C) 2023 Charleye <wangkart@aliyun.com>
 #
 
-obj-y	+= common.o
-obj-y	+= lambert.o
-obj-y	+= cpu.o
+obj-y += common.o lambert.o cpu.o
+obj-$(CONFIG_SPL_BUILD) += spl.o

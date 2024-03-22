@@ -1,3 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+#
+#
 
-obj-$(CONFIG_SYS_MTDPARTS_RUNTIME) += mtdparts.o
+obj-$(CONFIG_TARGET_LMT_VIRT) += lambert/
