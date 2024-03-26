@@ -2014,6 +2014,14 @@ config ARCH_AXERA
 	select OF_CONTROL
 	select SYS_MALLOC_F
 
+config ARCH_AXERA_R5F
+	bool "Axera R5F based Safety Island"
+	select CPU_V7R
+	select DM
+	select DM_SERIAL
+	select OF_CONTROL
+	imply CMD_DM
+
 config ARCH_OCTEONTX
 	bool "Support OcteonTX SoCs"
 	select CLK
@@ -2307,6 +2315,7 @@ source "arch/arm/mach-nexell/Kconfig"
 source "arch/arm/mach-npcm/Kconfig"
 
 source "arch/arm/mach-axera/Kconfig"
+source "arch/arm/mach-axera-r5f/Kconfig"
 
 source "board/armltd/total_compute/Kconfig"
 source "board/armltd/corstone1000/Kconfig"

@@ -1,0 +1,6 @@
+if TARGET_LUA_R5F_VIRT
+
+config SYS_BOARD
+	default "qemu-virt"
+
+endif

@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * dts file for Laguna R5F
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ *
+ */
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "axera,laguna-r5f";
+	model = "Laguna Safety Island";
+
+	cpus {
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-r5f";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	aliases {
+		serial0 = &uart1;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00200000 0x200000>;
+	};
+
+	chosen {
+		bootargs = "";
+		stdout-path = "serial0:115200n8";
+	};
+
+	clk100: clk100 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+		u-boot,dm-pre-reloc;
+	};
+
+	amba {
+		u-boot,dm-pre-reloc;
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ttc0: timer@ff110000 {
+			compatible = "cdns,ttc";
+			reg = <0x00657000 0x1000>;
+			timer-width = <32>;
+			clocks = <&clk100>;
+			u-boot,dm-pre-reloc;
+		};
+
+		uart1: serial@00602000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x00602000 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			clock-frequency = <192000000>; //192MHz
+			u-boot,dm-pre-reloc;
+		};
+	};
+};

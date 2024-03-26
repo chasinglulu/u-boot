@@ -6,3 +6,4 @@
 
 obj-$(CONFIG_TARGET_LMT_VIRT) += lambert/
 obj-$(CONFIG_TARGET_LUA_VIRT) += laguna/
+obj-$(CONFIG_TARGET_LUA_R5F_VIRT) += laguna_r5f/

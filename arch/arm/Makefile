@@ -92,6 +92,7 @@ machine-$(CONFIG_ARCH_ZYNQ)		+= zynq
 machine-$(CONFIG_ARCH_ZYNQMP)		+= zynqmp
 machine-$(CONFIG_ARCH_ZYNQMP_R5)	+= zynqmp-r5
 machine-$(CONFIG_ARCH_AXERA)		+= axera
+machine-$(CONFIG_ARCH_AXERA_R5F)	+= axera-r5f
 
 machine-$(CONFIG_MACH_IMX)		+= imx
 

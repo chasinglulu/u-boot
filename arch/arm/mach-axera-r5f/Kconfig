@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: GPL-2.0
+
+if ARCH_AXERA_R5F
+
+choice
+	prompt "Safety Island Platform Select"
+
+config TARGET_LUA_R5F_VIRT
+	bool "Laguna R5F Based Qemu Virtual Platform"
+	select LUA_R5F
+	help
+	  lua-safety-virt is a virtual development platform for Safety Island on QEMU,
+	  with a few part of function and physical connectors support
+	  like UART, ETH, TIMER, GPIO, I2C...
+
+config TARGET_LUA_R5F_FPGA
+	bool "Laguna R5F Based FPGA Verification Paltform"
+	select LUA_R5F
+	help
+	  FPGA is a verification board for Axera Laguna Safety Island,
+	  with a little function and physical connectors support like UART,
+	  JTAG, eMMC, ETH...
+
+endchoice
+
+config LUA_R5F
+	bool
+
+menu "Safety Island Features"
+
+config CPU_FREQ_HZ
+	int "CPU frequency"
+	depends on LUA_R5F
+	default 800000000
+	help
+	  The value, in Hz, that the CPU clock is running at.
+
+endmenu
+
+config SYS_VENDOR
+	default "axera"
+
+config SYS_SOC
+	default "axera-r5f"
+
+config SYS_CONFIG_NAME
+	default "laguna_r5f"
+	help
+	  This option contains information about board configuration name.
+	  Based on this option include/configs/<CONFIG_SYS_CONFIG_NAME>.h header
+	  will be used for board configuration.
+
+config SYS_MALLOC_F_LEN
+	default 0x600
+
+source "board/axera/qemu-virt/laguna_r5f/Kconfig"
+source "board/axera/fpga/laguna_r5f/Kconfig"
+
+endif
