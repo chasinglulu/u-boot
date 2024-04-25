@@ -27,6 +27,13 @@ int board_init(void)
 	return 0;
 }
 
+#ifdef CONFIG_DESIGNWARE_SPI
+int dw_spi_get_clk(struct udevice *bus, ulong *rate)
+{
+	return 0;
+}
+#endif
+
 #if defined (CONFIG_OF_LIBFDT) && defined (CONFIG_OF_BOARD_SETUP)
 int ft_board_setup(void *blob, struct bd_info *bd)
 {

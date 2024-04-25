@@ -92,7 +92,7 @@
 			status = "okay";
 		};
 
-		mmc1: mmc@0C011000 {
+		mmc1: mmc@0C012000 {
 			compatible = "axera,lua-dwcmshc";
 			reg = <0x0 0x0C012000 0x0 0x2000>;
 			interrupts = <0x0 0xa 0x4>;
@@ -101,6 +101,29 @@
 			mmc-ddr-1_8v;
 			mmc-hs200-1_8v;
 			status = "disabled";
+		};
+
+		spi: spi@0C040000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible ="snps,dwc-ssi-1.01a";
+			reg = <0x0 0x0C040000 0x0 0x1000>;
+			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
+			/* Could possibly go up to 200 MHz */
+			spi-max-frequency = <100000000>;
+			num-cs = <4>;
+			reg-io-width = <4>;
+			status = "okay";
+
+			spi-flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <50000000>;
+				spi-tx-bus-width = <4>;
+				spi-rx-bus-width = <4>;
+				m25p,fast-read;
+				broken-flash-reset;
+			};
 		};
 
 		eth0: ethernet@0E014000 {
