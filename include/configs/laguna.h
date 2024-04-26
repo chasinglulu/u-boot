@@ -9,13 +9,12 @@
 /* ---------------------------------------------------------------------
  * Board boot configuration
  */
-/* Environment options */
-
-#ifdef CONFIG_LUA_ENABLE_GICV2
-#define GICD_BASE 0x08001000
-#define GICC_BASE 0x08002000
+#ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
+#define GICC_BASE    CONFIG_LUA_GICC_BASE
+#define GICD_BASE    CONFIG_LUA_GICD_BASE
 #endif
 
+/* Environment options */
 #define FASTBOOT_NET_CMD "fastboot_net_cmd=fastboot net\0"
 
 #if CONFIG_IS_ENABLED(CMD_MMC)

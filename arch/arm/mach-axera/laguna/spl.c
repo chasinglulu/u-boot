@@ -73,6 +73,10 @@ void spl_display_print(void)
 	printf("EL level: EL%x\n", current_el());
 	printf("Boot SPL on physical CPU 0x%010lx [0x%08lx]\n",
 				mpidr, read_midr());
+
+#ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
+	printf("GICv2: enabled\n");
+#endif
 }
 #endif
 

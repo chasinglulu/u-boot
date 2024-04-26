@@ -31,8 +31,8 @@
 			};
 		};
 		fdt_1 {
-			description = "laguna-qemu-virt-dtb";
-			data = /incbin/("arch/arm/dts/laguna-qemu-virt.dtb");
+			description = "laguna-fpga-dtb";
+			data = /incbin/("arch/arm/dts/laguna-fpga.dtb");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";

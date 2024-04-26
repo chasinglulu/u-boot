@@ -4,4 +4,4 @@
 #
 
 obj-$(CONFIG_AXERA_LMT) += lambert/
-obj-$(CONFIG_TARGET_LUA_VIRT) += laguna/
+obj-$(CONFIG_AXERA_LUA) += laguna/

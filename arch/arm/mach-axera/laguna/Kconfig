@@ -82,7 +82,7 @@ config LUA_KERNEL_COMP_SIZE
 
 config LUA_FDT_LOAD_NAME
 	string "FDT image name"
-	default "laguna-virt.dtb"
+	default "laguna-fpga.dtb"
 
 config LUA_FDT_LOAD_ADDR
 	hex "DTB image loaded address"
@@ -100,14 +100,15 @@ config LUA_RAMDISK_LOAD_ADDR
 
 endmenu
 
+menu "Processor Specific Low-level Init"
 config LUA_SWITCH_TO_EL2
-	bool "Force switch to EL2"
+	bool "Force Switch to EL2"
 	help
 	  This option is used to switch CPU into EL2 state. When verifying on the FPGA,
 	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
 	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
 
-config LUA_ENABLE_GICV2
+config LUA_GICV2_LOWLEVEL_INIT
 	bool "Enable GICv2"
 	select GICV2
 	help
@@ -115,7 +116,41 @@ config LUA_ENABLE_GICV2
 	  we can initialize GIC without BL31, configure security related settings,
 	  and complete the same initialization configuration of GIC as BL31.
 
+config LUA_GICD_BASE
+	hex "GIC Distributor Base"
+	depends on LUA_GICV2_LOWLEVEL_INIT
+	default "0x08001000"
+
+config LUA_GICC_BASE
+	hex "GIC CPU Interfaces Base"
+	depends on LUA_GICV2_LOWLEVEL_INIT
+	default "0x08002000"
+
+config LUA_GTMR_LOWLEVEL_INIT
+	bool "Enable Generic Timer Counter"
+	help
+	  This option enables GTMR_CNT.
+
+config LUA_MAIN_SEC_GLB_BASE
+	hex "Main Domain sec_glb_0 Base"
+	depends on LUA_GTMR_LOWLEVEL_INIT
+	default "0x18000000"
+
+config LUA_GTMR_CNT_OFFSET
+	hex "GTMR_CNT Control Offset"
+	depends on LUA_GTMR_LOWLEVEL_INIT
+	default "0x1C8"
+
+config LUA_CPU_GTMR_BASE
+	hex "Generic Timer Counter Base"
+	depends on LUA_GTMR_LOWLEVEL_INIT
+	default "0x08012000"
+
+endmenu
+
+menu "MTD Settings"
 source "board/axera/common/laguna/Kconfig"
+endmenu
 
 endmenu
 

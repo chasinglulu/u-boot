@@ -1,0 +1,6 @@
+if TARGET_LUA_FPGA
+
+config SYS_BOARD
+	default "fpga"
+
+endif
