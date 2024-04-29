@@ -32,7 +32,7 @@
 		};
 		fdt_1 {
 			description = "laguna-fpga-dtb";
-			data = /incbin/("arch/arm/dts/laguna-fpga.dtb");
+			data = /incbin/("u-boot.dtb");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
