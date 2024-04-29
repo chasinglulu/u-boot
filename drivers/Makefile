@@ -91,6 +91,7 @@ obj-$(CONFIG_PCI_ENDPOINT) += pci_endpoint/
 obj-y += dfu/
 obj-$(CONFIG_PCH) += pch/
 obj-$(CONFIG_DM_REBOOT_MODE) += reboot-mode/
+obj-$(CONFIG_$(SPL_)DM_BOOT_DEVICE) += boot-device/
 obj-y += rtc/
 obj-y += scsi/
 obj-y += sound/

@@ -102,6 +102,7 @@ enum uclass_id {
 	UCLASS_QFW,		/* QEMU firmware config device */
 	UCLASS_RAM,		/* RAM controller */
 	UCLASS_REBOOT_MODE,	/* Reboot mode */
+	UCLASS_BOOT_DEVICE,	/* Boot Device */
 	UCLASS_REGULATOR,	/* Regulator device */
 	UCLASS_REMOTEPROC,	/* Remote Processor device */
 	UCLASS_RESET,		/* Reset controller device */
