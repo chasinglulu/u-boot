@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/gpio/gpio.h>
 
 #include "laguna-gpios.dtsi"
 / {
@@ -44,6 +45,17 @@
 		reg = <0x0 0x08001000 0x0 0x1000>,
 			  <0x0 0x08002000 0x0 0x2000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	boot-device {
+		compatible = "boot-device-gpio";
+		gpios = <&gpio0_a 0 GPIO_ACTIVE_HIGH>,
+				<&gpio0_a 1 GPIO_ACTIVE_HIGH>,
+				<&gpio0_a 2 GPIO_ACTIVE_HIGH>;
+		u-boot,env-variable = "bootdevice";
+		dev-UART = <0x01>;
+		dev-eMMC = <0x02>;
+		dev-Nor = <0x03>;
 	};
 
 	soc {
