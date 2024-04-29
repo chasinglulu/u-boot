@@ -1,0 +1,102 @@
+
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for Laguna gpio data
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	gpio0: gpio@0E400000 {
+		compatible = "snps,dw-apb-gpio";
+		reg = <0x0 0x0E400000 0x0 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		gpio0_a: gpio0@0 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL_HIGH>;
+			bank-name = "gpio0_a";
+		};
+
+		gpio0_b: gpio0@1 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <1>;
+			bank-name = "gpio0_b";
+		};
+
+		gpio0_c: gpio0@2 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <2>;
+			bank-name = "gpio0_c";
+		};
+
+		gpio0_d: gpio0@3 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <3>;
+			bank-name = "gpio0_d";
+		};
+	};
+
+	gpio1: gpio@0E401000 {
+		compatible = "snps,dw-apb-gpio";
+		reg = <0x0 0x0E401000 0x0 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio1_a: gpio1@0 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL_HIGH>;
+			bank-name = "gpio1_a";
+		};
+
+		gpio1_b: gpio1@1 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <1>;
+			bank-name = "gpio1_b";
+		};
+
+		gpio1_c: gpio1@2 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <2>;
+			bank-name = "gpio1_c";
+		};
+
+		gpio1_d: gpio1@3 {
+			compatible = "snps,dw-apb-gpio-port";
+			gpio-controller;
+			#gpio-cells = <2>;
+			snps,nr-gpios = <32>;
+			reg = <3>;
+			bank-name = "gpio1_d";
+		};
+	};
+};

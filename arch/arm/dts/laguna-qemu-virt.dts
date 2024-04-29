@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
+#include "laguna-gpios.dtsi"
 / {
 	model = "Laguna Qemu Virtual Platform";
 	compatible = "axera,laguna-virt";
