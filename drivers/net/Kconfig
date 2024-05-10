@@ -215,6 +215,13 @@ config DWC_ETH_QOS_LMT
 	  The Synopsys Designware Ethernet QOS IP block with the specific
 	  configuration used in Lambert soc.
 
+config DWC_ETH_QOS_LUA
+	bool "Synopsys DWC Ethernet QOS device support for Laguna"
+	depends on DWC_ETH_QOS
+	help
+	  The Synopsys Designware Ethernet QOS IP block with the specific
+	  configuration used in Laguna SoC.
+
 config DWC_ETH_QOS_STM32
 	bool "Synopsys DWC Ethernet QOS device support for STM32"
 	depends on DWC_ETH_QOS

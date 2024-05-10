@@ -1674,8 +1674,14 @@ static const struct udevice_id eqos_ids[] = {
 #endif
 #if IS_ENABLED(CONFIG_DWC_ETH_QOS_LMT)
 	{
-		.compatible = "ax,lmt-dwmac-eqos",
+		.compatible = "axera,lmt-dwmac-eqos",
 		.data = (ulong)&eqos_lmt_config
+	},
+#endif
+#if IS_ENABLED(CONFIG_DWC_ETH_QOS_LUA)
+	{
+		.compatible = "axera,lua-dwmac-eqos",
+		.data = (ulong)&eqos_lua_config
 	},
 #endif
 

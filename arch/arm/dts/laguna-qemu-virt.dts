@@ -140,14 +140,13 @@
 		};
 
 		eth0: ethernet@0E014000 {
-			// clock-names = "phy_ref_clk", "apb_pclk";
-			// clocks = <&clkc 17>, <&clkc 15>;
-			compatible = "axera,lmt-dwmac-eqos";
-			// interrupt-parent = <&intc>;
-			interrupts = <0x0 0x1e 0x4>;
+			compatible = "axera,lua-dwmac-eqos";
+			interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL_HIGH>;
 			reg = <0x0 0x0E014000 0x0 0x4000>;
 			phy-handle = <&phy1>;
 			phy-mode = "gmii";
+			// clock-names = "phy_ref_clk", "apb_pclk";
+			// clocks = <&clkc 17>, <&clkc 15>;
 			// phy-reset-gpios = <&gpioctlr 43 GPIO_ACTIVE_LOW>;
 
 			snps,en-tx-lpi-clockgating;
