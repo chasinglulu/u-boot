@@ -91,6 +91,8 @@
 		"  booti ${kernel_addr_r} - ${fdt_addr_r}; "        \
 		"else "                                             \
 		"  echo ramdisk_size not set; "                     \
+		"  booti ${kernel_addr_r} - ${fdt_addr_r}; "        \
+		"  echo ramdisk not builtin into kernel image; "    \
 		"fi\0"
 #define BOOTENV_DEV_NAME_FPGA(devtypeu, devtypel, instance) "fpga "
 #define BOOT_TARGET_FPGA(func) func(FPGA, fpga, na)
