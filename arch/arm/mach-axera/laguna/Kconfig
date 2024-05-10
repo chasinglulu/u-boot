@@ -38,9 +38,14 @@ config SYS_MALLOC_F_LEN
 menu "Laguna SoC features"
 
 config LUA_DRAM_BASE
-	hex "Laguna DRAM Address Space Base"
+	hex "Laguna DRAM Base Address"
 	depends on LUA_SOC
 	default 0x100000000
+
+config LUA_IRAM_BASE
+	hex "Laguna IRAM Base Address"
+	depends on LUA_SOC
+	default 0x00400000
 
 menu "SPL Loading Images"
 	depends on SPL

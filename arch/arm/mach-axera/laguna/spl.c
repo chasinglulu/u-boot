@@ -6,6 +6,7 @@
 #include <common.h>
 #include <debug_uart.h>
 #include <asm/system.h>
+#include <asm/arch/bootparams.h>
 #include <semihosting.h>
 #include <hang.h>
 #include <image.h>
@@ -31,6 +32,11 @@ void board_boot_order(u32 *spl_boot_list)
 struct image_header *spl_get_load_buffer(ssize_t offset, size_t size)
 {
 	return (struct image_header *)(CONFIG_SYS_LOAD_ADDR);
+}
+
+void spl_board_prepare_for_boot(void)
+{
+	/* Nothing to do */
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,
@@ -89,4 +95,12 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 		spl_image->os = IH_OS_ARM_TRUSTED_FIRMWARE;
 		spl_image->name = "ARM Trusted Firmware";
 	}
+
+	boot_params_t *bp = (boot_params_t *)CONFIG_LUA_IRAM_BASE;
+	memset(bp, 0, sizeof(boot_params_t));
+
+#if CONFIG_IS_ENABLED(LOAD_FIT) || CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+	if (spl_image->fdt_addr)
+		bp->fdt_addr = spl_image->fdt_addr;
+#endif
 }
