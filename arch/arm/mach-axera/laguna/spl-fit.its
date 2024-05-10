@@ -11,8 +11,8 @@
 			os = "u-boot";
 			arch = "arm64";
 			compression = "none";
-			load = <0x4 0x00200000>;
-			entry = <0x4 0x00200000>;
+			load = <0x1 0x00200000>;
+			entry = <0x1 0x00200000>;
 			hash {
 				algo = "md5";
 			};
@@ -24,19 +24,19 @@
 			os = "arm-trusted-firmware";
 			arch = "arm64";
 			compression = "none";
-			entry = <0x4 0x00104000>;
-			load = <0x4 0x00104000>;
+			entry = <0x1 0x00104000>;
+			load = <0x1 0x00104000>;
 			hash {
 				algo = "md5";
 			};
 		};
 		fdt_1 {
-			description = "laguna-fpga-dtb";
+			description = "laguna-dtb";
 			data = /incbin/("u-boot.dtb");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
-			load = <0x4 0x00300000>;
+			load = <0x1 0x00300000>;
 			hash {
 				algo = "md5";
 			};
@@ -46,7 +46,7 @@
 		default = "config_1";
 
 		config_1 {
-			description = "laguna-qemu-virt";
+			description = "laguna-atf-itb";
 			firmware = "atf";
 			loadables = "u-boot";
 			fdt = "fdt_1";
