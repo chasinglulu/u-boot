@@ -36,15 +36,14 @@ config SYS_MALLOC_F_LEN
 	default 0x4000
 
 menu "Laguna SoC features"
+	depends on LUA_SOC
 
 config LUA_DRAM_BASE
 	hex "Laguna DRAM Base Address"
-	depends on LUA_SOC
 	default 0x100000000
 
 config LUA_IRAM_BASE
 	hex "Laguna IRAM Base Address"
-	depends on LUA_SOC
 	default 0x00400000
 
 menu "SPL Loading Images"
@@ -52,12 +51,10 @@ menu "SPL Loading Images"
 
 config LUA_SPL_ATF_LOAD_ADDR
 	hex "ATF firmware loaded address"
-	depends on LUA_SOC
 	default 0x100104000
 
 config LUA_SPL_OPTEE_LOAD_ADDR
 	hex "OP-TEE firmware loaded address"
-	depends on LUA_SOC
 	default 0x104000000
 
 endmenu
@@ -65,7 +62,6 @@ endmenu
 menu "U-Boot Loading Images"
 config LUA_SCRIPT_LOAD_ADDR
 	hex "Boot script load address"
-	depends on LUA_SOC
 	default 0x10f000000
 
 config LUA_KERNEL_LOAD_NAME
@@ -74,7 +70,6 @@ config LUA_KERNEL_LOAD_NAME
 
 config LUA_KERNEL_LOAD_ADDR
 	hex "Kernel image loaded address"
-	depends on LUA_SOC
 	default 0x110000000
 
 config LUA_KERNEL_COMP_ADDR
@@ -91,7 +86,6 @@ config LUA_FDT_LOAD_NAME
 
 config LUA_FDT_LOAD_ADDR
 	hex "DTB image loaded address"
-	depends on LUA_SOC
 	default 0x118000000
 
 config LUA_RAMDISK_LOAD_NAME
@@ -100,7 +94,6 @@ config LUA_RAMDISK_LOAD_NAME
 
 config LUA_RAMDISK_LOAD_ADDR
 	hex "initramfs image loaded address"
-	depends on LUA_SOC
 	default 0x119000000
 
 endmenu
@@ -155,6 +148,14 @@ endmenu
 
 menu "MTD Settings"
 source "board/axera/common/laguna/Kconfig"
+endmenu
+
+menu "Misc Settings"
+
+config LUA_SERVERIP
+	string "serverip for tftpboot"
+	default 10.0.2.5
+
 endmenu
 
 endmenu

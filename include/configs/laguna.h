@@ -14,6 +14,10 @@
 #define GICD_BASE    CONFIG_LUA_GICD_BASE
 #endif
 
+#ifdef CONFIG_LUA_SERVERIP
+#define SERVERIP_ENV "serverip=" CONFIG_LUA_SERVERIP "\0"
+#endif
+
 /* Environment options */
 #define FASTBOOT_NET_CMD "fastboot_net_cmd=fastboot net\0"
 
@@ -97,18 +101,37 @@
 #define BOOTENV_DEV_NAME_FPGA(devtypeu, devtypel, instance) "fpga "
 #define BOOT_TARGET_FPGA(func) func(FPGA, fpga, na)
 
+#define BOOTENV_DEV_TFTP(devtypeu, devtypel, instance)      \
+	"bootcmd_tftp= "                                        \
+		"if test ! -e ${ipaddr}; then "                     \
+		"  dhcp; "                                          \
+		"fi; "                                              \
+		"if test -n ${serverip}; then "                     \
+		"  tftpboot ${kernel_addr_r} ${kernel_name}; "      \
+		"  tftpboot ${fdt_addr_r} ${fdtfile}; "             \
+		"  tftpboot ${ramdisk_addr_r} ${ramdisk_name}; "    \
+		"else "                                             \
+		"  echo serverip not set; "                         \
+		"fi\0"
+#define BOOTENV_DEV_NAME_TFTP(devtypeu, devtypel, instance) "tftp "
+#if CONFIG_IS_ENABLED(CMD_TFTPBOOT)
+#define BOOT_TARGET_TFTP(func) func(TFTP, tftp, na)
+#else
+#define BOOT_TARGET_TFTP(func)
+#endif
+
 #ifdef CONFIG_TARGET_LUA_VIRT
 #define BOOT_TARGET_DEVICES(func)   \
 		BOOT_TARGET_SMH(func)       \
 		BOOT_TARGET_MEM(func)       \
 		BOOT_TARGET_MMC(func)       \
 		BOOT_TARGET_VIRTIO(func)    \
-		BOOT_TARGET_DHCP(func)
+		BOOT_TARGET_TFTP(func)
 #elif defined(CONFIG_TARGET_LUA_FPGA)
 #define BOOT_TARGET_DEVICES(func)   \
 		BOOT_TARGET_FPGA(func)      \
-		BOOT_TARGET_MEM(func)       \
-		BOOT_TARGET_DHCP(func)
+		BOOT_TARGET_TFTP(func)      \
+		BOOT_TARGET_MEM(func)
 #else
 #define BOOT_TARGET_DEVICES(func) \
 		BOOT_TARGET_MMC(func) \
@@ -129,7 +152,7 @@
 		"stdout=serial\0"                                                     \
 		"stdin=serial\0"                                                      \
 		"stderr=serial\0"                                                     \
-		"ipaddr=10.0.2.15\0"                                                  \
+		"autoload=0\0"                                                        \
 		"scriptaddr=" __stringify(CONFIG_LUA_SCRIPT_LOAD_ADDR) "\0"           \
 		"fdt_addr_r=" __stringify(CONFIG_LUA_FDT_LOAD_ADDR) "\0"              \
 		"kernel_addr_r=" __stringify(CONFIG_LUA_KERNEL_LOAD_ADDR) "\0"        \
@@ -137,6 +160,7 @@
 		"kernel_comp_addr_r=" __stringify(CONFIG_LUA_KERNEL_COMP_ADDR) "\0"   \
 		"kernel_comp_size=" __stringify(CONFIG_LUA_KERNEL_COMP_SIZE) "\0"     \
 		EXTRA_ENV_NAMES                                                       \
+		SERVERIP_ENV                                                          \
 		BOOTENV
 
 /* SPL support */
