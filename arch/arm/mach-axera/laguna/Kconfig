@@ -82,7 +82,7 @@ config LUA_KERNEL_COMP_SIZE
 
 config LUA_FDT_LOAD_NAME
 	string "FDT image name"
-	default "laguna-fpga.dtb"
+	default "laguna.dtb"
 
 config LUA_FDT_LOAD_ADDR
 	hex "DTB image loaded address"

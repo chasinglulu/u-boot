@@ -110,6 +110,10 @@
 		"  tftpboot ${kernel_addr_r} ${kernel_name}; "      \
 		"  tftpboot ${fdt_addr_r} ${fdtfile}; "             \
 		"  tftpboot ${ramdisk_addr_r} ${ramdisk_name}; "    \
+		"  fdt addr ${fdt_addr_r}; "                        \
+		"  fdt resize; "                                    \
+		"  fdt chosen ${ramdisk_addr_r} ${filesize}; "      \
+		"  booti ${kernel_addr_r} - ${fdt_addr_r}; "        \
 		"else "                                             \
 		"  echo serverip not set; "                         \
 		"fi\0"
