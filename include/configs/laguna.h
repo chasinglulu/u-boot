@@ -105,15 +105,28 @@
 	"bootcmd_tftp= "                                        \
 		"if test ! -e ${ipaddr}; then "                     \
 		"  dhcp; "                                          \
+		"  if test $? -ne 0; then "                         \
+		"    echo dhcp failed; "                            \
+		"    exit -2; "                                     \
+		"  fi; "                                            \
 		"fi; "                                              \
 		"if test -n ${serverip}; then "                     \
+		"  ping ${serverip}; "                              \
+		"  if test $? -ne 0; then "                         \
+		"    echo ping faild; "                             \
+		"    exit -2; "                                     \
+		"  fi; "                                            \
 		"  tftpboot ${kernel_addr_r} ${kernel_name}; "      \
 		"  tftpboot ${fdt_addr_r} ${fdtfile}; "             \
 		"  tftpboot ${ramdisk_addr_r} ${ramdisk_name}; "    \
-		"  fdt addr ${fdt_addr_r}; "                        \
-		"  fdt resize; "                                    \
-		"  fdt chosen ${ramdisk_addr_r} ${filesize}; "      \
-		"  booti ${kernel_addr_r} - ${fdt_addr_r}; "        \
+		"  if test $? -ne 0; then "                         \
+		"    booti ${kernel_addr_r} - ${fdt_addr_r}; "      \
+		"  else "                                           \
+		"    fdt addr ${fdt_addr_r}; "                      \
+		"    fdt resize; "                                  \
+		"    fdt chosen ${ramdisk_addr_r} ${filesize}; "    \
+		"    booti ${kernel_addr_r} - ${fdt_addr_r}; "      \
+		"  fi; "                                            \
 		"else "                                             \
 		"  echo serverip not set; "                         \
 		"fi\0"
@@ -127,20 +140,20 @@
 #ifdef CONFIG_TARGET_LUA_VIRT
 #define BOOT_TARGET_DEVICES(func)   \
 		BOOT_TARGET_SMH(func)       \
-		BOOT_TARGET_MEM(func)       \
 		BOOT_TARGET_MMC(func)       \
-		BOOT_TARGET_VIRTIO(func)    \
-		BOOT_TARGET_TFTP(func)
+		BOOT_TARGET_TFTP(func)      \
+		BOOT_TARGET_VIRTIO(func)
 #elif defined(CONFIG_TARGET_LUA_FPGA)
 #define BOOT_TARGET_DEVICES(func)   \
 		BOOT_TARGET_FPGA(func)      \
 		BOOT_TARGET_TFTP(func)      \
 		BOOT_TARGET_MEM(func)
 #else
-#define BOOT_TARGET_DEVICES(func) \
-		BOOT_TARGET_MMC(func) \
-		BOOT_TARGET_MMC1(func) \
-		BOOT_TARGET_DHCP(func)
+#define BOOT_TARGET_DEVICES(func)   \
+		BOOT_TARGET_MMC(func)       \
+		BOOT_TARGET_MMC1(func)      \
+		BOOT_TARGET_DHCP(func)      \
+		BOOT_TARGET_MEM(func)
 #endif
 
 #define EXTRA_ENV_NAMES                                                       \
