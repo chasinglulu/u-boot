@@ -36,6 +36,7 @@ obj-$(CONFIG_$(SPL_)SYSINFO) += sysinfo/
 obj-$(CONFIG_$(SPL_TPL_)TPM) += tpm/
 obj-$(CONFIG_XEN) += xen/
 obj-$(CONFIG_$(SPL_)FPGA) += fpga/
+obj-$(CONFIG_$(SPL_)DM_BOOT_DEVICE) += boot-device/
 
 ifndef CONFIG_TPL_BUILD
 ifndef CONFIG_VPL_BUILD
@@ -91,7 +92,6 @@ obj-$(CONFIG_PCI_ENDPOINT) += pci_endpoint/
 obj-y += dfu/
 obj-$(CONFIG_PCH) += pch/
 obj-$(CONFIG_DM_REBOOT_MODE) += reboot-mode/
-obj-$(CONFIG_$(SPL_)DM_BOOT_DEVICE) += boot-device/
 obj-y += rtc/
 obj-y += scsi/
 obj-y += sound/

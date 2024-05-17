@@ -7,7 +7,7 @@
 menu "Boot Device Support"
 
 config DM_BOOT_DEVICE
-        bool "Enable boot device using Driver Model"
+	bool "Enable boot device using Driver Model"
 	depends on DM
 	help
 	  Enable support for boot device control. This will allow users to
