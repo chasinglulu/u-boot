@@ -12,6 +12,8 @@
 		reg = <0x0 0x0E400000 0x0 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
 		status = "okay";
 
 		gpio0_a: gpio0@0 {
@@ -24,6 +26,8 @@
 			#interrupt-cells = <2>;
 			interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL_HIGH>;
 			bank-name = "gpio0_a";
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 		};
 
 		gpio0_b: gpio0@1 {
@@ -33,6 +37,7 @@
 			snps,nr-gpios = <32>;
 			reg = <1>;
 			bank-name = "gpio0_b";
+			u-boot,dm-spl;
 		};
 
 		gpio0_c: gpio0@2 {
@@ -42,6 +47,7 @@
 			snps,nr-gpios = <32>;
 			reg = <2>;
 			bank-name = "gpio0_c";
+			u-boot,dm-spl;
 		};
 
 		gpio0_d: gpio0@3 {
@@ -51,6 +57,7 @@
 			snps,nr-gpios = <32>;
 			reg = <3>;
 			bank-name = "gpio0_d";
+			u-boot,dm-spl;
 		};
 	};
 

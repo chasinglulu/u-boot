@@ -56,12 +56,15 @@
 		dev-UART = <0x01>;
 		dev-eMMC = <0x02>;
 		dev-Nor = <0x03>;
+		u-boot,dm-spl;
 	};
 
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
 		ranges;
 
 		serial0: uart@0E403000 {
@@ -102,6 +105,8 @@
 			non-removable;
 			no-sdio;
 			no-sd;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 			status = "okay";
 		};
 
@@ -126,6 +131,8 @@
 			spi-max-frequency = <100000000>;
 			num-cs = <4>;
 			reg-io-width = <4>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 			status = "okay";
 
 			spi-flash@0 {
@@ -136,6 +143,8 @@
 				spi-rx-bus-width = <4>;
 				m25p,fast-read;
 				broken-flash-reset;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
 			};
 		};
 
