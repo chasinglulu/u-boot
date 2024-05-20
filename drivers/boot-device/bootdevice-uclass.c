@@ -10,6 +10,38 @@
 #include <exports.h>
 #include <boot-device/bootdevice.h>
 
+int dm_boot_device_get(struct udevice *dev, const char **name)
+{
+	struct boot_device_ops *ops = boot_device_get_ops(dev);
+	u32 bootdevice;
+	int ret, i;
+
+	assert(ops);
+
+	if (!ops->get)
+		return -ENOSYS;
+
+	ret = ops->get(dev, &bootdevice);
+	if (ret < 0) {
+		dev_err(dev, "Failed to retrieve the boot device value\n");
+		return ret;
+	}
+
+	const struct boot_device_uclass_platdata *plat_data =
+		dev_get_uclass_plat(dev);
+
+	for (i = 0; i < plat_data->count; i++) {
+		if (plat_data->devs[i].dev_id == bootdevice) {
+			if (name)
+				*name = plat_data->devs[i].dev_name;
+
+			return bootdevice;
+		}
+	}
+
+	return -ENODEV;
+}
+
 int dm_boot_device_update(struct udevice *dev)
 {
 	struct boot_device_ops *ops = boot_device_get_ops(dev);

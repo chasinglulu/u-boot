@@ -53,4 +53,13 @@ struct boot_device_ops {
  */
 int dm_boot_device_update(struct udevice *dev);
 
+/**
+ * dm_boot_device_get() - Get the boot device ID.
+ *
+ * @dev:	Device to read from
+ * @name:	boot device name to ouptut
+ * Return: dev_id if OK, -ve on error
+ */
+int dm_boot_device_get(struct udevice *dev, const char **name);
+
 #endif /* BOOT_DEVICE_H_ */
