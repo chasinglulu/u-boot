@@ -18,10 +18,30 @@
 
 u32 spl_boot_device(void)
 {
+	boot_params_t *bp = boot_params_get_base();
+	u32 dev_id = BOOT_DEVICE_RAM;
+
+	switch (bp->bootdevice) {
+	case BOOTDEVICE_GPIO_EMMC:
+		dev_id = BOOT_DEVICE_MMC1;
+		break;
+	case BOOTDEVICE_GPIO_NOR:
+		dev_id = BOOT_DEVICE_NOR;
+		break;
+	case BOOTDEVICE_GPIO_NAND:
+		dev_id = BOOT_DEVICE_NAND;
+		break;
+	case BOOTDEVICE_GPIO_UART:
+		dev_id = BOOT_DEVICE_UART;
+		break;
+	default:
+		pr_err("Unknown boot device\n");
+	}
+
 	if (semihosting_enabled())
 		return BOOT_DEVICE_SMH;
 
-	return BOOT_DEVICE_RAM;
+	return dev_id;
 }
 
 void board_boot_order(u32 *spl_boot_list)
@@ -77,9 +97,12 @@ static inline unsigned long read_midr(void)
 void spl_display_print(void)
 {
 	struct udevice *dev;
+	boot_params_t *bp = boot_params_get_base();
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
 	const char *name;
-	int dev_id;
+	int dev_id = -ENODEV;
+
+	memset(bp, 0, sizeof(boot_params_t));
 
 	printf("EL level:      EL%x\n", current_el());
 	printf("Boot SPL on physical CPU 0x%010lx [0x%08lx]\n",
@@ -90,9 +113,12 @@ void spl_display_print(void)
 #endif
 
 	uclass_first_device(UCLASS_BOOT_DEVICE, &dev);
-	if (dev) {
+	if (dev)
 		dev_id = dm_boot_device_get(dev, &name);
+
+	if (dev_id > 0) {
 		printf("Boot Device:   %s [0x%x]\n", name, dev_id);
+		bp->bootdevice = dev_id;
 	}
 }
 #endif
@@ -107,10 +133,9 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 		spl_image->name = "ARM Trusted Firmware";
 	}
 
-	boot_params_t *bp = (boot_params_t *)CONFIG_LUA_IRAM_BASE;
-	memset(bp, 0, sizeof(boot_params_t));
-
 #if CONFIG_IS_ENABLED(LOAD_FIT) || CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+	boot_params_t *bp = boot_params_get_base();
+
 	if (spl_image->fdt_addr)
 		bp->fdt_addr = spl_image->fdt_addr;
 #endif

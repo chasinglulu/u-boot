@@ -26,18 +26,18 @@ static char *get_reset_cause(void)
 	case 0x0004:
 		return "CSU";
 	case 0x0010:
-		return "WDOG";
+		return "WDT";
 	case 0x0040:
-		return "JTAG SW";
+		return "JTAG";
 	default:
-		return "unknown reset";
+		return "Unknown";
 	}
 }
 
 int print_cpuinfo(void)
 {
 	struct udevice *dev;
-	const char *name;
+	const char *name = NULL;
 
 	printf("EL Level:      EL%d\n", current_el());
 	printf("Reset Cause:   %s\n", get_reset_cause());
@@ -45,7 +45,7 @@ int print_cpuinfo(void)
 	uclass_get_device_by_name(UCLASS_BOOT_DEVICE, "boot-device", &dev);
 	if (dev)
 		dm_boot_device_get(dev, &name);
-	printf("Boot Device:   %s\n", name);
+	printf("Boot Device:   %s\n", name ?: "Unknown");
 
 	return 0;
 }

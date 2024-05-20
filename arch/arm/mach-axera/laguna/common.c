@@ -21,7 +21,7 @@ void *board_fdt_blob_setup(int *err)
 {
 	void *fdt_addr = NULL;
 #ifndef CONFIG_SPL_BUILD
-	boot_params_t *bp = (boot_params_t *)CONFIG_LUA_IRAM_BASE;
+	boot_params_t *bp = boot_params_get_base();
 	if (bp->fdt_addr && !fdt_check_header(bp->fdt_addr)) {
 		*err = 0;
 		return bp->fdt_addr;
