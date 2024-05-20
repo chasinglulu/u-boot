@@ -12,7 +12,9 @@
 #include <image.h>
 #include <init.h>
 #include <log.h>
+#include <dm.h>
 #include <spl.h>
+#include <boot-device/bootdevice.h>
 
 u32 spl_boot_device(void)
 {
@@ -74,7 +76,10 @@ static inline unsigned long read_midr(void)
 #define MPIDR_HWID_BITMASK	UL(0xff00ffffff)
 void spl_display_print(void)
 {
+	struct udevice *dev;
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
+	const char *name;
+	int dev_id;
 
 	printf("EL level: EL%x\n", current_el());
 	printf("Boot SPL on physical CPU 0x%010lx [0x%08lx]\n",
@@ -83,6 +88,12 @@ void spl_display_print(void)
 #ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
 	printf("GICv2: enabled\n");
 #endif
+
+	uclass_first_device(UCLASS_BOOT_DEVICE, &dev);
+	if (dev) {
+		dev_id = dm_boot_device_get(dev, &name);
+		printf("Boot Device: %s[0x%x]\n", name, dev_id);
+	}
 }
 #endif
 
