@@ -38,8 +38,6 @@ void board_debug_uart_init(void)
 
 int board_init(void)
 {
-	printf("EL Level: EL%d\n", current_el());
-
 	return 0;
 }
 

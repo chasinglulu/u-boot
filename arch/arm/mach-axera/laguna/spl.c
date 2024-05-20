@@ -81,18 +81,18 @@ void spl_display_print(void)
 	const char *name;
 	int dev_id;
 
-	printf("EL level: EL%x\n", current_el());
+	printf("EL level:      EL%x\n", current_el());
 	printf("Boot SPL on physical CPU 0x%010lx [0x%08lx]\n",
 				mpidr, read_midr());
 
 #ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
-	printf("GICv2: enabled\n");
+	printf("GICv2:         enabled\n");
 #endif
 
 	uclass_first_device(UCLASS_BOOT_DEVICE, &dev);
 	if (dev) {
 		dev_id = dm_boot_device_get(dev, &name);
-		printf("Boot Device: %s[0x%x]\n", name, dev_id);
+		printf("Boot Device:   %s [0x%x]\n", name, dev_id);
 	}
 }
 #endif

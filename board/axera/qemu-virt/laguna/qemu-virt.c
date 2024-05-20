@@ -6,11 +6,9 @@
 #include <common.h>
 #include <dm.h>
 #include <init.h>
-#include <asm/system.h>
 #include "jffs2/load_kernel.h"
 #include "fdt_support.h"
 #include "mtd_node.h"
-#include "boot-device/bootdevice.h"
 #include "env.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -24,21 +22,12 @@ int board_early_init_f(void)
 
 int board_init(void)
 {
-	printf("EL Level:\tEL%d\n", current_el());
 	return 0;
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-	struct udevice *dev;
-	uclass_get_device_by_name(UCLASS_BOOT_DEVICE, "boot-device", &dev);
-
-	if (dev)
-		dm_boot_device_update(dev);
-
-	printf("Boot Device: %s\n", env_get("bootdevice"));
-
 	return 0;
 }
 #endif

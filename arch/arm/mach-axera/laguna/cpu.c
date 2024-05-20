@@ -4,6 +4,10 @@
  */
 
 #include <common.h>
+#include <dm.h>
+#include <env.h>
+#include <asm/system.h>
+#include <boot-device/bootdevice.h>
 
 static u32 reset_cause = -1;
 
@@ -32,7 +36,16 @@ static char *get_reset_cause(void)
 
 int print_cpuinfo(void)
 {
-	printf("Reset cause: %s\n", get_reset_cause());
+	struct udevice *dev;
+	const char *name;
+
+	printf("EL Level:      EL%d\n", current_el());
+	printf("Reset Cause:   %s\n", get_reset_cause());
+
+	uclass_get_device_by_name(UCLASS_BOOT_DEVICE, "boot-device", &dev);
+	if (dev)
+		dm_boot_device_get(dev, &name);
+	printf("Boot Device:   %s\n", name);
 
 	return 0;
 }

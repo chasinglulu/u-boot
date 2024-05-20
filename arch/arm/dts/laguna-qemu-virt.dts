@@ -53,9 +53,10 @@
 				<&gpio0_a 1 GPIO_ACTIVE_HIGH>,
 				<&gpio0_a 2 GPIO_ACTIVE_HIGH>;
 		u-boot,env-variable = "bootdevice";
-		dev-UART = <0x01>;
-		dev-eMMC = <0x02>;
-		dev-Nor = <0x03>;
+		dev-eMMC = <0x01>;
+		dev-Nor = <0x02>;
+		dev-Nand = <0x03>;
+		dev-UART = <0x04>;
 		u-boot,dm-spl;
 	};
 
