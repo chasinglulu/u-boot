@@ -1010,6 +1010,8 @@ INPUTS-y += u-boot.img
 endif
 endif
 
+INPUTS-$(CONFIG_ARCH_AXERA) += u-boot-legacy.img
+
 INPUTS-$(CONFIG_X86) += u-boot-x86-start16.bin u-boot-x86-reset16.bin \
 	$(if $(CONFIG_SPL_X86_16BIT_INIT),spl/u-boot-spl.bin) \
 	$(if $(CONFIG_TPL_X86_16BIT_INIT),tpl/u-boot-tpl.bin)
@@ -1445,6 +1447,12 @@ u-boot.bin.lzma: u-boot.bin FORCE
 	$(call if_changed,lzma)
 
 u-boot-lzma.img: u-boot.bin.lzma FORCE
+	$(call if_changed,mkimage)
+
+MKIMAGEFLAGS_u-boot-legacy.img = -A $(ARCH) -T firmware -O u-boot \
+	-C none -n "$(VENDOR) $(SOC) $(BOARD) U-BOOT"
+
+u-boot-legacy.img: u-boot.bin FORCE
 	$(call if_changed,mkimage)
 
 u-boot-dtb.img u-boot.img u-boot.kwb u-boot.pbl u-boot-ivt.img: \
