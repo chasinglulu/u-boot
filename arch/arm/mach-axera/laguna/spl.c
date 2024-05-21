@@ -96,11 +96,8 @@ static inline unsigned long read_midr(void)
 #define MPIDR_HWID_BITMASK	UL(0xff00ffffff)
 void spl_display_print(void)
 {
-	struct udevice *dev;
 	boot_params_t *bp = boot_params_get_base();
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
-	const char *name;
-	int dev_id = -ENODEV;
 
 	memset(bp, 0, sizeof(boot_params_t));
 
@@ -112,6 +109,11 @@ void spl_display_print(void)
 	printf("GICv2:         enabled\n");
 #endif
 
+#if CONFIG_IS_ENABLED(DM_BOOT_DEVICE)
+	struct udevice *dev;
+	const char *name;
+	int dev_id = -ENODEV;
+
 	uclass_first_device(UCLASS_BOOT_DEVICE, &dev);
 	if (dev)
 		dev_id = dm_boot_device_get(dev, &name);
@@ -120,6 +122,7 @@ void spl_display_print(void)
 		printf("Boot Device:   %s [0x%x]\n", name, dev_id);
 		bp->bootdevice = dev_id;
 	}
+#endif
 }
 #endif
 

@@ -36,16 +36,18 @@ static char *get_reset_cause(void)
 
 int print_cpuinfo(void)
 {
-	struct udevice *dev;
-	const char *name = NULL;
-
 	printf("EL Level:      EL%d\n", current_el());
 	printf("Reset Cause:   %s\n", get_reset_cause());
+
+#if CONFIG_IS_ENABLED(DM_BOOT_DEVICE)
+	struct udevice *dev;
+	const char *name = NULL;
 
 	uclass_get_device_by_name(UCLASS_BOOT_DEVICE, "boot-device", &dev);
 	if (dev)
 		dm_boot_device_get(dev, &name);
 	printf("Boot Device:   %s\n", name ?: "Unknown");
+#endif
 
 	return 0;
 }
