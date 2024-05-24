@@ -797,6 +797,21 @@ config SPL_DM_MAILBOX
 	  this option to build the drivers in drivers/mailbox as part of
 	  SPL build.
 
+config SPL_MULTI_MMC
+	bool "Support loading multi-image from MMC"
+	depends on MMC
+	select SPL_MMC
+	help
+	  This enables loading a combination of ATF, OPTEE OS and
+	  U-Boot images from MMC.
+
+config SPL_ANY_MMC
+	bool "Support loading single image from MMC"
+	depends on MMC
+	select SPL_MMC
+	help
+	  This enables only loading single image from MMC.
+
 config SPL_MMC
 	bool "Support MMC"
 	depends on MMC

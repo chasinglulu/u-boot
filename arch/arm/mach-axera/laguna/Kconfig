@@ -152,6 +152,15 @@ endmenu
 
 menu "Misc Settings"
 
+config LUA_AB
+	bool "A/B Support"
+	select ANDROID_AB
+	select CMD_AB_SELECT
+	help
+	  AVB has been designed to work with A/B by requiring that
+	  the A/B suffix is never used in any partition names stored
+	  in descriptors.
+
 config LUA_SERVERIP
 	string "serverip for tftpboot"
 	default 10.0.2.5
