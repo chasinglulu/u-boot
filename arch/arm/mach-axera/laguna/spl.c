@@ -143,3 +143,20 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 		bp->fdt_addr = spl_image->fdt_addr;
 #endif
 }
+
+void spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
+{
+	switch (spl_image->os) {
+	case IH_OS_ARM_TRUSTED_FIRMWARE:
+		spl_image->load_addr = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
+		break;
+	case IH_OS_TEE:
+		spl_image->load_addr = CONFIG_LUA_SPL_OPTEE_LOAD_ADDR;
+		break;
+	case IH_OS_U_BOOT:
+		spl_image->load_addr = CONFIG_SYS_TEXT_BASE;
+	}
+
+	/* offset load addr in order to reduce one memmove */
+	spl_image->load_addr -= sizeof(image_header_t);
+}
