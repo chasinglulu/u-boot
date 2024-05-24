@@ -178,6 +178,13 @@ config SPL_SYS_REPORT_STACK_F_USAGE
 	  occurrence of non 0xaa bytes.
 	  This default implementation works for stacks growing down only.
 
+config SPL_LOAD_STRICT_CHECK
+	bool "Do a strict check of loading multiple images"
+	help
+	  Enable this do a strict check of the multiple images to make sure
+	  that none of them were absent. This helps to protect against carefully
+	  crafted images which take advantage of bugs or omissions in the code.
+
 config SPL_SHOW_ERRORS
 	bool "Show more information when something goes wrong"
 	help

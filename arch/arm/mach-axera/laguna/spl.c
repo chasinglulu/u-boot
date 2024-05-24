@@ -3,18 +3,19 @@
  * Copyright (c) 2024 Charleye <wangkart@aliyun.com>
  */
 
+#include <boot-device/bootdevice.h>
+#include <asm/arch/bootparams.h>
 #include <common.h>
 #include <debug_uart.h>
 #include <asm/system.h>
-#include <asm/arch/bootparams.h>
 #include <semihosting.h>
+#include <android_ab.h>
 #include <hang.h>
 #include <image.h>
 #include <init.h>
 #include <log.h>
 #include <dm.h>
 #include <spl.h>
-#include <boot-device/bootdevice.h>
 
 u32 spl_boot_device(void)
 {
@@ -144,19 +145,46 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 #endif
 }
 
+#if defined(CONFIG_SPL_MULTI_MMC)
 void spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
 	switch (spl_image->os) {
 	case IH_OS_ARM_TRUSTED_FIRMWARE:
 		spl_image->load_addr = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
+		spl_image->entry_point = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
 		break;
 	case IH_OS_TEE:
 		spl_image->load_addr = CONFIG_LUA_SPL_OPTEE_LOAD_ADDR;
 		break;
 	case IH_OS_U_BOOT:
 		spl_image->load_addr = CONFIG_SYS_TEXT_BASE;
+		spl_image->entry_point = CONFIG_SYS_TEXT_BASE;
 	}
 
 	/* offset load addr in order to reduce one memmove */
 	spl_image->load_addr -= sizeof(image_header_t);
 }
+
+#if defined(CONFIG_LUA_AB)
+int spl_multi_mmc_ab_select(struct blk_desc *dev_desc)
+{
+	struct disk_partition info;
+	int ret;
+
+	if (!dev_desc)
+		return -ENODEV;
+
+	ret = part_get_info_by_name(dev_desc, "misc", &info);
+	if (ret < 0) {
+		debug("misc part not exist\n");
+		return ret;
+	}
+
+	ret = ab_select_slot(dev_desc, &info);
+	if (ret < 0)
+		pr_err("failed to select ab slot\n");
+
+	return ret;
+}
+#endif /* CONFIG_LUA_AB */
+#endif /* CONFIG_SPL_MULTI_MMC */

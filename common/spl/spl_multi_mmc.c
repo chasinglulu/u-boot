@@ -17,6 +17,8 @@
 #include <image.h>
 #include <android_ab.h>
 
+#define MAX_NAME_LEN  32
+
 /* Weak default function for arch/board-specific fixups to the spl_image_info */
 void __weak
 spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
@@ -182,21 +184,40 @@ u32 __weak spl_mmc_boot_mode(struct mmc *mmc, const u32 boot_device)
 	return MMCSD_MODE_RAW;
 }
 
-const char *part_name[] = {
-	"atf",
-	"optee",
-	"uboot",
-};
+const char * __weak spl_board_get_part_name(int index)
+{
+	static const char *part_lable[] = {
+		"atf",
+		"optee",
+		"uboot",
+	};
+
+	if (index >= ARRAY_SIZE(part_lable))
+		return NULL;
+
+	return part_lable[index];
+}
+
+int __weak spl_multi_mmc_ab_select(struct blk_desc *dev_desc)
+{
+	return 0;
+}
 
 static int spl_mmc_load_multi_image(struct spl_image_info *spl_image,
 		       struct spl_boot_device *bootdev)
 {
+	struct spl_image_info image_info;
+	struct disk_partition info;
+	struct blk_desc *dev_desc;
 	static struct mmc *mmc;
-	int err = 0;
-	__maybe_unused int part = 0;
-	int mmc_dev;
-	int index = 0;
+	bool has_uboot = false;
+	bool has_optee = false;
 	bool has_atf = false;
+	char name[MAX_NAME_LEN];
+	int mmc_dev;
+	int ab_slot;
+	int err = 0;
+	int i;
 
 	/* Perform peripheral init only once for an mmc device */
 	mmc_dev = spl_mmc_get_device_index(bootdev->boot_device);
@@ -213,31 +234,30 @@ static int spl_mmc_load_multi_image(struct spl_image_info *spl_image,
 		}
 	}
 
-	struct disk_partition info;
-	struct blk_desc *desc = mmc_get_blk_desc(mmc);
-	struct spl_image_info image_info;
-	int i;
-	char name[8];
-
-#if defined (CONFIG_LUA_AB)
-	part_get_info_by_name(desc, "misc", &info);
-	index = ab_select_slot(desc, &info);
-	if (index < 0) {
-		pr_err("ab_select_slot failed, ret = %d\n", index);
-		return index;
+	dev_desc = mmc_get_blk_desc(mmc);
+	if (!dev_desc) {
+		debug("failed to get block descriptor\n");
+		return -ENODEV;
 	}
-#endif
 
-	for (i = 0; i < ARRAY_SIZE(part_name); i++) {
-		snprintf(name, sizeof(name), "%s_%c", part_name[i],
-									BOOT_SLOT_NAME(index));
-		err = part_get_info_by_name(desc, name, &info);
+	ab_slot = spl_multi_mmc_ab_select(dev_desc);
+	if (ab_slot < 0) {
+		debug("failed to get ab slot\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; spl_board_get_part_name(i); i++) {
+		snprintf(name, sizeof(name), "%s_%c",
+		                spl_board_get_part_name(i),
+		                BOOT_SLOT_NAME(ab_slot));
+		err = part_get_info_by_name(dev_desc, name, &info);
 		if (err < 0) {
-			pr_err("partition %s not exist\n", name);
-			snprintf(name, sizeof(name), "%s", part_name[i]);
-			err = part_get_info_by_name(desc, name, &info);
+			debug("%s part not exist\n", name);
+			snprintf(name, sizeof(name), "%s",
+			            spl_board_get_part_name(i));
+			err = part_get_info_by_name(dev_desc, name, &info);
 			if (err < 0) {
-				pr_err("partition %s also not exist\n", name);
+				debug("%s part also not exist\n", name);
 				continue;
 			}
 		}
@@ -252,30 +272,42 @@ static int spl_mmc_load_multi_image(struct spl_image_info *spl_image,
 			|| (image_info.os == IH_OS_U_BOOT && !has_atf)) {
 			spl_image->name = image_info.name;
 			spl_image->load_addr = image_info.load_addr;
-			spl_image->boot_device = bootdev->boot_device;
+			spl_image->entry_point = image_info.entry_point;
 		}
 
 		switch (image_info.os) {
 		case IH_OS_ARM_TRUSTED_FIRMWARE:
 			spl_image->os = IH_OS_ARM_TRUSTED_FIRMWARE;
-			spl_image->entry_point = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
 			has_atf = true;
 			break;
 		case IH_OS_U_BOOT:
+			has_uboot = true;
+#if CONFIG_IS_ENABLED(LOAD_FIT) || CONFIG_IS_ENABLED(LOAD_FIT_FULL)
+			spl_image->fdt_addr = image_info.fdt_addr;
+#endif
+
 			if (has_atf)
 				break;
 
 			spl_image->os = IH_OS_U_BOOT;
-			spl_image->entry_point = CONFIG_SYS_TEXT_BASE;
 			break;
 		case IH_OS_TEE:
 			/* SPL does not support direct jump to optee */
+			has_optee = true;
 			break;
 		default:
 			pr_err("Invaild Image: %d\n", image_info.os);
 			return -EINVAL;
 		}
 	}
+
+	if (!has_uboot)
+		return -ENODATA;
+
+#if CONFIG_IS_ENABLED(LOAD_STRICT_CHECK)
+	if (!has_atf || !has_optee)
+		return -ENODATA;
+#endif
 
 	return err;
 }
