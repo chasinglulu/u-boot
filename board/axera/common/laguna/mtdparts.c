@@ -8,11 +8,12 @@
 #include <mtd.h>
 #include <linux/string.h>
 
-#define MTDPARTS_LEN		256
-#define MTDIDS_LEN		128
+#define MTDPARTS_LEN    256
+#define MTDIDS_LEN      128
 
-static void board_get_mtdparts(const char *dev, const char *partition,
-							char *mtdids, char *mtdparts)
+static __maybe_unused
+void board_get_mtdparts(const char *dev, const char *partition,
+                          char *mtdids, char *mtdparts)
 {
 	/* mtdids: "<dev>=<dev>, ...." */
 	if (mtdids[0] != '\0')
@@ -34,9 +35,9 @@ static void board_get_mtdparts(const char *dev, const char *partition,
 
 void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 {
-	struct mtd_info *mtd;
-	struct udevice *dev;
-	const char *mtd_partition;
+	struct mtd_info __maybe_unused *mtd;
+	struct udevice __maybe_unused *dev;
+	const char __maybe_unused *mtd_parts;
 	static char parts[3 * MTDPARTS_LEN + 1];
 	static char ids[MTDIDS_LEN + 1];
 	static bool mtd_initialized;
@@ -50,30 +51,32 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	memset(parts, 0, sizeof(parts));
 	memset(ids, 0, sizeof(ids));
 
-	if (IS_ENABLED(CONFIG_LUA_SOC)) {
-		/* probe all MTD devices */
-		for (uclass_first_device(UCLASS_MTD, &dev); dev;
-		     uclass_next_device(&dev)) {
-			debug("mtd device = %s\n", dev->name);
-		}
-
-		mtd = get_mtd_device_nm("nor0");
-		if (!IS_ERR_OR_NULL(mtd)) {
-			mtd_partition = CONFIG_LUA_MTDPARTS_NOR0;
-			board_get_mtdparts("nor0", mtd_partition, ids, parts);
-			put_mtd_device(mtd);
-		}
-
-		mtd = get_mtd_device_nm("nor1");
-		if (!IS_ERR_OR_NULL(mtd)) {
-			mtd_partition = CONFIG_LUA_MTDPARTS_NOR1;
-			board_get_mtdparts("nor1", mtd_partition, ids, parts);
-			put_mtd_device(mtd);
-		}
+	/* probe all SPI Flash devices */
+	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev) {
+		debug("SPI Flash device = %s\n", dev->name);
 	}
 
-	mtd_initialized = true;
+#if defined(CONFIG_LUA_NOR0)
+	mtd_parts = CONFIG_LUA_MTDPARTS_NOR0;
+	mtd = get_mtd_device_nm("nor0");
+	if (!IS_ERR_OR_NULL(mtd) && strlen(mtd_parts)) {
+		board_get_mtdparts("nor0", mtd_parts, ids, parts);
+		put_mtd_device(mtd);
+		mtd_initialized = true;
+	}
+#endif
+
+#if defined(CONFIG_LUA_NOR1)
+	mtd_parts = CONFIG_LUA_MTDPARTS_NOR1;
+	mtd = get_mtd_device_nm("nor1");
+	if (!IS_ERR_OR_NULL(mtd) && strlen(mtd_parts)) {
+		board_get_mtdparts("nor1", mtd_parts, ids, parts);
+		put_mtd_device(mtd);
+		mtd_initialized = true;
+	}
+#endif
+
 	*mtdids = ids;
 	*mtdparts = parts;
-	debug("%s:mtdids=%s & mtdparts=%s\n", __func__, ids, parts);
+	debug("%s:\nmtdids   : %s\nmtdparts : %s\n", __func__, ids, parts);
 }

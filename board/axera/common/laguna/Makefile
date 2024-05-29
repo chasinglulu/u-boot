@@ -1,3 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0+
 
-obj-$(CONFIG_SYS_MTDPARTS_RUNTIME) += mtdparts.o
+ifneq ($(CONFIG_LUA_NOR0)$(CONFIG_LUA_NOR1),)
+obj-y += mtdparts.o
+endif
