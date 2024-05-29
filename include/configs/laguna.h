@@ -14,8 +14,10 @@
 #define GICD_BASE    CONFIG_LUA_GICD_BASE
 #endif
 
-#ifdef CONFIG_LUA_SERVERIP
+#ifdef CONFIG_LUA_CUSTOM_SERVERIP
 #define SERVERIP_ENV "serverip=" CONFIG_LUA_SERVERIP "\0"
+#else
+#define SERVERIP_ENV "serverip=""\0"
 #endif
 
 /* Environment options */
