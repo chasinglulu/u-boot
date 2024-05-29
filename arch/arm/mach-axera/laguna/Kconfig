@@ -161,9 +161,18 @@ config LUA_AB
 	  the A/B suffix is never used in any partition names stored
 	  in descriptors.
 
+config LUA_CUSTOM_SERVERIP
+	bool "Custom severip"
+	help
+	  This option enable us to specify a server IP address
+	  used for tftpboot.
+
 config LUA_SERVERIP
-	string "serverip for tftpboot"
+	depends on LUA_CUSTOM_SERVERIP
+	string "serverip used for tftpboot"
 	default 10.0.2.5
+	help
+	  specify sever IP address used for tftpboot.
 
 endmenu
 
