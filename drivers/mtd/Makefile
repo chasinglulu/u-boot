@@ -25,6 +25,7 @@ obj-y += nand/
 obj-y += onenand/
 obj-y += spi/
 obj-$(CONFIG_MTD_UBI) += ubi/
+obj-$(CONFIG_BLK) += mtdblock.o
 
 #SPL/TPL build
 else
@@ -34,6 +35,7 @@ obj-$(CONFIG_SPL_MTD_SUPPORT) += mtd.o
 endif
 obj-$(CONFIG_$(SPL_TPL_)NAND_SUPPORT) += nand/
 obj-$(CONFIG_SPL_SPINAND_SUPPORT) += nand/
+obj-$(CONFIG_$(SPL_)BLK) += mtdblock.o
 obj-$(CONFIG_SPL_ONENAND_SUPPORT) += onenand/
 obj-$(CONFIG_$(SPL_TPL_)SPI_FLASH_SUPPORT) += spi/
 obj-$(CONFIG_SPL_UBI) += ubispl/
