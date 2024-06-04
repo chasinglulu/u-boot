@@ -870,6 +870,23 @@ config SPL_MPC8XXX_INIT_DDR
 	  allows DRAM to be set up before loading U-Boot into that DRAM,
 	  where it can run.
 
+config SPL_ANY_MTD
+	bool "Support loading single image from MTD device"
+	depends on DM_MTD
+	select SPL_MTD_SUPPORT
+	select SPL_LEGACY_IMAGE_FORMAT
+	help
+	  This enables only loading single image from MMC.
+
+config SPL_MULTI_MTD
+	bool "Support loading multiple images from MTD device"
+	depends on DM_MTD
+	select SPL_MTD_SUPPORT
+	select SPL_LEGACY_IMAGE_FORMAT
+	help
+	  This enables loading a combination of ATF, OPTEE OS and
+	  U-Boot images from MTD device.
+
 config SPL_MTD_SUPPORT
 	bool "Support MTD drivers"
 	help

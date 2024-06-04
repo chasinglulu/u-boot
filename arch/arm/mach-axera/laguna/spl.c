@@ -145,7 +145,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 #endif
 }
 
-#if defined(CONFIG_SPL_MULTI_MMC)
+#if defined(CONFIG_SPL_MULTI_MMC) || defined(CONFIG_SPL_MULTI_MTD)
 void spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
 	switch (spl_image->os) {
