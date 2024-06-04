@@ -38,6 +38,7 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	struct mtd_info __maybe_unused *mtd;
 	struct udevice __maybe_unused *dev;
 	const char __maybe_unused *mtd_parts;
+	const char __maybe_unused *mtd_name;
 	static char parts[3 * MTDPARTS_LEN + 1];
 	static char ids[MTDIDS_LEN + 1];
 	static bool mtd_initialized;
@@ -58,9 +59,16 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 
 #if defined(CONFIG_LUA_NOR0)
 	mtd_parts = CONFIG_LUA_MTDPARTS_NOR0;
-	mtd = get_mtd_device_nm("nor0");
+
+#if CONFIG_IS_ENABLED(SPI_FLASH_TINY)
+	mtd_name = "spi-flash";
+#else
+	mtd_name = "nor0";
+#endif
+
+	mtd = get_mtd_device_nm(mtd_name);
 	if (!IS_ERR_OR_NULL(mtd) && strlen(mtd_parts)) {
-		board_get_mtdparts("nor0", mtd_parts, ids, parts);
+		board_get_mtdparts(mtd_name, mtd_parts, ids, parts);
 		put_mtd_device(mtd);
 		mtd_initialized = true;
 	}
@@ -68,9 +76,10 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 
 #if defined(CONFIG_LUA_NOR1)
 	mtd_parts = CONFIG_LUA_MTDPARTS_NOR1;
-	mtd = get_mtd_device_nm("nor1");
+	mtd_name = "nor1";
+	mtd = get_mtd_device_nm(mtd_name);
 	if (!IS_ERR_OR_NULL(mtd) && strlen(mtd_parts)) {
-		board_get_mtdparts("nor1", mtd_parts, ids, parts);
+		board_get_mtdparts(mtd_name, mtd_parts, ids, parts);
 		put_mtd_device(mtd);
 		mtd_initialized = true;
 	}

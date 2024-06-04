@@ -142,7 +142,7 @@ static const char *get_mtdparts(void)
 	else if (env_get_f("mtdparts", tmp_parts, sizeof(tmp_parts)) != -1)
 		mtdparts = tmp_parts;
 
-	if (mtdparts)
+	if (mtdparts && strlen(mtdparts))
 		return mtdparts;
 
 #if defined(CONFIG_SYS_MTDPARTS_RUNTIME)
