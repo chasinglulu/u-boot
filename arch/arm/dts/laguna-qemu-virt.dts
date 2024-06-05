@@ -147,6 +147,14 @@
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
 			};
+
+			spi-nand@1 {
+				compatible = "spi-nand";
+				spi-max-frequency = <40000000>;
+				reg = <1>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
 		};
 
 		eth0: ethernet@0E014000 {
