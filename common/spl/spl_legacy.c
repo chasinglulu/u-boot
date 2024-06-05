@@ -15,6 +15,12 @@
 
 #define LZMA_LEN	(1 << 20)
 
+/* Weak default function for arch/board-specific fixups to the spl_image_info */
+void __weak
+spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
+{
+}
+
 int spl_parse_legacy_header(struct spl_image_info *spl_image,
 			    const struct image_header *header)
 {
@@ -54,6 +60,13 @@ int spl_parse_legacy_header(struct spl_image_info *spl_image,
 
 	spl_image->os = image_get_os(header);
 	spl_image->name = image_get_name(header);
+
+	/* For some baord image, the load and entry address was not
+	 * specified in legacy image header. We can't use it.
+	 * So fixup it in the case.
+	 */
+	spl_board_perform_legacy_fixups(spl_image);
+
 	debug(SPL_TPL_PROMPT
 	      "payload image: %32s load addr: 0x%lx size: %d\n",
 	      spl_image->name, spl_image->load_addr, spl_image->size);
