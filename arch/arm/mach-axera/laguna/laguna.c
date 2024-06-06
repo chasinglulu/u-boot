@@ -64,11 +64,6 @@ static struct mm_region lua_mem_map[] = {
 
 struct mm_region *mem_map = lua_mem_map;
 
-void reset_cpu(void)
-{
-	return;
-}
-
 void enable_caches(void)
 {
 	icache_enable();

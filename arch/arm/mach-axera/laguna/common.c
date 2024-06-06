@@ -15,6 +15,7 @@
 #include <env.h>
 #include <nand.h>
 #include <dm/uclass.h>
+#include <mtd.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -49,6 +50,12 @@ void *board_fdt_blob_setup(int *err)
 }
 #endif
 
+void reset_cpu(void)
+{
+	return;
+}
+
+#ifndef CONFIG_SPL_BUILD
 /*
  * Get the top of usable RAM
  *
@@ -88,24 +95,28 @@ int dram_init_banksize(void)
 	return 0;
 }
 
+int board_init(void)
+{
+#if CONFIG_IS_ENABLED(MTD)
+	/* probe all mtd device */
+	mtd_probe_devices();
+#endif
+
+	return 0;
+}
 
 #if CONFIG_IS_ENABLED(CMD_NAND)
 void board_nand_init(void)
 {
 	struct mtd_info *mtd;
-	struct udevice *dev;
 	char mtd_name[20];
 	int i;
-
-	/* probe all mtd device */
-	uclass_foreach_dev_probe(UCLASS_MTD, dev)
-		;
 
 	for (i = 0; i < CONFIG_SYS_MAX_NAND_DEVICE; i++) {
 		snprintf(mtd_name, sizeof(mtd_name), "spi-nand%d", i);
 		mtd = get_mtd_device_nm(mtd_name);
 		if (IS_ERR_OR_NULL(mtd)) {
-			printf("MTD device %s not found, ret %ld\n", mtd_name,
+			debug("MTD device %s not found, ret %ld\n", mtd_name,
 				PTR_ERR(mtd));
 			return;
 		}
@@ -114,3 +125,4 @@ void board_nand_init(void)
 	}
 }
 #endif
+#endif /* !CONFIG_SPI_BUILD */
