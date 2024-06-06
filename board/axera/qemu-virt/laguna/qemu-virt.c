@@ -13,17 +13,12 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#ifndef CONFIG_SPL_BUILD
+#if CONFIG_IS_ENABLED(BOARD_EARLY_INIT_R)
 int board_early_init_f(void)
 {
 	return 0;
 }
 #endif
-
-int board_init(void)
-{
-	return 0;
-}
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)

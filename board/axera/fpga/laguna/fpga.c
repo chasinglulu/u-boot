@@ -36,11 +36,6 @@ void board_debug_uart_init(void)
 }
 #endif
 
-int board_init(void)
-{
-	return 0;
-}
-
 #ifdef CONFIG_DESIGNWARE_SPI
 int dw_spi_get_clk(struct udevice *bus, ulong *rate)
 {
