@@ -26,3 +26,17 @@ config LUA_MTDPARTS_NOR1
 	help
 	  This define the partition of nor1 used to build mtparts dynamically
 	  for booting.
+
+config LUA_NAND0
+	bool "SPI NAND Flash Settings for nand0"
+	depends on SYS_MTDPARTS_RUNTIME
+	depends on AXERA_LUA
+	help
+	  This enable settings for the first SPI NAND Flash.
+
+config LUA_MTDPARTS_NAND0
+	string "MTD Partitions for nand0"
+	depends on LUA_NAND0
+	help
+	  This define the partition of nand0 used to build mtparts dynamically
+	  for booting.

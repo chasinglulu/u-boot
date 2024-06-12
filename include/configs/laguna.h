@@ -186,7 +186,7 @@
 #define CONFIG_SYS_MONITOR_LEN    (2 << 20)
 
 /* nand cmd */
-#ifdef CONFIG_CMD_NAND
+#if defined(CONFIG_CMD_NAND) || defined(CONFIG_MTD_RAW_NAND)
 #	define CONFIG_SYS_MAX_NAND_DEVICE	1
 #	define CONFIG_SYS_NAND_SELF_INIT 1
 #endif

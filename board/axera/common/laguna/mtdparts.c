@@ -52,9 +52,9 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	memset(parts, 0, sizeof(parts));
 	memset(ids, 0, sizeof(ids));
 
-	/* probe all SPI Flash devices */
+	/* probe all SPI NOR Flash devices */
 	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev) {
-		debug("SPI Flash device = %s\n", dev->name);
+		debug("SPI NOR Flash device = %s\n", dev->name);
 	}
 
 #if defined(CONFIG_LUA_NOR0)
@@ -77,6 +77,25 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 #if defined(CONFIG_LUA_NOR1)
 	mtd_parts = CONFIG_LUA_MTDPARTS_NOR1;
 	mtd_name = "nor1";
+	mtd = get_mtd_device_nm(mtd_name);
+	if (!IS_ERR_OR_NULL(mtd) && strlen(mtd_parts)) {
+		board_get_mtdparts(mtd_name, mtd_parts, ids, parts);
+		put_mtd_device(mtd);
+		mtd_initialized = true;
+	}
+#endif
+
+#if defined(CONFIG_LUA_NAND0)
+	/* probe all SPI NAND Flash devices */
+	uclass_foreach_dev_probe(UCLASS_MTD, dev)
+		debug("SPI NAND Flash device = %s\n", dev->name);
+
+	mtd_parts = CONFIG_LUA_MTDPARTS_NAND0;
+#if IS_ENABLED(CONFIG_CMD_NAND) && IS_ENABLED(CONFIG_MTD_RAW_NAND)
+	mtd_name = "nand0";
+#else
+	mtd_name = "spi-nand0";
+#endif
 	mtd = get_mtd_device_nm(mtd_name);
 	if (!IS_ERR_OR_NULL(mtd) && strlen(mtd_parts)) {
 		board_get_mtdparts(mtd_name, mtd_parts, ids, parts);
