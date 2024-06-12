@@ -97,20 +97,28 @@ int dram_init_banksize(void)
 
 int board_init(void)
 {
-#if CONFIG_IS_ENABLED(MTD)
-	/* probe all mtd device */
-	mtd_probe_devices();
+#if IS_ENABLED(CONFIG_DM_SPI_FLASH) && IS_ENABLED(CONFIG_SPI_FLASH_MTD)
+	struct udevice *dev;
+
+	/* probe all SPI NOR Flash device */
+	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
+		;
 #endif
 
 	return 0;
 }
 
-#if CONFIG_IS_ENABLED(CMD_NAND)
+#if IS_ENABLED(CONFIG_CMD_NAND) && IS_ENABLED(CONFIG_MTD_RAW_NAND)
 void board_nand_init(void)
 {
+	struct udevice *dev;
 	struct mtd_info *mtd;
 	char mtd_name[20];
 	int i;
+
+	/* probe all SPI NAND Flash devices */
+	uclass_foreach_dev_probe(UCLASS_MTD, dev)
+		debug("SPI NAND Flash device = %s\n", dev->name);
 
 	for (i = 0; i < CONFIG_SYS_MAX_NAND_DEVICE; i++) {
 		snprintf(mtd_name, sizeof(mtd_name), "spi-nand%d", i);
