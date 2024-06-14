@@ -1,0 +1,96 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for each subsystem clock and reset ctrl
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	pll_ctrl1: pll-ctrl1@18001000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x18001000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x18001000 0x1000>;
+	};
+
+	pll_ctrl2: pll-ctrl1@0A01C000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0A01C000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0A01C000 0x1000>;
+	};
+
+	comm_cru: common-cru@06101000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x06101000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x06101000 0x1000>;
+	};
+
+	cpu_cru: cpu-cru@08011000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x08011000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x08011000 0x1000>;
+	};
+
+	ddr_cru: ddr-cru@0A000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0A000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0A000000 0x1000>;
+	};
+
+	flash_cru: flash-cru@0C001000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0C001000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0C001000 0x1000>;
+	};
+
+	periph_cru: periph-cru@0E001000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0E001000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0E001000 0x1000>;
+	};
+
+	isp_cru: isp-cru@10001000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x10001000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x10001000 x1000>;
+	};
+
+	mm_cru: mm-cru@12004000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x12004000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x12004000 x1000>;
+	};
+
+	npu_cru: npu-cru@14310000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x14310000 0x00 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x14310000 x10000>;
+	};
+
+	vpu_cru: vpu-cru@16001000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x16001000 0x00 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x16001000 x10000>;
+	};
+};
