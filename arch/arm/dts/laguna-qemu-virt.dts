@@ -10,6 +10,7 @@
 #include <dt-bindings/gpio/gpio.h>
 
 #include "laguna-gpios.dtsi"
+#include "laguna-global-ctrl.dtsi"
 / {
 	model = "Laguna Qemu Virtual Platform";
 	compatible = "axera,laguna-virt";

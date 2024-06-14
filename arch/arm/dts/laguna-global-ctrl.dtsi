@@ -1,0 +1,104 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for each subsystem global ctrl region
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	common_glb: common-glb@06100000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x06100000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x06100000 0x1000>;
+	};
+
+	cpu_glb: cpu-glb@08010000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x08010000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x08010000 0x1000>;
+	};
+
+	ddr_glb: ddr-glb@0A001000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0A001000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0A001000 0x1000>;
+	};
+
+	flash_glb: flash-glb@0C000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0C000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0C000000 0x1000>;
+	};
+
+	periph_glb: periph-glb@0E000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x0E000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x0E000000 0x1000>;
+	};
+
+	isp_glb: isp-glb@10000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x10000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x10000000 0x1000>;
+	};
+
+	sen_glb: sen-glb@11000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x11000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x11000000 0x1000>;
+	};
+
+	mm_glb: mm-glb@12000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x12000000 0x00 0x4000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x12000000 0x4000>;
+	};
+
+	npu_glb: npu-glb@14300000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x14300000 0x00 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x14300000 0x10000>;
+	};
+
+	vpu_glb: vpu-glb@16000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x16000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x16000000 0x1000>;
+	};
+
+	top_sec_glb: top-sec-glb@18000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x18000000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x18000000 0x1000>;
+	};
+
+	top_glb: top-glb@18008000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x18008000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x00 0x00 0x18008000 0x1000>;
+	};
+};
