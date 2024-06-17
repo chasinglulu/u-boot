@@ -925,6 +925,14 @@ config SPL_NAND_RAW_ONLY
 	help
 	  Use this only if you need to save space.
 
+config SPL_SPINAND_SUPPORT
+	bool "Support SPI NAND flash"
+	help
+	  Enable support for SPI NAND (Negative AND) flash in SPL. SPI NAND flash
+	  can be used to allow SPL to load U-Boot from supported devices.
+	  This enables the drivers in drivers/mtd/nand/spi as part of an SPL
+	  build.
+
 config SPL_NAND_DRIVERS
 	bool "Use standard NAND driver"
 	help
