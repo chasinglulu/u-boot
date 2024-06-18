@@ -8,11 +8,27 @@
 #include <linux/errno.h>
 #include <linux/mtd/mtd.h>
 #include <spi_flash.h>
+#include <dm/lists.h>
+#include <dm/device-internal.h>
 
 #if CONFIG_IS_ENABLED(DM_SPI_FLASH)
-
 int spi_flash_mtd_register(struct spi_flash *flash)
 {
+#if CONFIG_IS_ENABLED(DM_MTD_SPI_NOR)
+	struct udevice *dev;
+	char name[32];
+	int ret;
+
+	sprintf(name, "spi-nor@%d", dev_seq(flash->dev));
+	ret = device_bind_driver(flash->dev, "spi_nor",
+	                        strdup(name), &dev);
+	if (ret)
+		return ret;
+
+	/* prevent mtd uclass from allocating mtd_info object on device_probe */
+	dev_set_uclass_plat(dev, &flash->mtd);
+#endif
+
 	return add_mtd_device(&flash->mtd);
 }
 
@@ -20,6 +36,41 @@ void spi_flash_mtd_unregister(struct spi_flash *flash)
 {
 	del_mtd_device(&flash->mtd);
 }
+
+#if CONFIG_IS_ENABLED(DM_MTD_SPI_NOR)
+struct spinor_plat {
+	struct mtd_info *mtd;
+};
+
+static int spi_nor_mtd_bind(struct udevice *dev)
+{
+	if (blk_enabled()) {
+		struct spinor_plat *plat = dev_get_plat(dev);
+
+		return mtd_bind(dev, &plat->mtd);
+	}
+
+	return 0;
+}
+
+static int spi_nor_mtd_probe(struct udevice *dev)
+{
+	struct spinor_plat *plat = dev_get_plat(dev);
+	struct mtd_info *mtd = dev_get_uclass_plat(dev);
+
+	plat->mtd = mtd;
+
+	return 0;
+}
+
+U_BOOT_DRIVER(spiflash) = {
+	.name = "spi_nor",
+	.id = UCLASS_MTD,
+	.probe		= spi_nor_mtd_probe,
+	.bind		= spi_nor_mtd_bind,
+	.plat_auto	= sizeof(struct spinor_plat),
+};
+#endif /* CONFIG_IS_ENABLED(DM_MTD_SPI_NOR) */
 
 #else /* !CONFIG_IS_ENABLED(DM_SPI_FLASH) */
 
