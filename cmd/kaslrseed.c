@@ -70,7 +70,7 @@ static int do_kaslr_seed(struct cmd_tbl *cmdtp, int flag, int argc, char *const 
 
 #ifdef CONFIG_SYS_LONGHELP
 static char kaslrseed_help_text[] =
-	"[n]\n"
+	"\n"
 	"  - append random bytes to chosen kaslr-seed node\n";
 #endif
 
