@@ -245,7 +245,7 @@ config SPI_FLASH_MTD
 	bool "SPI Flash MTD support"
 	depends on SPI_FLASH && MTD
 	help
-          Enable the MTD support for spi flash layer, this adapter is for
+	  Enable the MTD support for spi flash layer, this adapter is for
 	  translating mtd_read/mtd_write commands into spi_flash_read/write
 	  commands. It is not intended to use it within sf_cmd or the SPI
 	  flash subsystem. Such an adapter is needed for subsystems like
@@ -257,8 +257,22 @@ config SPL_SPI_FLASH_MTD
 	bool "SPI flash MTD support for SPL"
 	depends on SPI_FLASH && SPL
 	help
-          Enable the MTD support for the SPI flash layer in SPL.
+	  Enable the MTD support for the SPI flash layer in SPL.
 
 	  If unsure, say N
+
+config DM_MTD_SPI_NOR
+	bool "SPI Flash MTD Block support"
+	depends on SPI_FLASH_MTD
+	help
+	  Enable the MTD block support for spi flash layer, this adapter is
+	  for translating blk_read/blk_write commands into mtd_read/write
+	  commands.
+
+config SPL_DM_MTD_SPI_NOR
+	bool "SPI Flash MTD Block support for SPL"
+	depends on SPI_FLASH_MTD && SPL
+	help
+	  Enable the MTD block support for spi flash layer in SPL.
 
 endmenu # menu "SPI Flash Support"
