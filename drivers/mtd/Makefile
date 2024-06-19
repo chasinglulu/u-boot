@@ -7,6 +7,7 @@ mtd-$(CONFIG_MTD) += mtdcore.o mtd_uboot.o
 mtd-$(CONFIG_DM_MTD) += mtd-uclass.o
 mtd-$(CONFIG_MTD_PARTITIONS) += mtdpart.o
 mtd-$(CONFIG_MTD_CONCAT) += mtdconcat.o
+mtd-$(CONFIG_$(SPL_)BLK) += mtdblock.o
 mtd-$(CONFIG_ALTERA_QSPI) += altera_qspi.o
 mtd-$(CONFIG_FLASH_CFI_DRIVER) += cfi_flash.o
 mtd-$(CONFIG_FLASH_CFI_MTD) += cfi_mtd.o
@@ -25,7 +26,6 @@ obj-y += nand/
 obj-y += onenand/
 obj-y += spi/
 obj-$(CONFIG_MTD_UBI) += ubi/
-obj-$(CONFIG_BLK) += mtdblock.o
 
 #SPL/TPL build
 else
@@ -35,7 +35,6 @@ obj-$(CONFIG_SPL_MTD_SUPPORT) += mtd.o
 endif
 obj-$(CONFIG_$(SPL_TPL_)NAND_SUPPORT) += nand/
 obj-$(CONFIG_SPL_SPINAND_SUPPORT) += nand/
-obj-$(CONFIG_$(SPL_)BLK) += mtdblock.o
 obj-$(CONFIG_SPL_ONENAND_SUPPORT) += onenand/
 obj-$(CONFIG_$(SPL_TPL_)SPI_FLASH_SUPPORT) += spi/
 obj-$(CONFIG_SPL_UBI) += ubispl/
