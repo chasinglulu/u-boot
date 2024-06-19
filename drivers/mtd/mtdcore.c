@@ -841,6 +841,48 @@ out_unlock:
 }
 EXPORT_SYMBOL_GPL(get_mtd_device_nm);
 
+/**
+ * get_mtd_unique_nm - obtain a validated handle for an MTD device by
+ * unique device name
+ * @name: MTD device name to open
+ *
+ * This function returns MTD device description structure in case of
+ * success and an error code in case of failure.
+ */
+struct mtd_info *get_mtd_unique_nm(const char *name)
+{
+	int err = -ENODEV;
+	struct mtd_info *mtd = NULL, *other;
+
+	mutex_lock(&mtd_table_mutex);
+
+	mtd_for_each_device(other) {
+		if (mtd_device_matches_name(other, name)) {
+			if (mtd) {
+				printf("Error: MTD name \"%s\" is not unique.\n",
+				       name);
+				return ERR_PTR(-ENOTUNIQ);
+			}
+			mtd = other;
+		}
+	}
+
+	if (!mtd)
+		goto out_unlock;
+
+	err = __get_mtd_device(mtd);
+	if (err)
+		goto out_unlock;
+
+	mutex_unlock(&mtd_table_mutex);
+	return mtd;
+
+out_unlock:
+	mutex_unlock(&mtd_table_mutex);
+	return ERR_PTR(err);
+}
+EXPORT_SYMBOL_GPL(get_mtd_unique_nm);
+
 #if defined(CONFIG_CMD_MTDPARTS_SPREAD)
 /**
  * mtd_get_len_incl_bad
