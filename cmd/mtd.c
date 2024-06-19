@@ -19,16 +19,63 @@
 
 #include <linux/ctype.h>
 
+static
+struct mtd_info *get_mtd_by_part(struct mtd_info *master,
+                                    const char *name)
+{
+	struct mtd_info *part;
+
+	list_for_each_entry(part, &master->partitions, node)
+		if (!strcmp(name, part->name))
+			return part;
+
+	debug("Partition '%s' not found on MTD device %s\n", name, master->name);
+	return ERR_PTR(-ENODEV);
+}
+
 static struct mtd_info *get_mtd_by_name(const char *name)
 {
-	struct mtd_info *mtd;
+	struct mtd_info *mtd, *part;
+	const char *mtd_part = NULL, *mtd_nm = NULL;
+	const char *end = NULL;
 
 	mtd_probe_devices();
 
-	mtd = get_mtd_device_nm(name);
-	if (IS_ERR_OR_NULL(mtd))
-		printf("MTD device %s not found, ret %ld\n", name,
-		       PTR_ERR(mtd));
+	end = strchr(name, ':');
+	if (end) {
+		mtd_part = end + 1;
+		if (!strlen(mtd_part)) {
+			printf("MTD part name is empty.\n");
+			return ERR_PTR(-EINVAL);
+		}
+		mtd_nm = strndup(name, end - name);
+	}
+
+	mtd = get_mtd_unique_nm(end ? mtd_nm: name);
+	if (IS_ERR_OR_NULL(mtd)) {
+		switch (PTR_ERR(mtd)) {
+		case -ENOTUNIQ:
+			break;
+		default:
+			printf("MTD device \"%s\" not found, ret %ld\n",
+			        end ? mtd_nm: name, PTR_ERR(mtd));
+		}
+	}
+	kfree(mtd_nm);
+
+	if (mtd_part && !IS_ERR_OR_NULL(mtd)) {
+		part = get_mtd_by_part(mtd, mtd_part);
+		if (IS_ERR_OR_NULL(part)) {
+			printf("MTD part \"%s\" not found, ret %ld\n", mtd_part,
+			       PTR_ERR(part));
+			goto fail_part;
+		}
+		__get_mtd_device(part);
+
+fail_part:
+		put_mtd_device(mtd);
+		return part;
+	}
 
 	return mtd;
 }
@@ -543,7 +590,7 @@ static char mtd_help_text[] =
 	"mtd bad                               <name>\n"
 	"\n"
 	"With:\n"
-	"\t<name>: NAND partition/chip name (or corresponding DM device name or OF path)\n"
+	"\t<name>: NAND partition/chip name (or corresponding DM device name or OF path or dev:part)\n"
 	"\t<addr>: user address from/to which data will be retrieved/stored\n"
 	"\t<off>: offset in <name> in bytes (default: start of the part)\n"
 	"\t\t* must be block-aligned for erase\n"
