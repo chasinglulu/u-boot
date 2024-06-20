@@ -6,7 +6,7 @@
  *
  * Based on dwc3-omap.c.
  */
-
+#define DEBUG
 #include <common.h>
 #include <cpu_func.h>
 #include <log.h>
@@ -568,6 +568,7 @@ static const struct udevice_id dwc3_glue_ids[] = {
 	{ .compatible = "fsl,imx8mp-dwc3", .data = (ulong)&imx8mp_ops },
 	{ .compatible = "fsl,imx8mq-dwc3" },
 	{ .compatible = "intel,tangier-dwc3" },
+	{ .compatible = "axera,laguna-dwc3" },
 	{ }
 };
 
