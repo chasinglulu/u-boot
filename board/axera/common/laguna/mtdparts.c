@@ -91,7 +91,8 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 		debug("SPI NAND Flash device = %s\n", dev->name);
 
 	mtd_parts = CONFIG_LUA_MTDPARTS_NAND0;
-#if IS_ENABLED(CONFIG_CMD_NAND) && IS_ENABLED(CONFIG_MTD_RAW_NAND)
+
+#if CONFIG_IS_ENABLED(CMD_NAND) && CONFIG_IS_ENABLED(MTD_RAW_NAND)
 	mtd_name = "nand0";
 #else
 	mtd_name = "spi-nand0";
