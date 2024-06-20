@@ -111,16 +111,62 @@ end:
 	return 0;
 }
 
-static struct mtd_info *get_mtd_by_name(const char *name)
+static
+struct mtd_info *get_mtd_by_part(struct mtd_info *master,
+                                    const char *name)
 {
-	struct mtd_info *mtd;
+	struct mtd_info *part;
+
+	list_for_each_entry(part, &master->partitions, node)
+		if (!strcmp(name, part->name))
+			return part;
+
+	debug("Partition '%s' not found on MTD device %s\n", name, master->name);
+	return ERR_PTR(-ENODEV);
+}
+
+static
+struct mtd_info *get_mtd_by_name(const char *name,
+                                  struct spl_boot_device *bootdev)
+{
+	struct mtd_info *mtd, *master;
+	const char *mtd_nm;
 
 	mtd_probe_devices();
 
-	mtd = get_mtd_device_nm(name);
-	if (IS_ERR_OR_NULL(mtd))
-		printf("MTD device %s not found, ret %ld\n", name,
+	switch (bootdev->boot_device) {
+	case BOOT_DEVICE_NAND:
+		mtd_nm = "spi-nand0";
+		break;
+	case BOOT_DEVICE_NOR:
+#if CONFIG_IS_ENABLED(SPI_FLASH_TINY)
+		mtd_nm = "spi-flash";
+#else
+		mtd_nm = "nor0";
+#endif
+		break;
+	default:
+		pr_err("Not supported boot device: %d\n", bootdev->boot_device);
+		return NULL;
+	}
+	debug("MTD device name: %s:%s\n", mtd_nm, name);
+
+	master = get_mtd_device_nm(mtd_nm);
+	if (IS_ERR_OR_NULL(master)) {
+		printf("MTD device \"%s\" not found, ret %ld\n",
+		            name, PTR_ERR(master));
+		return master;
+	}
+
+	mtd = get_mtd_by_part(master, name);
+	if (IS_ERR_OR_NULL(mtd)) {
+		printf("MTD part \"%s\" not found, ret %ld\n", name,
 		       PTR_ERR(mtd));
+		put_mtd_device(master);
+		return mtd;
+	}
+	put_mtd_device(master);
+	__get_mtd_device(mtd);
 
 	return mtd;
 }
@@ -148,14 +194,14 @@ static int spl_mtd_load_multi_image(struct spl_image_info *spl_image,
 		snprintf(name, sizeof(name), "%s_%c",
 		                spl_board_get_part_name(i),
 		                BOOT_SLOT_NAME(ab_slot));
-		mtd = get_mtd_by_name(name);
+		mtd = get_mtd_by_name(name, bootdev);
 		if (IS_ERR_OR_NULL(mtd)) {
-			debug("mtd part %s not exist\n", name);
+			debug("MTD part \"%s\" is not exist\n", name);
 			snprintf(name, sizeof(name), "%s",
 			            spl_board_get_part_name(i));
-			mtd = get_mtd_by_name(name);
+			mtd = get_mtd_by_name(name, bootdev);
 			if (IS_ERR_OR_NULL(mtd)) {
-				debug("mtd part %s also not exist\n", name);
+				debug("MTD part \"%s\" also is not exist\n", name);
 				continue;
 			}
 		}
@@ -212,4 +258,3 @@ static int spl_mtd_load_multi_image(struct spl_image_info *spl_image,
 
 SPL_LOAD_IMAGE_METHOD("NOR", 0, BOOT_DEVICE_NOR, spl_mtd_load_multi_image);
 SPL_LOAD_IMAGE_METHOD("NAND", 0, BOOT_DEVICE_NAND, spl_mtd_load_multi_image);
-SPL_LOAD_IMAGE_METHOD("SPI", 1, BOOT_DEVICE_SPI, spl_mtd_load_multi_image);
