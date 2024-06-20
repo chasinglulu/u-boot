@@ -123,6 +123,29 @@
 			status = "disabled";
 		};
 
+		usb0: usb0@0E100000 {
+			compatible = "axera,laguna-dwc3";
+			reg = <0x0 0x0E100000 0x0 0x100000>;
+			#address-cells = <2>;
+			#size-cells = <2>;
+
+			dwc3: usb@0E200000 {
+				compatible = "snps,dwc3";
+				reg = <0x0 0x0E200000 0x0 0x00200000>;
+				// interrupts = <0 132 4>;
+				// interrupt-names = "dwc_usb3";
+				#stream-id-cells = <1>;
+				snps,quirk-frame-length-adjustment = <0x20>;
+				snps,refclk_fladj;
+				snps,enable_guctl1_resume_quirk;
+				snps,enable_guctl1_ipd_quirk;
+				snps,xhci-stream-quirk;
+				dr_mode = "host";
+				phy-names = "usb3-phy";
+				/* dma-coherent; */
+			};
+		};
+
 		spi: spi@0C040000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
