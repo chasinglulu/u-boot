@@ -12,7 +12,7 @@
  * commit 02e8c96627 : usb: gadget: udc: core: prepend udc_attach_driver with
  *		       usb_
  */
-
+#define DEBUG
 #include <dm/device_compat.h>
 #include <dm/devres.h>
 #include <linux/compat.h>
@@ -112,6 +112,7 @@ void usb_gadget_udc_reset(struct usb_gadget *gadget,
 		struct usb_gadget_driver *driver)
 {
 	driver->reset(gadget);
+	printf("%s\n", __func__);
 	usb_gadget_set_state(gadget, USB_STATE_DEFAULT);
 }
 EXPORT_SYMBOL_GPL(usb_gadget_udc_reset);

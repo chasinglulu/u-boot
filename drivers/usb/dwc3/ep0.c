@@ -12,6 +12,9 @@
  *
  * commit c00552ebaf : Merge 3.18-rc7 into usb-next
  */
+#define DEBUG
+#define LOG_DEBUG
+#define VERBOSE_DEBUG
 #include <common.h>
 #include <cpu_func.h>
 #include <dm.h>
@@ -19,6 +22,7 @@
 #include <linux/bug.h>
 #include <linux/kernel.h>
 #include <linux/list.h>
+#include <hexdump.h>
 
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
@@ -60,6 +64,7 @@ static int dwc3_ep0_start_trans(struct dwc3 *dwc, u8 epnum, dma_addr_t buf_dma,
 	int				ret;
 
 	dep = dwc->eps[epnum];
+	printf("%s: name: %s flags: 0x%x\n", __func__, dep->name, dep->flags);
 	if (dep->flags & DWC3_EP_BUSY) {
 		dev_vdbg(dwc->dev, "%s still busy", dep->name);
 		return 0;
@@ -86,6 +91,8 @@ static int dwc3_ep0_start_trans(struct dwc3 *dwc, u8 epnum, dma_addr_t buf_dma,
 
 	dwc3_flush_cache((uintptr_t)buf_dma, len);
 	dwc3_flush_cache((uintptr_t)trb, sizeof(*trb));
+
+	print_hex_dump("transfer ", DUMP_PREFIX_ADDRESS, 16, 4, trb, sizeof(*trb), false);
 
 	if (chain)
 		return 0;
@@ -204,6 +211,7 @@ static int __dwc3_gadget_ep0_queue(struct dwc3_ep *dep,
 
 		direction = dwc->ep0_expect_in;
 		dwc->ep0state = EP0_DATA_PHASE;
+		printf("--- %s: direction: %d\n", __func__, direction);
 
 		__dwc3_ep0_do_control_data(dwc, dwc->eps[direction], req);
 
@@ -238,7 +246,7 @@ int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
 		goto out;
 	}
 
-	dev_vdbg(dwc->dev, "queueing request %p to %s length %d state '%s'",
+	dev_vdbg(dwc->dev, "queueing request %p to %s length %d state '%s'\n",
 			request, dep->name, request->length,
 			dwc3_ep0_state_string(dwc->ep0state));
 
@@ -508,6 +516,7 @@ static int dwc3_ep0_set_address(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 		dev_dbg(dwc->dev, "invalid device address %d", addr);
 		return -EINVAL;
 	}
+	printf("%s: addr: %u\n", __func__, addr);
 
 	if (state == USB_STATE_CONFIGURED) {
 		dev_dbg(dwc->dev, "trying to set address when configured");
@@ -543,6 +552,8 @@ static int dwc3_ep0_set_config(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 	u32 cfg;
 	int ret;
 	u32 reg;
+
+	printf("%s: state: %d\n", __func__, state);
 
 	dwc->start_config_issued = false;
 	cfg = le16_to_cpu(ctrl->wValue);
@@ -808,7 +819,10 @@ static void dwc3_ep0_complete_data(struct dwc3 *dwc,
 	ur = &r->request;
 	buf = ur->buf;
 
-	length = trb->size & DWC3_TRB_SIZE_MASK;
+	//length = trb->size & DWC3_TRB_SIZE_MASK;
+	length = 0;
+
+	printf("%s: length: 0x%x ur->length: 0x%x bounced: %d\n", __func__, length, ur->length, dwc->ep0_bounced);
 
 	maxp = ep0->endpoint.maxpacket;
 
@@ -841,6 +855,7 @@ static void dwc3_ep0_complete_data(struct dwc3 *dwc,
 	}
 
 	ur->actual += transferred;
+	printf("%s: actual: 0x%x\n", __func__, ur->actual);
 
 	if ((epnum & 1) && ur->actual < ur->length) {
 		/* for some reason we did not get everything out */
@@ -849,10 +864,13 @@ static void dwc3_ep0_complete_data(struct dwc3 *dwc,
 	} else {
 		dwc3_gadget_giveback(ep0, r, 0);
 
+		printf("ur->length: %d, ur->zero: %d, ep0->endpoint.maxpacket: %d\n",
+					ur->length, ur->zero, ep0->endpoint.maxpacket);
 		if (IS_ALIGNED(ur->length, ep0->endpoint.maxpacket) &&
 				ur->length && ur->zero) {
 			int ret;
 
+			printf("111111111111111\n");
 			dwc->ep0_next_event = DWC3_EP0_COMPLETE;
 
 			ret = dwc3_ep0_start_trans(dwc, epnum,
@@ -905,6 +923,8 @@ static void dwc3_ep0_xfer_complete(struct dwc3 *dwc,
 {
 	struct dwc3_ep		*dep = dwc->eps[event->endpoint_number];
 
+	printf("== %s: name: %s, flags: 0x%x\n", __func__, dep->name, dep->flags);
+
 	dep->flags &= ~DWC3_EP_BUSY;
 	dep->resource_index = 0;
 	dwc->setup_packet_pending = false;
@@ -935,6 +955,9 @@ static void __dwc3_ep0_do_control_data(struct dwc3 *dwc,
 	int			ret;
 
 	req->direction = !!dep->number;
+
+	printf("%s: %d %d %d name: %s\n", __func__, req->request.length,
+				dep->endpoint.maxpacket, dep->number, dep->name);
 
 	if (req->request.length == 0) {
 		ret = dwc3_ep0_start_trans(dwc, dep->number,
@@ -1092,7 +1115,7 @@ void dwc3_ep0_interrupt(struct dwc3 *dwc,
 {
 	u8			epnum = event->endpoint_number;
 
-	dev_dbg(dwc->dev, "%s while ep%d%s in state '%s'",
+	dev_dbg(dwc->dev, "%s while ep%d%s in state '%s'\n",
 			dwc3_ep_event_string(event->endpoint_event),
 			epnum >> 1, (epnum & 1) ? "in" : "out",
 			dwc3_ep0_state_string(dwc->ep0state));

@@ -5,7 +5,8 @@
  * Copyright (C) 2006-2008 David Brownell
  * U-Boot porting: Lukasz Majewski <l.majewski@samsung.com>
  */
-#undef DEBUG
+#define DEBUG
+//#undef DEBUG
 
 #include <log.h>
 #include <dm/devres.h>
@@ -377,6 +378,7 @@ static int set_config(struct usb_composite_dev *cdev,
 	int			tmp;
 	struct usb_function	*f;
 
+	debug("%s: Entry\n", __func__);
 	if (cdev->config)
 		reset_config(cdev);
 
@@ -391,6 +393,7 @@ static int set_config(struct usb_composite_dev *cdev,
 			goto done;
 	} else
 		result = 0;
+	debug("%s: Entry\n", __func__);
 
 	debug("%s: %s speed config #%d: %s\n", __func__,
 	     ({ char *speed;
@@ -778,6 +781,7 @@ int usb_string_ids_n(struct usb_composite_dev *c, unsigned n)
 
 static void composite_setup_complete(struct usb_ep *ep, struct usb_request *req)
 {
+	printf("%s\n", __func__);
 	if (req->status || req->actual != req->length)
 		debug("%s: setup complete --> %d, %d/%d\n", __func__,
 				req->status, req->actual, req->length);
@@ -1109,8 +1113,10 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			else
 				debug("HNP inactive\n");
 		}
+		printf("%s: USB_REQ_SET_CONFIGURATION\n", __func__);
 
 		value = set_config(cdev, ctrl, w_value);
+		printf("%s: value: %d\n", __func__, value);
 		break;
 	case USB_REQ_GET_CONFIGURATION:
 		if (ctrl->bRequestType != USB_DIR_IN)
@@ -1507,6 +1513,7 @@ int usb_composite_register(struct usb_composite_driver *driver)
 	if (!driver->name)
 		driver->name = "composite";
 	composite = driver;
+	composite_driver.function = (char *)driver->name;
 
 	res = usb_gadget_register_driver(&composite_driver);
 	if (res != 0)
