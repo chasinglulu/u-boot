@@ -12,7 +12,9 @@
  *
  * commit 8e74475b0e : usb: dwc3: gadget: use udc-core's reset notifier
  */
-
+#define VERBOSE_DEBUG
+#define DEBUG
+#define LOG_DEBUG
 #include <common.h>
 #include <cpu_func.h>
 #include <log.h>
@@ -1358,6 +1360,7 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 	u32			reg;
 	u32			timeout = 500;
 
+	printf("Entry %s\n", __func__);
 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
 	if (is_on) {
 		if (dwc->revision <= DWC3_REVISION_187A) {

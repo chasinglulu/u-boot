@@ -1507,6 +1507,7 @@ int usb_composite_register(struct usb_composite_driver *driver)
 	if (!driver->name)
 		driver->name = "composite";
 	composite = driver;
+	composite_driver.function = (char *)driver->name;
 
 	res = usb_gadget_register_driver(&composite_driver);
 	if (res != 0)
