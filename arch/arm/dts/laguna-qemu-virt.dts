@@ -233,7 +233,7 @@
 				snps,enable_guctl1_resume_quirk;
 				snps,enable_guctl1_ipd_quirk;
 				snps,xhci-stream-quirk;
-				dr_mode = "host";
+				dr_mode = "otg";
 				phy-names = "usb3-phy";
 				/* dma-coherent; */
 			};
