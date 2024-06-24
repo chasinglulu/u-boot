@@ -238,7 +238,8 @@
 
 /* #define VERBOSE_DEBUG */
 /* #define DUMP_MSGS */
-
+#define DEBUG
+#define VERBOSE_DEBUG
 #include <config.h>
 #include <div64.h>
 #include <hexdump.h>
@@ -480,6 +481,8 @@ static int ep0_queue(struct fsg_common *common)
 {
 	int	rc;
 
+	debug("%s\n", __func__);
+
 	rc = usb_ep_queue(common->ep0, common->ep0req, GFP_ATOMIC);
 	common->ep0->driver_data = common;
 	if (rc != 0 && rc != -ESHUTDOWN) {
@@ -701,6 +704,7 @@ static int do_read(struct fsg_common *common)
 	unsigned int		partial_page;
 	ssize_t			nread;
 
+	printf("%s: entry\n", __func__);
 	/* Get the starting Logical Block Address and check that it's
 	 * not too big */
 	if (common->cmnd[0] == SC_READ_6)
@@ -1431,6 +1435,7 @@ static int pad_with_zeros(struct fsg_dev *fsg)
 
 	bh->state = BUF_STATE_EMPTY;		/* For the first iteration */
 	fsg->common->usb_amount_left = nkeep + fsg->common->residue;
+	printf("%s: usb_amount_left: %d\n", __func__, fsg->common->usb_amount_left);
 	while (fsg->common->usb_amount_left > 0) {
 
 		/* Wait for the next buffer to be free */
@@ -1513,6 +1518,7 @@ static int finish_reply(struct fsg_common *common)
 	struct fsg_buffhd	*bh = common->next_buffhd_to_fill;
 	int			rc = 0;
 
+	printf("%s: data_dir: %d\n", __func__, common->data_dir);
 	switch (common->data_dir) {
 	case DATA_DIR_NONE:
 		break;			/* Nothing to send */
@@ -1540,6 +1546,7 @@ static int finish_reply(struct fsg_common *common)
 
 		/* If there's no residue, simply send the last buffer */
 		} else if (common->residue == 0) {
+			printf("%s: common->residue == 0\n", __func__);
 			bh->inreq->zero = 0;
 			START_TRANSFER_OR(common, bulk_in, bh->inreq,
 					  &bh->inreq_busy, &bh->state)
@@ -1550,6 +1557,7 @@ static int finish_reply(struct fsg_common *common)
 		 * short packet and halt the bulk-in endpoint.  If we can't
 		 * stall, pad out the remaining data with 0's. */
 		} else if (common->can_stall) {
+			printf("%s: common->can_stall\n", __func__);
 			bh->inreq->zero = 1;
 			START_TRANSFER_OR(common, bulk_in, bh->inreq,
 					  &bh->inreq_busy, &bh->state)
@@ -1560,6 +1568,7 @@ static int finish_reply(struct fsg_common *common)
 			if (common->fsg)
 				rc = halt_bulk_in_endpoint(common->fsg);
 		} else if (fsg_is_set(common)) {
+			printf("%s: pad_with_zeros\n", __func__);
 			rc = pad_with_zeros(common->fsg);
 		} else {
 			/* Don't know what to do if common->fsg is NULL */
@@ -1600,6 +1609,7 @@ static int finish_reply(struct fsg_common *common)
 		}
 		break;
 	}
+	printf("%s: done\n", __func__);
 	return rc;
 }
 
@@ -1613,6 +1623,7 @@ static int send_status(struct fsg_common *common)
 	u8			status = USB_STATUS_PASS;
 	u32			sd, sdinfo = 0;
 
+	printf("%s: entry\n", __func__);
 	/* Wait for the next buffer to become available */
 	bh = common->next_buffhd_to_fill;
 	while (bh->state != BUF_STATE_EMPTY) {
@@ -2130,6 +2141,7 @@ static int get_next_command(struct fsg_common *common)
 
 	/* Wait for the next buffer to become available */
 	bh = common->next_buffhd_to_fill;
+	printf("%s: state: %d\n", __func__, bh->state);
 	while (bh->state != BUF_STATE_EMPTY) {
 		rc = sleep_thread(common);
 		if (rc)
@@ -2192,6 +2204,8 @@ static int do_set_interface(struct fsg_common *common, struct fsg_dev *new_fsg)
 	const struct usb_endpoint_descriptor *d;
 	struct fsg_dev *fsg;
 	int i, rc = 0;
+
+	debug("%s\n", __func__);
 
 	if (common->running)
 		DBG(common, "reset interface\n");
@@ -2280,6 +2294,7 @@ reset:
 
 static int fsg_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 {
+	debug("%s\n", __func__);
 	struct fsg_dev *fsg = fsg_from_func(f);
 	fsg->common->new_fsg = fsg;
 	raise_exception(fsg->common, FSG_STATE_CONFIG_CHANGE);
@@ -2411,18 +2426,22 @@ int fsg_main_thread(void *common_)
 	do {
 		if (exception_in_progress(common)) {
 			handle_exception(common);
+			printf("11111111111111\n");
 			continue;
 		}
 
 		if (!common->running) {
 			ret = sleep_thread(common);
+			printf("222222: ret=%d\n", ret);
 			if (ret)
 				return ret;
 
+			printf("22222222222222\n");
 			continue;
 		}
 
 		ret = get_next_command(common);
+		printf("3333333333: ret=%d\n", ret);
 		if (ret)
 			return ret;
 

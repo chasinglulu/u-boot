@@ -12,7 +12,9 @@
  *
  * commit 8e74475b0e : usb: dwc3: gadget: use udc-core's reset notifier
  */
-
+#define VERBOSE_DEBUG
+#define DEBUG
+#define LOG_DEBUG
 #include <common.h>
 #include <cpu_func.h>
 #include <log.h>
@@ -613,6 +615,7 @@ static int dwc3_gadget_ep_enable(struct usb_ep *ep,
 	}
 
 	dep = to_dwc3_ep(ep);
+	debug("%s: ep number: %d\n", __func__, dep->number);
 
 	if (dep->flags & DWC3_EP_ENABLED) {
 		WARN(true, "%s is already enabled\n",
@@ -717,6 +720,7 @@ static void dwc3_prepare_one_trb(struct dwc3_ep *dep,
 	trb = &dep->trb_pool[dep->free_slot & DWC3_TRB_MASK];
 
 	if (!req->trb) {
+		debug("%s: req->trb is NULL\n", __func__);
 		dwc3_gadget_move_request_queued(req);
 		req->trb = trb;
 		req->trb_dma = dwc3_trb_dma_offset(dep, trb);
@@ -1358,6 +1362,7 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 	u32			reg;
 	u32			timeout = 500;
 
+	printf("Entry %s\n", __func__);
 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
 	if (is_on) {
 		if (dwc->revision <= DWC3_REVISION_187A) {
@@ -1948,6 +1953,7 @@ static void dwc3_reset_gadget(struct dwc3 *dwc)
 	if (!dwc->gadget_driver)
 		return;
 
+	printf("%s: speed: %d\n", __func__, dwc->gadget.speed);
 	if (dwc->gadget.speed != USB_SPEED_UNKNOWN) {
 		spin_unlock(&dwc->lock);
 		usb_gadget_udc_reset(&dwc->gadget, dwc->gadget_driver);
@@ -2147,6 +2153,7 @@ static void dwc3_gadget_conndone_interrupt(struct dwc3 *dwc)
 	reg = dwc3_readl(dwc->regs, DWC3_DSTS);
 	speed = reg & DWC3_DSTS_CONNECTSPD;
 	dwc->speed = speed;
+	printf("%s: speed: 0x%x\n", __func__, speed);
 
 	dwc3_update_ram_clk_sel(dwc, speed);
 
@@ -2388,12 +2395,15 @@ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
 		dwc3_gadget_disconnect_interrupt(dwc);
 		break;
 	case DWC3_DEVICE_EVENT_RESET:
+		printf("event: reset, %u\n", event->type);
 		dwc3_gadget_reset_interrupt(dwc);
 		break;
 	case DWC3_DEVICE_EVENT_CONNECT_DONE:
+		printf("event: connect done, %u\n", event->type);
 		dwc3_gadget_conndone_interrupt(dwc);
 		break;
 	case DWC3_DEVICE_EVENT_WAKEUP:
+		printf("event: wakeup, %u\n", event->type);
 		dwc3_gadget_wakeup_interrupt(dwc);
 		break;
 	case DWC3_DEVICE_EVENT_HIBER_REQ:
@@ -2462,6 +2472,8 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
 		union dwc3_event event;
 
 		event.raw = *(u32 *) (evt->buf + evt->lpos);
+
+		printf("%s: buf: %d event raw: 0x%x left: %d\n", __func__, buf, event.raw, left);
 
 		dwc3_process_event_entry(dwc, &event);
 

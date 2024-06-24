@@ -60,7 +60,9 @@
 #define FSG_PRODUCT_ID	0xa4a5	/* Linux-USB File-backed Storage Gadget */
 
 /*-------------------------------------------------------------------------*/
-
+#define DEBUG
+#define VERBOSE_DEBUG
+#define DUMP_MSGS
 #ifndef DEBUG
 #undef VERBOSE_DEBUG
 #undef DUMP_MSGS

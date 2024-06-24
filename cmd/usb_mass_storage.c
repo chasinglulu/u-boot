@@ -210,6 +210,7 @@ static int do_usb_mass_storage(struct cmd_tbl *cmdtp, int flag,
 		puts("\r\n");
 	}
 
+	printf("%s: entry loop\n", __func__);
 	while (1) {
 		usb_gadget_handle_interrupts(controller_index);
 
