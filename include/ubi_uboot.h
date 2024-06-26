@@ -78,4 +78,13 @@ extern struct ubi_device *ubi_devices[];
 int cmd_ubifs_mount(char *vol_name);
 int cmd_ubifs_umount(void);
 
+#if IS_ENABLED(CONFIG_BLK) && IS_ENABLED(CONFIG_MTD_UBI)
+int ubi_bind(struct udevice *dev);
+#else
+static inline int ubi_bind(struct udevice *dev)
+{
+	return -EOPNOTSUPP;
+}
+#endif
+
 #endif

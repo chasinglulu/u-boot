@@ -44,6 +44,7 @@ enum if_type {
 	IF_TYPE_VIRTIO,
 	IF_TYPE_EFI_MEDIA,
 	IF_TYPE_MTD,
+	IF_TYPE_UBI,
 
 	IF_TYPE_COUNT,			/* Number of interface types */
 };
