@@ -298,6 +298,9 @@ static void print_part_header(const char *type, struct blk_desc *dev_desc)
 	case IF_TYPE_MTD:
 		puts("MTD");
 		break;
+	case IF_TYPE_UBI:
+		puts("UBI");
+		break;
 	default:
 		puts("UNKNOWN");
 		break;
