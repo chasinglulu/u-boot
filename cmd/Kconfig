@@ -1289,6 +1289,12 @@ config CMD_MTD_MARKBAD
 	help
 	  MTD markbad command support.
 
+config CMD_MTD_TORTURE
+	bool "mtd torture"
+	depends on CMD_MTD
+	help
+	  MTD torture command support.
+
 config CMD_MUX
 	bool "mux"
 	depends on MULTIPLEXER
