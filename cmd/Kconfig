@@ -1295,6 +1295,12 @@ config CMD_MTD_TORTURE
 	help
 	  MTD torture command support.
 
+config CMD_MTD_NANDTEST
+	bool "mtd nandtest"
+	depends on CMD_MTD
+	help
+	  MTD nandtest command support.
+
 config CMD_MUX
 	bool "mux"
 	depends on MULTIPLEXER
