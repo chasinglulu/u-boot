@@ -24,3 +24,10 @@ int dram_init(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_DESIGNWARE_SPI
+int dw_spi_get_clk(struct udevice *bus, ulong *rate)
+{
+	return 0;
+}
+#endif

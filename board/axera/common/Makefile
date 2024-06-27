@@ -6,3 +6,4 @@
 
 obj-$(CONFIG_AXERA_LMT) += lambert/
 obj-$(CONFIG_AXERA_LUA) += laguna/
+obj-$(CONFIG_ARCH_AXERA_R5F) += laguna_r5f/

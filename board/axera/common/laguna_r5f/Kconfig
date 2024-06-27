@@ -1,0 +1,42 @@
+
+config LUA_NOR0
+	bool "SPI NOR Flash Settings for nor0"
+	depends on SYS_MTDPARTS_RUNTIME
+	depends on LUA_R5F
+	help
+	  This enable settings for first SPI NOR Flash.
+
+config LUA_MTDPARTS_NOR0
+	string "MTD Partitions for nor0"
+	depends on LUA_NOR0
+	help
+	  This define the partition of nor0 used to build mtparts dynamically
+	  for booting.
+
+config LUA_NOR1
+	bool "SPI NOR Flash Settings for nor1"
+	depends on SYS_MTDPARTS_RUNTIME
+	depends on LUA_R5F
+	help
+	  This enable settings for second SPI NOR Flash.
+
+config LUA_MTDPARTS_NOR1
+	string "MTD Partitions for nor1"
+	depends on LUA_NOR1
+	help
+	  This define the partition of nor1 used to build mtparts dynamically
+	  for booting.
+
+config LUA_NAND0
+	bool "SPI NAND Flash Settings for nand0"
+	depends on SYS_MTDPARTS_RUNTIME
+	depends on LUA_R5F
+	help
+	  This enable settings for the first SPI NAND Flash.
+
+config LUA_MTDPARTS_NAND0
+	string "MTD Partitions for nand0"
+	depends on LUA_NAND0
+	help
+	  This define the partition of nand0 used to build mtparts dynamically
+	  for booting.
