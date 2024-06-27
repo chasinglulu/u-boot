@@ -27,6 +27,7 @@ config LUA_R5F
 	bool
 
 menu "Safety Island Features"
+	depends on LUA_R5F
 
 config CPU_FREQ_HZ
 	int "CPU frequency"
@@ -34,6 +35,10 @@ config CPU_FREQ_HZ
 	default 800000000
 	help
 	  The value, in Hz, that the CPU clock is running at.
+
+menu "MTD Settings"
+source "board/axera/common/laguna_r5f/Kconfig"
+endmenu
 
 endmenu
 
