@@ -19,7 +19,7 @@
 	interrupt-parent = <&gic>;
 
 	chosen {
-		stdout-path = "serial0:115200n8";
+		stdout-path = "serial1:115200n8";
 	};
 
 	memory {
@@ -28,8 +28,11 @@
 	};
 
 	aliases {
-		serial0 = &serial0;
 		serial1 = &serial1;
+		serial2 = &serial2;
+		serial3 = &serial3;
+		serial4 = &serial4;
+		serial5 = &serial5;
 	};
 
 	psci {
@@ -69,24 +72,60 @@
 		u-boot,dm-spl;
 		ranges;
 
-		serial0: uart@0E403000 {
+		serial1: uart@0E403000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x0E403000 0x0 0x1000>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <GIC_SPI 167 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>; //192MHz
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
 		};
 
-		serial1: uart@0E404000 {
+		serial2: uart@0E404000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x0E404000 0x0 0x1000>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+		};
+
+		serial3: uart@0E405000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E405000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+		};
+
+		serial4: uart@0E410000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E410000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <192000000>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+		};
+
+		serial5: uart@0E411000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E411000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>;
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
