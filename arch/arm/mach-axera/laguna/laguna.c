@@ -14,20 +14,26 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 typedef enum mmap_region_type {
-	MMAP_SAFETY_IRAM,
-	MMAP_PERI_MMIO,
-	MMAP_OCM,
-	MMAP_DRAM,
-	MMAP_END,
+	MMIO_SAFETY_IRAM,
+	MMIO_CPUSYS,
+	MMIO_FLASHSYS,
+	MMIO_PERISYS,
+	MMIO_NPU_OCM,
+	MMIO_TOP,
+	MMIO_DRAM,
+	MMIO_COUNT,
 } mmap_region_t;
 
-#define MMAP_OCM_BASE          0x14000000U
-#define MMAP_PERI_BASE         0x08000000U
-#define MMAP_SAFETY_IRAM_BASE  0x00200000U
+#define MMAP_SAFETY_IRAM_BASE  0x00400000U
+#define MMAP_CPUSYS_BASE       0x08000000U
+#define MMAP_FLASHSYS_BASE     0x0C000000U
+#define MMAP_PERISYS_BASE      0x0E000000U
+#define MMAP_NPUOCM_BASE       0x14000000U
+#define MMAP_TOP_BASE          0x18000000U
 #define MMAP_DRAM_BASE         0x100000000UL
 
 static struct mm_region lua_mem_map[] = {
-	[MMAP_SAFETY_IRAM] = {
+	[MMIO_SAFETY_IRAM] = {
 		.virt = MMAP_SAFETY_IRAM_BASE,
 		.phys = MMAP_SAFETY_IRAM_BASE,
 		.size = SZ_64K,
@@ -35,28 +41,53 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMAP_PERI_MMIO] = {
-		.virt = MMAP_PERI_BASE,
-		.phys = MMAP_PERI_BASE,
-		.size = SZ_128M,
+	[MMIO_CPUSYS] = {
+		.virt = MMAP_CPUSYS_BASE,
+		.phys = MMAP_CPUSYS_BASE,
+		.size = SZ_32M,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMAP_OCM] = {
-		.virt = MMAP_OCM_BASE,
-		.phys = MMAP_OCM_BASE,
-		.size = SZ_512K,
+	[MMIO_FLASHSYS] = {
+		.virt = MMAP_FLASHSYS_BASE,
+		.phys = MMAP_FLASHSYS_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	[MMIO_PERISYS] = {
+		.virt = MMAP_PERISYS_BASE,
+		.phys = MMAP_PERISYS_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	[MMIO_NPU_OCM] = {
+		.virt = MMAP_NPUOCM_BASE,
+		.phys = MMAP_NPUOCM_BASE,
+		.size = SZ_2M,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			PTE_BLOCK_INNER_SHARE
 	},
-	[MMAP_DRAM] = {
+	[MMIO_TOP] = {
+		.virt = MMAP_TOP_BASE,
+		.phys = MMAP_TOP_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	[MMIO_DRAM] = {
 		.virt = MMAP_DRAM_BASE,
 		.phys = MMAP_DRAM_BASE,
 		.size = SZ_4G,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			PTE_BLOCK_INNER_SHARE
-	}, {
+	},
+	{
 		/* List terminator */
 		0,
 	}
