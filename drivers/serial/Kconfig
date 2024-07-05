@@ -751,6 +751,15 @@ config NS16550_DYNAMIC
 	  UARTs in a system. This option avoids this problem at the cost of a
 	  slightly increased code size.
 
+config DW_UART_INIT
+	bool "Enable DesignWare 8250 UART Initialization"
+	depends on SYS_NS16550
+	help
+	  This option enable Synopsis DesignWare 8250 UART initialization.
+	  For Synopsys DesignWare 8250 uart, there is a valid divisor latch
+	  fraction register. This add a function that tries to get the fractional
+	  divisor.
+
 config INTEL_MID_SERIAL
 	bool "Intel MID platform UART support"
 	depends on DM_SERIAL && OF_CONTROL
