@@ -179,6 +179,8 @@ struct ns16550 {
 #define UART_LCR_BKSE	0x80		/* Bank select enable */
 #define UART_LCR_DLAB	0x80		/* Divisor latch access bit */
 
+#define DW_UART_DLF		0xC0		/* Divisor Latch Fraction Register */
+
 /*
  * These are the definitions for the Line Status Register
  */

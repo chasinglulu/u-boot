@@ -206,6 +206,52 @@ static u32 ns16550_getfcr(struct ns16550 *port)
 }
 #endif
 
+#if defined(CONFIG_DW_UART_INIT)
+/*
+ * divisor = div(I) + div(F)
+ * "I" means integer, "F" means fractional
+ * quot = div(I) = clk / (16 * baud)
+ * frac = div(F) * 2^dlf_size
+ *
+ * let rem = clk % (16 * baud)
+ * we have: div(F) * (16 * baud) = rem
+ * so frac = 2^dlf_size * rem / (16 * baud) = (rem << dlf_size) / (16 * baud)
+ */
+int dw8250_calc_frac(struct ns16550 *port, int clock, int baud)
+{
+	unsigned int rem, base_baud = baud * 16;
+
+	rem = clock % base_baud;
+
+	return DIV_ROUND_CLOSEST(rem << 4, base_baud);
+}
+
+void dw8250_writel_ext(unsigned long addr, int offset, int val)
+{
+	writel(val, addr + offset);
+}
+
+void dw8250_set_baud_frac(struct ns16550 *port, int baud)
+{
+	struct ns16550_plat *plat = port->plat;
+	int frac;
+
+	frac = dw8250_calc_frac(port, plat->clock, baud);
+	dw8250_writel_ext(plat->base, DW_UART_DLF, frac);
+}
+
+void _debug_dw8250_baud_init(unsigned long base, int clock, int baud)
+{
+	int frac;
+
+	frac = dw8250_calc_frac(NULL, clock, baud);
+	dw8250_writel_ext(base, DW_UART_DLF, frac);
+}
+#else
+void dw8250_set_baud_frac(struct ns16550 *port, int baud) {}
+void _debug_dw8250_baud_init(unsigned long base, int clock, int baud) {}
+#endif
+
 int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 {
 	const unsigned int mode_x_div = 16;
@@ -340,6 +386,10 @@ static inline void _debug_uart_init(void)
 	 */
 	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_DEBUG_UART_CLOCK,
 					    CONFIG_BAUDRATE);
+
+	_debug_dw8250_baud_init(CONFIG_DEBUG_UART_BASE,
+				        CONFIG_DEBUG_UART_CLOCK, CONFIG_BAUDRATE);
+
 	serial_dout(&com_port->ier, CONFIG_SYS_NS16550_IER);
 	serial_dout(&com_port->mcr, UART_MCRVAL);
 	serial_dout(&com_port->fcr, UART_FCR_DEFVAL);
@@ -428,6 +478,7 @@ static int ns16550_serial_setbrg(struct udevice *dev, int baudrate)
 
 	clock_divisor = ns16550_calc_divisor(com_port, plat->clock, baudrate);
 
+	dw8250_set_baud_frac(com_port, baudrate);
 	ns16550_setbrg(com_port, clock_divisor);
 
 	return 0;
