@@ -11,14 +11,18 @@
 #include "fdt_support.h"
 #include "mtd_node.h"
 #include <asm/io.h>
+#include <linux/delay.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 #define PHEIPH_SYS_CK_RST_BASE  0x0E001000
 void uart_clk_enable(void)
 {
-	writel(0x4200, PHEIPH_SYS_CK_RST_BASE + 0x40);
-	writel(0x7ff, PHEIPH_SYS_CK_RST_BASE + 0x120);
+	writel(0x0, PHEIPH_SYS_CK_RST_BASE + 0x40);
+	writel(0xFFFFFFFF, PHEIPH_SYS_CK_RST_BASE + 0x120);
+	udelay(10);
+	writel(0x7FE00, PHEIPH_SYS_CK_RST_BASE + 0x40);
+	writel(0xFFE007FF, PHEIPH_SYS_CK_RST_BASE + 0x120);
 }
 
 #ifdef CONFIG_BOARD_EARLY_INIT_F
