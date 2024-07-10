@@ -31,3 +31,5 @@ obj-$(CONFIG_UNIT_TEST) += common/
 obj-y += log/
 obj-$(CONFIG_$(SPL_)UT_UNICODE) += unicode_ut.o
 endif
+
+obj-$(CONFIG_AXERA_LUA) += laguna/

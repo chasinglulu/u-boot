@@ -80,6 +80,10 @@ static struct cmd_tbl cmd_ut_sub[] = {
 #ifdef CONFIG_CMD_LOADM
 	U_BOOT_CMD_MKENT(loadm, CONFIG_SYS_MAXARGS, 1, do_ut_loadm, "", ""),
 #endif
+#ifdef CONFIG_AXERA_LUA
+	U_BOOT_CMD_MKENT(laguna, CONFIG_SYS_MAXARGS, 1, do_ut_laguna, "", ""),
+	U_BOOT_CMD_MKENT(stress, CONFIG_SYS_MAXARGS, 1, do_ut_laguna_stress, "", ""),
+#endif
 };
 
 static int do_ut_all(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -167,6 +171,10 @@ static char ut_help_text[] =
 #endif
 #ifdef CONFIG_CMD_LOADM
 	"ut loadm [test-name]- test of parameters and load memory blob\n"
+#endif
+#ifdef CONFIG_AXERA_LUA
+	"ut laguna [test-name] - test Axera Laguna SoC functions\n"
+	"ut stress [test-name] - stress Axera Laguna SoC functions\n"
 #endif
 	;
 #endif /* CONFIG_SYS_LONGHELP */
