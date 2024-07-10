@@ -208,7 +208,7 @@ static int setexpr_test_sub(struct unit_test_state *uts)
 	char *buf, *nbuf;
 	int i;
 
-	buf = map_sysmem(0, BUF_SIZE);
+	buf = map_sysmem(0x10, BUF_SIZE);
 	nbuf = map_sysmem(0x1000, BUF_SIZE);
 
 	/* Add a pattern so we can check the buffer limits */
@@ -248,7 +248,7 @@ static int setexpr_test_backref(struct unit_test_state *uts)
 	char *buf, *nbuf;
 	int i;
 
-	buf = map_sysmem(0, BUF_SIZE);
+	buf = map_sysmem(0x10, BUF_SIZE);
 	nbuf = map_sysmem(0x1000, BUF_SIZE);
 
 	/* Add a pattern so we can check the buffer limits */
