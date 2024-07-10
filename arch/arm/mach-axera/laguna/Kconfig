@@ -46,6 +46,10 @@ config LUA_IRAM_BASE
 	hex "Laguna IRAM Base Address"
 	default 0x00400000
 
+config LUA_OCM_BASE
+	hex "Laguna NPU OCM Base Address"
+	default 0x14000000
+
 menu "SPL Loading Images"
 	depends on SPL
 
