@@ -23,6 +23,10 @@
 #ifdef __KERNEL__
 extern void show_regs(struct pt_regs *);
 
+#if CONFIG_IS_ENABLED(SYMBOL_LOOKUP)
+void unwind_stack(void);
+#endif
+
 #define predicate(x)	(x & 0xf0000000)
 #define PREDICATE_ALWAYS	0xe0000000
 
