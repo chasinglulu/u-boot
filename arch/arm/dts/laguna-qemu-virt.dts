@@ -8,9 +8,11 @@
 /dts-v1/;
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/reset/laguna-sysctl.h>
 
 #include "laguna-gpios.dtsi"
 #include "laguna-global-ctrl.dtsi"
+#include "laguna-cru.dtsi"
 / {
 	model = "Laguna Qemu Virtual Platform";
 	compatible = "axera,laguna-virt";
@@ -79,6 +81,9 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 167 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>; //192MHz
+			resets = <&periph_sysrst0 LAGUNA_PERI_UART1_PRST>,
+					 <&periph_sysrst0 LAGUNA_PERI_UART1_RST>;
+			reset-names = "prst", "rst";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -91,6 +96,9 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>;
+			resets = <&periph_sysrst0 LAGUNA_PERI_UART2_PRST>,
+					 <&periph_sysrst0 LAGUNA_PERI_UART2_RST>;
+			reset-names = "prst", "rst";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -103,6 +111,9 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>;
+			resets = <&periph_sysrst0 LAGUNA_PERI_UART3_PRST>,
+					 <&periph_sysrst0 LAGUNA_PERI_UART3_RST>;
+			reset-names = "prst", "rst";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -115,6 +126,9 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>;
+			resets = <&periph_sysrst0 LAGUNA_PERI_UART4_PRST>,
+					 <&periph_sysrst0 LAGUNA_PERI_UART4_RST>;
+			reset-names = "prst", "rst";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -127,6 +141,9 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <192000000>;
+			resets = <&periph_sysrst0 LAGUNA_PERI_UART5_PRST>,
+					 <&periph_sysrst0 LAGUNA_PERI_UART5_RST>;
+			reset-names = "prst", "rst";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
