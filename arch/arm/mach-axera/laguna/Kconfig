@@ -148,6 +148,27 @@ config LUA_CPU_GTMR_BASE
 	depends on LUA_GTMR_LOWLEVEL_INIT
 	default "0x08012000"
 
+config LUA_PERIPH_CRU
+	bool "Enable Periph Subsystem Clock Gate & Reset"
+	help
+	  This option enables periph subsystem clock gate and
+	  reset sysctl register.
+
+config LUA_PERIPH_CRU_BASE
+	hex "Periph Clock & Reset Base"
+	depends on LUA_PERIPH_CRU
+	default 0x0E001000
+
+config LUA_PERIPH_CLK_GATE_REG0
+	hex "Periph Global Clock Gate Enable Register 0"
+	depends on LUA_PERIPH_CRU
+	default 0x40
+
+config LUA_PERIPH_SWRST_REG0
+	hex "Periph Software Control Reset Register 0"
+	depends on LUA_PERIPH_CRU
+	default 0x120
+
 endmenu
 
 menu "MTD Settings"
