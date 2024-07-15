@@ -5,92 +5,144 @@
  * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
 
+#include <dt-bindings/mfd/laguna-sysctl.h>
 / {
-	pll_ctrl1: pll-ctrl1@18001000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x18001000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x18001000 0x1000>;
-	};
+	cru {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
 
-	pll_ctrl2: pll-ctrl1@0A01C000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x0A01C000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x0A01C000 0x1000>;
-	};
+		pll_ctrl1: pll-ctrl1@18001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x18001000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 
-	comm_cru: common-cru@06101000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x06101000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x06101000 0x1000>;
-	};
+		pll_ctrl2: pll-ctrl1@0A01C000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0A01C000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 
-	cpu_cru: cpu-cru@08011000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x08011000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x08011000 0x1000>;
-	};
+		comm_cru: common-cru@06101000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x06101000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-	ddr_cru: ddr-cru@0A000000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x0A000000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x0A000000 0x1000>;
-	};
+			comm_sysrst: common-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&comm_cru>;
+				offset = <LAGUNA_SYSCTL_COMM_SWRST>;
+				mask = <0x7FFFFFFF>;
+				assert-high = <1>;
+			};
+		};
 
-	flash_cru: flash-cru@0C001000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x0C001000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x0C001000 0x1000>;
-	};
+		cpu_cru: cpu-cru@08011000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x08011000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-	periph_cru: periph-cru@0E001000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x0E001000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x0E001000 0x1000>;
-	};
+			cpu_sysrst: cpu-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&cpu_cru>;
+				offset = <LAGUNA_SYSCTL_CPU_SWRST>;
+				mask = <0x3F>;
+				assert-high = <1>;
+			};
+		};
 
-	isp_cru: isp-cru@10001000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x10001000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x10001000 x1000>;
-	};
+		ddr_cru: ddr-cru@0A000000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0A000000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 
-	mm_cru: mm-cru@12004000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x12004000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x12004000 x1000>;
-	};
+		flash_cru: flash-cru@0C001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0C001000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x00 0x00 0x0C001000 0x1000>;
 
-	npu_cru: npu-cru@14310000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x14310000 0x00 0x10000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x14310000 x10000>;
-	};
+			flash_sysrst: flash-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&flash_cru>;
+				offset = <LAGUNA_SYSCTL_FLASH_SWRST>;
+				mask = <0x3FFFFF>;
+				assert-high = <1>;
+			};
+		};
 
-	vpu_cru: vpu-cru@16001000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x16001000 0x00 0x10000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x00 0x00 0x16001000 x10000>;
+		periph_cru: periph-cru@0E001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0E001000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			periph_sysrst0: periph-reset@0 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_SYSCTL_PERIPH_SWRST0>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+
+			periph_sysrst1: periph-reset@1 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_SYSCTL_PERIPH_SWRST1>;
+				mask = <0xFFFFFF>;
+				assert-high = <1>;
+			};
+
+			periph_can_sysrst: periph-can-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_SYSCTL_PERIPH_CAN_SWRST>;
+				mask = <0x3>;
+				assert-high = <1>;
+			};
+		};
+
+		isp_cru: isp-cru@10001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x10001000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		mm_cru: mm-cru@12004000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x12004000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		npu_cru: npu-cru@14310000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x14310000 0x00 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		vpu_cru: vpu-cru@16001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x16001000 0x00 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 	};
 };
