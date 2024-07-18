@@ -232,6 +232,13 @@ void part_init(struct blk_desc *dev_desc)
 
 	blkcache_invalidate(dev_desc->if_type, dev_desc->devnum);
 
+	if (dev_desc->part_type != PART_TYPE_UNKNOWN) {
+		for (entry = drv; entry != drv + n_ents; entry++) {
+			if (entry->part_type == dev_desc->part_type && !entry->test(dev_desc))
+				return;
+		}
+	}
+
 	dev_desc->part_type = PART_TYPE_UNKNOWN;
 	for (entry = drv; entry != drv + n_ents; entry++) {
 		int ret;
