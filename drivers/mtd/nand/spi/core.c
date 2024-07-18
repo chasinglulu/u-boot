@@ -25,6 +25,7 @@
 #include <watchdog.h>
 #include <spi.h>
 #include <spi-mem.h>
+#include <ubi_uboot.h>
 #include <dm/device_compat.h>
 #include <dm/devres.h>
 #include <linux/bitops.h>
@@ -1199,6 +1200,12 @@ static int spinand_probe(struct udevice *dev)
 		ret = mtd_bind(dev, &plat->mtd);
 		if (ret)
 			goto err_spinand_cleanup;
+
+#if CONFIG_IS_ENABLED(UBI_BLOCK)
+		ret = ubi_bind(dev);
+		if (ret)
+			goto err_spinand_cleanup;
+#endif
 	}
 
 	return 0;
