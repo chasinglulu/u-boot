@@ -153,6 +153,9 @@ void dev_print (struct blk_desc *dev_desc)
 	case IF_TYPE_MTD:
 		printf("%s MTD Block Device\n", dev_desc->product);
 		break;
+	case IF_TYPE_UBI:
+		printf("UBI Block Device\n");
+		return;
 	case IF_TYPE_DOC:
 		puts("device type DOC\n");
 		return;
@@ -300,6 +303,9 @@ static void print_part_header(const char *type, struct blk_desc *dev_desc)
 		break;
 	case IF_TYPE_MTD:
 		puts("MTD");
+		break;
+	case IF_TYPE_UBI:
+		puts("UBI");
 		break;
 	default:
 		puts("UNKNOWN");
