@@ -253,6 +253,9 @@
 			reg = <0x0 0x0E014000 0x0 0x4000>;
 			phy-handle = <&phy1>;
 			phy-mode = "gmii";
+			resets = <&periph_sysrst1 LAGUNA_PERI_EMAC_ARST>;
+			reset-names = "arst";
+			axera,syscon-eth0 = <&periph_glb 0x24>;
 			// clock-names = "phy_ref_clk", "apb_pclk";
 			// clocks = <&clkc 17>, <&clkc 15>;
 			// phy-reset-gpios = <&gpioctlr 43 GPIO_ACTIVE_LOW>;
