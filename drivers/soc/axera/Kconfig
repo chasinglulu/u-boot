@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0+
+
+menuconfig SOC_LUA
+	bool "Laguna SoC drivers support"
+	depends on ARCH_AXERA
+
+if SOC_LUA
+
+config DM_GLBCON
+	bool "Support Subsystem Global Control Register Driver"
+	depends on DM
+	help
+	  This option support sysctl driver for Global Register Controller.
+
+endif

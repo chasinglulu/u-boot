@@ -1,0 +1,36 @@
+Generic SYSCON mapped register subsysctl driver
+
+This is a generic subsysctl driver using syscon to map the subsysctl register.
+The subsysctl is generally performed with a write to the subsysctl register
+defined by the register map pointed by syscon reference plus the offset and
+shifted by the subsysctl specifier.
+
+Required properties:
+- compatible: should contain "axera,laguna-sysctl"
+- #syscon-cells: at least 2
+- regmap: this is phandle to the register map node
+- offset: offset in the register map for the syscon register (in bytes)
+
+Optional properties:
+- mask: accept only the syscon specifiers defined by the mask (32 bit)
+- field-width: bit width of field to write when asserting a syscon.
+
+Default will be little endian mode, 32 bit access only.
+
+Example:
+
+		periph_glb: periph-glb@0E000000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0E000000 0x00 0x1000>;
+
+			uart_xfer_sel: uart-xfer-sel {
+				compatible = "axera,laguna-sysctl";
+				#syscon-cells = <2>;
+				regmap = <&periph_glb>;
+				offset = <0x2C>;
+				mask = <0x3FF>;
+				field-width = <2>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
+		};
