@@ -133,5 +133,31 @@
 			syscon-names = "xfersel";
 			status = "okay";
 		};
+
+		eth0: ethernet@0E014000{
+			compatible = "axera,lua-dwmac-eqos";
+			reg = <0x0 0xE014000 0x0 0x4000>;
+			clock-frequency = <10000000>;
+			max-speed = <100>;
+			phy-handle = <&phy0>;
+			phy-mode = "gmii";
+			resets = <&periph_sysrst1 LAGUNA_PERI_EMAC_ARST>;
+			reset-names = "arst";
+			axera,syscon-eth0 = <&periph_glb 0x24>;
+			axera,syscon-pps = <&periph_glb 0x68>;
+
+			// axera,syscon-eth0 = <&periph_glb 0x24>,
+			// 					<&periph_glb 0x68>;
+
+			mdio {
+				#address-cells = <0x1>;
+				#size-cells = <0x0>;
+				phy0: phy@0 {
+					compatible = "Marvell 88E1111S";
+					device_type = "ethernet-phy";
+					reg = <0x0>;
+				};
+			};
+		};
 	};
 };
