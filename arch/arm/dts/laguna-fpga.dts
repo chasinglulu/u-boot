@@ -19,7 +19,7 @@
 	interrupt-parent = <&gic>;
 
 	chosen {
-		stdout-path = "serial1:38400n8";
+		stdout-path = "serial1";
 	};
 
 	memory {
@@ -67,6 +67,8 @@
 			resets = <&periph_sysrst0 LAGUNA_PERI_UART1_PRST>,
 					 <&periph_sysrst0 LAGUNA_PERI_UART1_RST>;
 			reset-names = "prst", "rst";
+			syscons = <&uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -82,6 +84,8 @@
 			resets = <&periph_sysrst0 LAGUNA_PERI_UART2_PRST>,
 					 <&periph_sysrst0 LAGUNA_PERI_UART2_RST>;
 			reset-names = "prst", "rst";
+			syscons = <&uart_xfer_sel 2 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
 			status = "okay";
 		};
 
@@ -95,6 +99,8 @@
 			resets = <&periph_sysrst0 LAGUNA_PERI_UART3_PRST>,
 					 <&periph_sysrst0 LAGUNA_PERI_UART3_RST>;
 			reset-names = "prst", "rst";
+			syscons = <&uart_xfer_sel 4 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
 			status = "okay";
 		};
 
@@ -108,6 +114,8 @@
 			resets = <&periph_sysrst0 LAGUNA_PERI_UART4_PRST>,
 					 <&periph_sysrst0 LAGUNA_PERI_UART4_RST>;
 			reset-names = "prst", "rst";
+			syscons = <&uart_xfer_sel 6 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
 			status = "okay";
 		};
 
@@ -121,6 +129,8 @@
 			resets = <&periph_sysrst0 LAGUNA_PERI_UART5_PRST>,
 					 <&periph_sysrst0 LAGUNA_PERI_UART5_RST>;
 			reset-names = "prst", "rst";
+			syscons = <&uart_xfer_sel 8 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
 			status = "okay";
 		};
 	};
