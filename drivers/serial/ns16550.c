@@ -18,6 +18,7 @@
 #include <linux/err.h>
 #include <linux/types.h>
 #include <asm/io.h>
+#include <linux/glbcon.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -557,6 +558,7 @@ int ns16550_serial_probe(struct udevice *dev)
 	struct ns16550_plat *plat = dev_get_plat(dev);
 	struct ns16550 *const com_port = dev_get_priv(dev);
 	struct reset_ctl_bulk reset_bulk;
+	struct subsysctl subsys_ctl;
 	fdt_addr_t addr;
 	int ret;
 
@@ -570,6 +572,10 @@ int ns16550_serial_probe(struct udevice *dev)
 		if (ret)
 			return ret;
 	}
+
+	ret = subsysctl_get_by_name(dev, "xfersel", &subsys_ctl);
+	if (!ret)
+		subsysctl_assert(&subsys_ctl);
 
 	ret = reset_get_bulk(dev, &reset_bulk);
 	if (!ret)
