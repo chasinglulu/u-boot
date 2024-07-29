@@ -13,6 +13,29 @@
 		#size-cells = <2>;
 		ranges;
 
+		safety_wrap_cru: safety-wrap-cru@00600000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x00600000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			safety_sysrst0: safety-reset@0 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <0x124>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+		};
+
+		safety_top_cru: safety-top-cru@00600000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x00600000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
 		pll_ctrl1: pll-ctrl1@18001000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x18001000 0x00 0x1000>;

@@ -121,12 +121,12 @@ config LUA_GICV2_LOWLEVEL_INIT
 config LUA_GICD_BASE
 	hex "GIC Distributor Base"
 	depends on LUA_GICV2_LOWLEVEL_INIT
-	default "0x08001000"
+	default 0x08001000
 
 config LUA_GICC_BASE
 	hex "GIC CPU Interfaces Base"
 	depends on LUA_GICV2_LOWLEVEL_INIT
-	default "0x08002000"
+	default 0x08002000
 
 config LUA_GTMR_LOWLEVEL_INIT
 	bool "Enable Generic Timer Counter"
@@ -136,17 +136,17 @@ config LUA_GTMR_LOWLEVEL_INIT
 config LUA_MAIN_SEC_GLB_BASE
 	hex "Main Domain sec_glb_0 Base"
 	depends on LUA_GTMR_LOWLEVEL_INIT
-	default "0x18000000"
+	default 0x18000000
 
 config LUA_GTMR_CNT_OFFSET
 	hex "GTMR_CNT Control Offset"
 	depends on LUA_GTMR_LOWLEVEL_INIT
-	default "0x1C8"
+	default 0x1C8
 
 config LUA_CPU_GTMR_BASE
 	hex "Generic Timer Counter Base"
 	depends on LUA_GTMR_LOWLEVEL_INIT
-	default "0x08012000"
+	default 0x08012000
 
 config LUA_PERIPH_CRU
 	bool "Enable Periph Subsystem Clock Gate & Reset"
@@ -168,6 +168,12 @@ config LUA_PERIPH_SWRST_REG0
 	hex "Periph Software Control Reset Register 0"
 	depends on LUA_PERIPH_CRU
 	default 0x120
+
+config LUA_SAFETY_INIT
+	bool "Initialize Safety Peripherals"
+	help
+	  This option enables initialization of safety domain peripherals,
+	  like UART, Ethernet...
 
 endmenu
 
