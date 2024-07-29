@@ -28,6 +28,7 @@
 	};
 
 	aliases {
+		serial0 = &serial0;
 		serial1 = &serial1;
 		serial2 = &serial2;
 		serial3 = &serial3;
@@ -56,6 +57,21 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+
+		serial0: uart@00602000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x00602000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			clock-frequency = <10000000>;
+			resets = <&safety_sysrst0 14>,
+					 <&safety_sysrst0 15>;
+			reset-names = "prst", "rst";
+			syscons = <&safety_uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+		};
 
 		serial1: uart@0E403000 {
 			compatible = "snps,dw-apb-uart";
