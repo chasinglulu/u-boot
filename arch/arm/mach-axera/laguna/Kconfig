@@ -205,6 +205,12 @@ config LUA_SERVERIP
 	help
 	  specify sever IP address used for tftpboot.
 
+config SPL_LUA_OCM_TEST
+	bool "Enable OCM Stress Test in SPL"
+	depends on SPL_UNIT_TEST
+	help
+	  This enables NPU subsystem OCM test in SPL.
+
 endmenu
 
 endmenu
