@@ -16,6 +16,10 @@
 #include <log.h>
 #include <dm.h>
 #include <spl.h>
+#include <cpu_func.h>
+#include <malloc.h>
+#include <test/test.h>
+#include <test/ut.h>
 
 u32 spl_boot_device(void)
 {
@@ -78,9 +82,39 @@ int spl_parse_board_header(struct spl_image_info *spl_image,
 	return -EINVAL;
 }
 
+static inline void setup_caches(void)
+{
+	gd->arch.tlb_size = PGTABLE_SIZE;
+	/* Align tlb_addr to 16KiB */
+	gd->arch.tlb_addr = (uint64_t)memalign(SZ_16K, gd->arch.tlb_size);
+	enable_caches();
+}
+
+#if CONFIG_IS_ENABLED(SOC_INIT)
+void spl_soc_init(void)
+{
+}
+#endif
+
+#if CONFIG_IS_ENABLED(LUA_OCM_TEST)
+static void spl_test_npu_ocm(void)
+{
+	struct unit_test *tests = UNIT_TEST_SUITE_START(laguna_spl_test);
+	const int n_ents = UNIT_TEST_SUITE_COUNT(laguna_spl_test);
+
+	ut_run_list("ocm-noncacheable", "test_spl_", tests, n_ents, "npu_ocm_noncacheable");
+
+	setup_caches();
+	ut_run_list("ocm-cacheable", "test_spl_", tests, n_ents, "npu_ocm_cacheable");
+}
+#else
+static inline void spl_test_npu_ocm(void) { }
+#endif
+
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
+	spl_test_npu_ocm();
 }
 #endif
 

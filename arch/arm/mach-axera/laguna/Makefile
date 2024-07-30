@@ -3,10 +3,10 @@
 # Copyright (C) 2024 Charleye <wangkart@aliyun.com>
 #
 
-obj-y += common.o lowlevel.o
+obj-y += common.o lowlevel.o laguna.o
 
 ifdef CONFIG_SPL_BUILD
 obj-y += spl.o
 else
-obj-y += laguna.o cpu.o
+obj-y += cpu.o
 endif
