@@ -19,7 +19,7 @@ static void show_devices(struct udevice *dev, int depth, int last_flag)
 	/* print the first 20 characters to not break the tree-format. */
 	printf(IS_ENABLED(CONFIG_SPL_BUILD) ? " %s  %d  [ %c ]   %s  " :
 	       " %-10.10s  %3d  [ %c ]   %-20.20s  ", dev->uclass->uc_drv->name,
-	       dev_get_uclass_index(dev, NULL),
+	       dev->seq_,
 	       flags & DM_FLAG_ACTIVATED ? '+' : ' ', dev->driver->name);
 
 	for (i = depth; i >= 0; i--) {
@@ -51,7 +51,7 @@ void dm_dump_tree(void)
 
 	root = dm_root();
 	if (root) {
-		printf(" Class     Index  Probed  Driver                Name\n");
+		printf(" Class     Seq    Probed  Driver                Name\n");
 		printf("-----------------------------------------------------------\n");
 		show_devices(root, -1, 0);
 	}
