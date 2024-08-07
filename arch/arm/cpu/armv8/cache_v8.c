@@ -955,6 +955,11 @@ void mmu_set_region_dcache_behaviour(phys_addr_t start, size_t size,
 {
 }
 
+u64 get_page_table_size(void)
+{
+	return 0;
+}
+
 #endif	/* !CONFIG_IS_ENABLED(SYS_DCACHE_OFF) */
 
 #if !CONFIG_IS_ENABLED(SYS_ICACHE_OFF)
