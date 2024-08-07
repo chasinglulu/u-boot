@@ -108,9 +108,3 @@ static struct mm_region lua_mem_map[] = {
 };
 
 struct mm_region *mem_map = lua_mem_map;
-
-void enable_caches(void)
-{
-	icache_enable();
-	dcache_enable();
-}
