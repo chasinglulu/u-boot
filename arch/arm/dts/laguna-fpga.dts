@@ -56,6 +56,8 @@
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
 		ranges;
 
 		serial0: uart@00602000 {
