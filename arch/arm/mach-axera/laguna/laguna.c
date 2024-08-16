@@ -18,6 +18,7 @@ typedef enum mmap_region_type {
 #if defined(CONFIG_LUA_SAFETY_INIT)
 	MMIO_SAFETY_PERI,
 #endif
+	MMIO_COMMSYS,
 	MMIO_CPUSYS,
 	MMIO_FLASHSYS,
 	MMIO_PERISYS,
@@ -29,6 +30,7 @@ typedef enum mmap_region_type {
 
 #define MMAP_SAFETY_IRAM_BASE  0x00400000U
 #define MMAP_SAFETY_PERI_BASE  0x00440000U
+#define MMAP_COMMSYS_BASE      0x06000000U
 #define MMAP_CPUSYS_BASE       0x08000000U
 #define MMAP_FLASHSYS_BASE     0x0C000000U
 #define MMAP_PERISYS_BASE      0x0E000000U
@@ -55,6 +57,14 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_UXN
 	},
 #endif
+	[MMIO_COMMSYS] = {
+		.virt = MMAP_COMMSYS_BASE,
+		.phys = MMAP_COMMSYS_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
 	[MMIO_CPUSYS] = {
 		.virt = MMAP_CPUSYS_BASE,
 		.phys = MMAP_CPUSYS_BASE,
