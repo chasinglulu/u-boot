@@ -20,6 +20,7 @@ static void show_clks(struct udevice *dev, int depth, int last_flag)
 	struct udevice *child;
 	struct clk *clkp, *parent;
 	u32 rate;
+	char *unit = "Hz";
 
 	clkp = dev_get_clk_ptr(dev);
 	if (device_get_uclass_id(dev) == UCLASS_CLK && clkp) {
@@ -29,7 +30,18 @@ static void show_clks(struct udevice *dev, int depth, int last_flag)
 		depth++;
 		rate = clk_get_rate(clkp);
 
-		printf(" %-12u  %8d        ", rate, clkp->enable_count);
+		if (rate > 1000000000) {
+			rate /= 1000000000;
+			unit = "GHz";
+		} else if (rate > 1000000) {
+			rate /= 1000000;
+			unit = "MHz";
+		} else if (rate > 1000) {
+			rate /= 1000;
+			unit = "KHz";
+		}
+
+		printf(" %3u%s  %8d        ", rate, unit, clkp->enable_count);
 
 		for (i = depth; i >= 0; i--) {
 			is_last = (last_flag >> i) & 1;
@@ -68,7 +80,7 @@ int __weak soc_clk_dump(void)
 	if (ret)
 		return ret;
 
-	printf(" Rate               Usecnt      Name\n");
+	printf("   Rate       Usecnt      Name\n");
 	printf("------------------------------------------\n");
 
 	uclass_foreach_dev(dev, uc)
