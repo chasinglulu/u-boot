@@ -1,0 +1,469 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for Laguna clock tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	fake_32khz: fake_32khz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <32000>;
+		clock-output-names = "fake_32k";
+	};
+
+	main_xtal_24mhz: main_clk_24mhz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "main_xtal_24m";
+	};
+
+	safety_xtal_24mhz: safety_clk_24mhz {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "safety_xtal_24m";
+	};
+
+	ddr_pllc: ddr-pllc@0A01C000 {
+		compatible = "axera,lua-dpll-ctrl";
+		reg = <0x00 0x0A01C000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ddr_pll: ddr_pll {
+			compatible = "pll-clk";
+			clocks = <&main_xtal_24mhz>;
+			#clock-cells = <0>;
+			clock-output-names = "ddr_pll_4260m";
+		};
+	};
+
+	main_pllc: main-pllc@18001000 {
+		compatible = "axera,lua-pll-ctrl";
+		reg = <0x00 0x18001000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		fab_pll: fab_pll {
+			compatible = "pll-clk";
+			clocks = <&main_xtal_24mhz>;
+			clock-names = "main_xtal_24m";
+			#clock-cells = <0>;
+			clock-output-names = "fab_pll_2400m";
+			pll-reg = <&main_pllc 0x00>;
+			pll-rdy = <&main_pllc 0x104 0>;
+			pll-on = <&main_pllc 0x108>;
+			pll-frc-en = <&main_pllc 0x144 0>;
+			pll-frc-en-sw = <&main_pllc 0x150 0>;
+			pll-reopen = <&main_pllc 0x15C 0>;
+		};
+	};
+
+	clock-tree {
+		compatible = "axera,lua-clock-tree";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		fab_pll_div2_lv0: fab_pll_div2_lv0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_1200m";
+		};
+
+		fab_pll_div3_lv0: fab_pll_div3_lv0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll>;
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "fab_pll_800m";
+		};
+
+		fab_pll_div5_lv0: fab_pll_div5_lv0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll>;
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "fab_pll_480m";
+		};
+
+		fab_pll_div2_lv1: fab_pll_div2_lv1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv0>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_600m";
+		};
+
+		fab_pll_div2_lv1_0: fab_pll_div2_lv1_0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div3_lv0>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_400m";
+		};
+
+		fab_pll_div6_lv1: fab_pll_div6_lv1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv0>;
+			clock-mult = <1>;
+			clock-div = <6>;
+			clock-output-names = "fab_pll_80m";
+		};
+
+		fab_pll_div2_lv2: fab_pll_div2_lv2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv1>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_300m";
+		};
+
+		fab_pll_div2_lv2_0: fab_pll_div2_lv2_0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div3_lv0>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_200m";
+		};
+
+		fab_pll_div2_lv2_1: fab_pll_div2_lv2_1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div6_lv1>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_40m";
+		};
+
+		fab_pll_div5_lv2: fab_pll_div5_lv2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv1>;
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "fab_pll_120m";
+		};
+
+		fab_pll_div2_lv3: fab_pll_div2_lv3 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv2>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_60m";
+		};
+
+		fab_pll_div2_lv3_0: fab_pll_div2_lv3_0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv2_0>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_100m";
+		};
+
+		fab_pll_div2_lv3_1: fab_pll_div2_lv3_1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv2_1>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_20m";
+		};
+
+		fab_pll_div2_lv3_2: fab_pll_div2_lv3_2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv2>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_150m";
+		};
+
+		fab_pll_div5_lv3: fab_pll_div5_lv3 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv2>;
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "fab_pll_24m";
+		};
+
+		fab_pll_div2_lv4: fab_pll_div2_lv4 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv3>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_12m";
+		};
+
+		fab_pll_div2_lv4_0: fab_pll_div2_lv4_0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div2_lv3>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "fab_pll_30m";
+		};
+
+		fab_pll_div3_lv4: fab_pll_div3_lv4 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv3>;
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "fab_pll_8m";
+		};
+
+		cpu_pll: cpu_pll {
+			compatible = "pll-clk";
+			clocks = <&fab_pll_div5_lv3>;
+			clock-names = "fab_pll_24m";
+			#clock-cells = <0>;
+			clock-output-names = "cpu_pll_1296m";
+			pll-reg = <&main_pllc 0x34>;
+			pll-rdy = <&main_pllc 0x104 1>;
+			pll-on = <&main_pllc 0x114>;
+			pll-frc-en = <&main_pllc 0x144 1>;
+			pll-frc-en-sw = <&main_pllc 0x150 1>;
+			pll-reopen = <&main_pllc 0x15C 1>;
+		};
+
+		npu_pll: npu_pll {
+			compatible = "pll-clk";
+			clocks = <&fab_pll_div5_lv3>;
+			clock-names = "fab_pll_24m";
+			#clock-cells = <0>;
+			clock-output-names = "npu_pll_996m";
+			pll-reg = <&main_pllc 0x68>;
+			pll-rdy = <&main_pllc 0x104 2>;
+			pll-on = <&main_pllc 0x120>;
+			pll-frc-en = <&main_pllc 0x144 2>;
+			pll-frc-en-sw = <&main_pllc 0x150 2>;
+			pll-reopen = <&main_pllc 0x15C 2>;
+		};
+
+		apll: apll {
+			compatible = "pll-clk";
+			clocks = <&fab_pll_div5_lv3>;
+			clock-names = "fab_pll_24m";
+			#clock-cells = <0>;
+			clock-output-names = "apll_996m";
+			pll-reg = <&main_pllc 0x9C>;
+			pll-rdy = <&main_pllc 0x104 3>;
+			pll-on = <&main_pllc 0x12C>;
+			pll-frc-en = <&main_pllc 0x144 3>;
+			pll-frc-en-sw = <&main_pllc 0x150 3>;
+			pll-reopen = <&main_pllc 0x15C 3>;
+		};
+
+		epll: epll {
+			compatible = "pll-clk";
+			clocks = <&fab_pll_div5_lv3>;
+			clock-names = "fab_pll_24m";
+			#clock-cells = <0>;
+			clock-output-names = "epll_1500m";
+			pll-reg = <&main_pllc 0xD0>;
+			pll-rdy = <&main_pllc 0x104 4>;
+			pll-on = <&main_pllc 0x138>;
+			pll-frc-en = <&main_pllc 0x144 4>;
+			pll-frc-en-sw = <&main_pllc 0x150 4>;
+			pll-reopen = <&main_pllc 0x15C 4>;
+		};
+
+		cpu_pll_div11_lv3: cpu_pll_div11_lv3 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&cpu_pll>;
+			clock-mult = <1>;
+			clock-div = <44>;
+			clock-output-names = "cpu_pll_29p45m";
+		};
+
+		cpu_pll_div2_lv4: cpu_pll_div2_lv4 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&cpu_pll>;
+			clock-mult = <1>;
+			clock-div = <16>;
+			clock-output-names = "cpu_pll_81m";
+		};
+
+		npu_pll_div10_lv4: npu_pll_div10_lv4 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&npu_pll>;
+			clock-mult = <1>;
+			clock-div = <80>;
+			clock-output-names = "cpu_pll_24p9m";
+		};
+
+		epll_div3_lv0: epll_div3_lv0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll>;
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "epll_500m";
+		};
+
+		epll_div2_lv1: epll_div2_lv1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll_div3_lv0>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "epll_250m";
+		};
+
+		epll_div2_lv1_0: epll_div2_lv1_0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll>;
+			clock-mult = <1>;
+			clock-div = <10>;
+			clock-output-names = "epll_150m";
+		};
+
+		epll_div2_lv2: epll_div2_lv2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll_div2_lv1>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "epll_125m";
+		};
+
+		epll_div3_lv2: epll_div3_lv2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll_div2_lv1_0>;
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "epll_50m";
+		};
+
+		epll_div2_lv3: epll_div2_lv3 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll_div3_lv2>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "epll_25m";
+		};
+
+		epll_div5_lv4: epll_div5_lv4 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&epll_div2_lv3>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "epll_5m";
+		};
+
+		apll_div2_lv0: apll_div2_lv0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "apll_498m";
+		};
+
+		apll_div11_lv1: apll_div11_lv1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll_div2_lv0>;
+			clock-mult = <1>;
+			clock-div = <11>;
+			clock-output-names = "apll_45p27m";
+		};
+
+		apll_div2_lv1: apll_div2_lv1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll_div2_lv0>;
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "apll_249m";
+		};
+
+		apll_div5_lv1: apll_div5_lv1 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll_div2_lv0>;
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "apll_99p6m";
+		};
+
+		apll_div5_lv2: apll_div5_lv2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll>;
+			clock-mult = <1>;
+			clock-div = <75>;
+			clock-output-names = "apll_13p28m";
+		};
+
+		apll_div5_lv2_0: apll_div5_lv2_0 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll_div5_lv1>;
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "apll_19p92m";
+		};
+
+		apll_div10_lv2: apll_div10_lv2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll_div5_lv1>;
+			clock-mult = <1>;
+			clock-div = <10>;
+			clock-output-names = "apll_9p96m";
+		};
+
+		apll_div5_lv3: apll_div5_lv3 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&apll_div2_lv1>;
+			clock-mult = <1>;
+			clock-div = <15>;
+			clock-output-names = "apll_16p6m";
+		};
+
+		clk_comm_24m: clk_comm_24m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv3>;
+			clock-mult = <1>;
+			clock-div = <1>;
+			clock-output-names = "clk_comm_24m";
+		};
+
+		clk_flash_24m: clk_flash_24m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&fab_pll_div5_lv3>;
+			clock-names = "fab_pll_24m";
+			clock-mult = <1>;
+			clock-div = <1>;
+			clock-output-names = "clk_flash_24m";
+		};
+	};
+};
