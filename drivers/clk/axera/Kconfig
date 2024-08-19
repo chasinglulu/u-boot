@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+#
+
+config CLK_AXERA
+	bool "Clock support for Axera SoC family of devices"
+	depends on CLK
+	help
+	  Enables the clock translation layer from DT to device clocks.
+
+config SPL_CLK_AXERA
+	bool "Clock support for Axera SoC family of devices in SPL"
+	depends on CLK && SPL
+	help
+	  Enables the clock translation layer from DT to device clocks.

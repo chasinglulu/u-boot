@@ -15,6 +15,7 @@ obj-y += analogbits/
 obj-y += imx/
 obj-y += tegra/
 obj-y += ti/
+obj-y += axera/
 obj-$(CONFIG_$(SPL_TPL_)CLK_INTEL) += intel/
 obj-$(CONFIG_ARCH_ASPEED) += aspeed/
 obj-$(CONFIG_ARCH_MEDIATEK) += mediatek/
