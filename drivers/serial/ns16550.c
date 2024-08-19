@@ -601,6 +601,7 @@ int ns16550_serial_of_to_plat(struct udevice *dev)
 	const u32 port_type = dev_get_driver_data(dev);
 	fdt_addr_t addr;
 	struct clk clk;
+	struct clk_bulk bulk;
 	int err;
 
 	addr = dev_read_addr(dev);
@@ -611,6 +612,10 @@ int ns16550_serial_of_to_plat(struct udevice *dev)
 	plat->reg_offset = dev_read_u32_default(dev, "reg-offset", 0);
 	plat->reg_shift = dev_read_u32_default(dev, "reg-shift", 0);
 	plat->reg_width = dev_read_u32_default(dev, "reg-io-width", 1);
+
+	err = clk_get_bulk(dev, &bulk);
+	if (!err)
+		clk_enable_bulk(&bulk);
 
 	err = clk_get_by_index(dev, 0, &clk);
 	if (!err) {
