@@ -10,6 +10,7 @@
 #include <dt-bindings/reset/laguna-sysctl.h>
 
 #include "laguna-global-ctrl.dtsi"
+#include "laguna-fpga-clocks.dtsi"
 #include "laguna-cru.dtsi"
 / {
 	model = "Laguna FPGA Platform";
@@ -87,6 +88,8 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+			clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
+			clock-names = "clk_periph_uart1", "pclk_periph_uart1";
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -104,6 +107,8 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 2 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+			clocks = <&clk_periph_uart2>, <&pclk_periph_uart2>;
+			clock-names = "clk_periph_uart2", "pclk_periph_uart2";
 			status = "okay";
 		};
 
@@ -119,6 +124,8 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 4 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+			clocks = <&clk_periph_uart3>, <&pclk_periph_uart3>;
+			clock-names = "clk_periph_uart3", "pclk_periph_uart3";
 			status = "okay";
 		};
 
@@ -134,6 +141,8 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 6 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+			clocks = <&clk_periph_uart4>, <&pclk_periph_uart4>;
+			clock-names = "clk_periph_uart4", "pclk_periph_uart4";
 			status = "okay";
 		};
 
@@ -149,6 +158,8 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 8 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+			clocks = <&clk_periph_uart5>, <&pclk_periph_uart5>;
+			clock-names = "clk_periph_uart5", "pclk_periph_uart5";
 			status = "okay";
 		};
 
