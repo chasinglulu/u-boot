@@ -33,17 +33,17 @@ void main_uart_clk_enable(void)
 	reg |= BIT(9);    /* UART1 PCLK */
 	reg |= BIT(14);   /* UART1 CLK */
 
-	reg |= BIT(10);   /* UART2 PCLK */
-	reg |= BIT(15);   /* UART2 CLK */
+	// reg |= BIT(10);   /* UART2 PCLK */
+	// reg |= BIT(15);   /* UART2 CLK */
 
-	reg |= BIT(11);   /* UART3 PCLK */
-	reg |= BIT(16);   /* UART3 CLK */
+	// reg |= BIT(11);   /* UART3 PCLK */
+	// reg |= BIT(16);   /* UART3 CLK */
 
-	reg |= BIT(12);   /* UART4 PCLK */
-	reg |= BIT(17);   /* UART4 CLK */
+	// reg |= BIT(12);   /* UART4 PCLK */
+	// reg |= BIT(17);   /* UART4 CLK */
 
-	reg |= BIT(13);   /* UART5 PCLK */
-	reg |= BIT(18);   /* UART5 CLK */
+	// reg |= BIT(13);   /* UART5 PCLK */
+	// reg |= BIT(18);   /* UART5 CLK */
 	writel(reg, (CONFIG_LUA_PERIPH_CRU_BASE +
 		     CONFIG_LUA_PERIPH_CLK_GATE_REG0));
 }
