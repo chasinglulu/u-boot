@@ -58,11 +58,14 @@ __weak int lua_eqos_txclk_set_rate(unsigned long rate)
 
 static ulong eqos_get_tick_clk_rate_lua(struct udevice *dev)
 {
-	ulong clock;
+	struct eqos_priv *eqos = dev_get_priv(dev);
+	ulong rate;
 
-	clock = dev_read_u32_default(dev, "clock-frequency", 1000000);
+	rate = clk_get_rate(&eqos->clk_slave_bus);
+	if (!rate)
+		rate = dev_read_u32_default(dev, "clock-frequency", 1000000);
 
-	return clock;
+	return rate;
 }
 
 static int eqos_interface_eth_init(struct udevice *dev,
@@ -101,21 +104,73 @@ static int eqos_probe_resources_lua(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
 	phy_interface_t interface;
+	int ret;
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
+	ret = reset_get_by_name(dev, "arst", &eqos->reset_ctl);
+	if (ret) {
+		pr_err("reset_get_by_name(rst) failed: %d", ret);
+		return ret;
+	}
+
+	ret = clk_get_by_name(dev, "aclk_eqos", &eqos->clk_slave_bus);
+	if (ret) {
+		pr_err("clk_get_by_name(aclk_eqos) failed: %d", ret);
+		goto err_free_reset_eqos;
+	}
+
+	ret = clk_get_by_name(dev, "ptp_ref", &eqos->clk_ptp_ref);
+	if (ret) {
+		pr_err("clk_get_by_name(ptp_ref) failed: %d", ret);
+		goto err_free_clk_eqos;
+	}
+
+	ret = clk_get_by_name(dev, "ephy_ref", &eqos->clk_ck);
+	if (ret) {
+		pr_err("clk_get_by_name(ephy_ref) failed: %d", ret);
+		goto err_free_clk_ptp_ref;
+	}
+
+	ret = clk_get_by_name(dev, "rmii_phy", &eqos->clk_rx);
+	if (ret) {
+		pr_err("clk_get_by_name(rmii_phy) failed: %d", ret);
+		goto err_free_clk_ck;
+	}
+
+	ret = clk_get_by_name(dev, "rgmii_tx", &eqos->clk_tx);
+	if (ret) {
+		pr_err("clk_get_by_name(rmii_phy) failed: %d", ret);
+		goto err_free_clk_rx;
+	}
+
 	interface = eqos->config->interface(dev);
 
+	ret = -EINVAL;
 	if (interface == PHY_INTERFACE_MODE_NA) {
 		pr_err("Invalid PHY interface\n");
-		return -EINVAL;
+		goto err_free_clk_tx;
 	}
 
 	if (eqos_interface_eth_init(dev, interface))
-		return -EINVAL;
+		goto err_free_clk_tx;
 
 	debug("%s: OK\n", __func__);
 	return 0;
+
+err_free_clk_tx:
+	clk_free(&eqos->clk_tx);
+err_free_clk_rx:
+	clk_free(&eqos->clk_rx);
+err_free_clk_ck:
+	clk_free(&eqos->clk_ck);
+err_free_clk_ptp_ref:
+	clk_free(&eqos->clk_ptp_ref);
+err_free_clk_eqos:
+	clk_free(&eqos->clk_slave_bus);
+err_free_reset_eqos:
+	reset_free(&eqos->reset_ctl);
+	return ret;
 }
 
 static int eqos_set_rgmii_tx_clk_speed(struct udevice *dev)
@@ -225,27 +280,31 @@ static int eqos_get_enetaddr_lua(struct udevice *dev)
 
 static int eqos_stop_resets_lua(struct udevice *dev)
 {
-	struct reset_ctl_bulk bulk;
-	int ret;
+	struct eqos_priv *eqos = dev_get_priv(dev);
 
-	/* Assert EQOS Controller */
-	ret = reset_get_bulk(dev, &bulk);
-	if (!ret)
-		reset_assert_bulk(&bulk);
+	reset_assert(&eqos->reset_ctl);
 
-	return ret;
+	return 0;
 }
 
 static int eqos_start_resets_lua(struct udevice *dev)
 {
 	struct eqos_priv *eqos = dev_get_priv(dev);
-	struct reset_ctl_bulk bulk;
 	int ret;
 
-	/* Deassert EQOS Controller */
-	ret = reset_get_bulk(dev, &bulk);
-	if (!ret)
-		reset_deassert_bulk(&bulk);
+	ret = reset_assert(&eqos->reset_ctl);
+	if (ret < 0) {
+		pr_err("reset_assert() failed: %d", ret);
+		return ret;
+	}
+
+	udelay(2);
+
+	ret = reset_deassert(&eqos->reset_ctl);
+	if (ret < 0) {
+		pr_err("reset_deassert() failed: %d", ret);
+		return ret;
+	}
 
 	if (eqos->phy) {
 		phy_config(eqos->phy);
@@ -256,87 +315,62 @@ static int eqos_start_resets_lua(struct udevice *dev)
 
 static int eqos_stop_clks_lua(struct udevice *dev)
 {
-	uint32_t value;
-	uint64_t addr;
+	struct eqos_priv *eqos = dev_get_priv(dev);
 
-	debug("Disabling EMAC clk...\n");
+	debug("%s(dev=%p):\n", __func__, dev);
 
-	/* Disable EMAC ACLK */
-	addr = 0x0E001000 + 0x44;
-	value = readl(addr);
-	value &= ~BIT(13);
-	writel(value, addr);
+	clk_disable(&eqos->clk_tx);
+	clk_disable(&eqos->clk_rx);
+	clk_disable(&eqos->clk_ck);
+	clk_disable(&eqos->clk_slave_bus);
 
-	/* Disable EPHY REF CLK */
-	addr = 0x0E001000 + 0x20;
-	value = readl(addr);
-	value &= ~BIT(7);
-	writel(value, addr);
-
-	/* Disable RGMII TX CLK */
-	addr = 0x0E001000 + 0x20;
-	value = readl(addr);
-	value &= ~BIT(4);
-	writel(value, addr);
-
-	/* Disable RMII PHY CLK */
-	addr = 0x0E001000 + 0x20;
-	value = readl(addr);
-	value &= ~BIT(5);
-	writel(value, addr);
-
-	/* Disable RMII RX CLK */
-	addr = 0x0E001000 + 0x16C;
-	value = readl(addr);
-	value &= ~BIT(0);
-	writel(value, addr);
-
+	debug("%s: OK\n", __func__);
 	return 0;
 }
 
 static int eqos_start_clks_lua(struct udevice *dev)
 {
-	uint32_t value;
-	uint64_t addr;
+	struct eqos_priv *eqos = dev_get_priv(dev);
+	int ret;
 
-	debug("Configuring Main EMAC clk...\n");
+	debug("%s(dev=%p):\n", __func__, dev);
 
-	/* Enable EMAC ACLK */
-	addr = 0x0E001000 + 0x44;
-	value = readl(addr);
-	value &= ~BIT(13);
-	value |= BIT(13);
-	writel(value, addr);
+	ret = clk_enable(&eqos->clk_slave_bus);
+	if (ret < 0) {
+		pr_err("clk_enable(clk_slave_bus) failed: %d", ret);
+		goto err;
+	}
 
-	/* Enable EPHY REF CLK */
-	addr = 0x0E001000 + 0x20;
-	value = readl(addr);
-	value &= ~BIT(7);
-	value |= BIT(7);
-	writel(value, addr);
+	ret = clk_enable(&eqos->clk_ck);
+	if (ret < 0) {
+		pr_err("clk_enable(clk_ck) failed: %d", ret);
+		goto err_disable_clk_slave_bus;
+	}
 
-	/* Enable RGMII TX CLK */
-	addr = 0x0E001000 + 0x20;
-	value = readl(addr);
-	value &= ~BIT(4);
-	value |= BIT(4);
-	writel(value, addr);
+	ret = clk_enable(&eqos->clk_rx);
+	if (ret < 0) {
+		pr_err("clk_enable(clk_rx) failed: %d", ret);
+		goto err_disable_clk_ck;
+	}
 
-	/* Enable RMII PHY CLK */
-	addr = 0x0E001000 + 0x20;
-	value = readl(addr);
-	value &= ~BIT(5);
-	value |= BIT(5);
-	writel(value, addr);
+	ret = clk_enable(&eqos->clk_tx);
+	if (ret < 0) {
+		pr_err("clk_enable(clk_tx) failed: %d", ret);
+		goto err_disable_clk_rx;
+	}
 
-	/* Enable RMII RX CLK */
-	addr = 0x0E001000 + 0x16C;
-	value = readl(addr);
-	value &= ~BIT(0);
-	value |= BIT(0);
-	writel(value, addr);
-
+	debug("%s: OK\n", __func__);
 	return 0;
+
+err_disable_clk_rx:
+	clk_disable(&eqos->clk_rx);
+err_disable_clk_ck:
+	clk_disable(&eqos->clk_ck);
+err_disable_clk_slave_bus:
+	clk_disable(&eqos->clk_slave_bus);
+err:
+	debug("%s: FAILED: %d\n", __func__, ret);
+	return ret;
 }
 
 static struct eqos_ops eqos_lua_ops = {
