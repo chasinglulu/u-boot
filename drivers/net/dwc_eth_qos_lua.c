@@ -306,6 +306,8 @@ static int eqos_start_resets_lua(struct udevice *dev)
 		return ret;
 	}
 
+	mdelay(500);
+
 	if (eqos->phy) {
 		phy_config(eqos->phy);
 	}
