@@ -478,6 +478,8 @@ config DEBUG_UART_BASE
 	default 0 if DEBUG_UART_SANDBOX
 	default 0xff000000 if DEBUG_UART_ZYNQ && ARCH_ZYNQMP
 	default 0xe0000000 if DEBUG_UART_ZYNQ && ARCH_ZYNQ
+	default 0x0E403000 if DEBUG_UART1_LUA && AXERA_LUA
+	default 0x00602000 if DEBUG_UART0_LUA && AXERA_LUA
 	help
 	  This is the base address of your UART for memory-mapped UARTs.
 

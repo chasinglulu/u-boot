@@ -216,6 +216,42 @@ config SPL_LUA_OCM_TEST
 	help
 	  This enables NPU subsystem OCM test in SPL.
 
+config LUA_SELECT_UART_FOR_CONSOLE
+	bool "Select which UART will use for console"
+	help
+	  This is able to select given UART as console.
+
+config LUA_UART_INDEX
+	int
+	depends on LUA_SELECT_UART_FOR_CONSOLE
+	range 0 5
+	default 1 if LUA_UART1
+	default 0 if LUA_SAFETY_UART0
+
+config DEBUG_UART1_LUA
+	bool
+	depends on LUA_SELECT_UART_FOR_CONSOLE
+
+config DEBUG_UART0_LUA
+	bool
+	depends on LUA_SELECT_UART_FOR_CONSOLE
+
+choice
+	prompt "UART used for console in Laguna"
+	depends on LUA_SELECT_UART_FOR_CONSOLE
+	default LUA_UART1
+
+config LUA_SAFETY_UART0
+	bool "Safety UART0"
+	select DEBUG_UART0_LUA
+	select LUA_SAFETY_INIT
+
+config LUA_UART1
+	bool "Main UART1"
+	select DEBUG_UART1_LUA
+
+endchoice
+
 endmenu
 
 endmenu
