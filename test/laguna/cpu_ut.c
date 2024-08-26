@@ -13,6 +13,7 @@
 #include <asm/io.h>
 #include <mapmem.h>
 #include <init.h>
+#include <linux/delay.h>
 
 #define NPU_OCM_SIZE        SZ_2M
 #define SAFETY_IRAM_SIZE    SZ_64K
@@ -20,7 +21,7 @@
 static int ocm_rw(uint64_t addr, int size)
 {
 	char *buf = map_sysmem(addr, size);
-	int i;
+	int i, count = 0;
 
 	memset(buf, '\xff', size);
 
@@ -28,9 +29,16 @@ static int ocm_rw(uint64_t addr, int size)
 		writel(i, buf + i * 4);
 
 	for (i = 0; i < size / 4; i++) {
-		if (readl(buf + i * 4) != i)
-			return -1;
+		if (readl(buf + i * 4) != i) {
+			printf("got = 0x%x, i = 0x%x [%p]\n",
+				readl(buf + i * 4), i,
+				buf + i * 4);
+			count++;
+		}
 	}
+
+	if (count)
+		return -1;
 
 	return 0;
 }
@@ -117,7 +125,7 @@ LAGUNA_SPL_TEST(test_spl_npu_ocm_noncacheable, UT_TESTF_CONSOLE_REC);
 static int safety_iram_rw(int size)
 {
 	char *buf = map_sysmem(CONFIG_LUA_IRAM_BASE, size);
-	int i;
+	int i, count = 0;
 
 	memset(buf, '\xff', size);
 
@@ -125,9 +133,16 @@ static int safety_iram_rw(int size)
 		writel(i, buf + i * 4);
 
 	for (i = 0; i < size / 4; i++) {
-		if (readl(buf + i * 4) != i)
-			return -1;
+		if (readl(buf + i * 4) != i) {
+			printf("got = 0x%x, i = 0x%x [%p]\n",
+				readl(buf + i * 4), i,
+				buf + i * 4);
+			count++;
+		}
 	}
+
+	if (count)
+		return -1;
 
 	return 0;
 }
