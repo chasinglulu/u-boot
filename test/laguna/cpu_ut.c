@@ -168,3 +168,16 @@ static int test_ddr(struct unit_test_state *uts)
 	return 0;
 }
 LAGUNA_TEST(test_ddr, UT_TESTF_CONSOLE_REC);
+
+static int test_generic_timer(struct unit_test_state *uts)
+{
+	int wait = 50;
+	unsigned long start = get_timer(0);
+	mdelay(wait);
+
+	ut_assert(wait == get_timer(start));
+
+	printf("%s: pass\n", __func__);
+	return 0;
+}
+LAGUNA_TEST(test_generic_timer, UT_TESTF_CONSOLE_REC);
