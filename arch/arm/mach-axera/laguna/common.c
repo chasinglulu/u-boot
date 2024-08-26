@@ -22,7 +22,15 @@ DECLARE_GLOBAL_DATA_PTR;
 #ifdef CONFIG_OF_BOARD
 void *board_fdt_blob_setup(int *err)
 {
-	void *fdt_addr = NULL;
+	void *fdt_addr;
+
+	/* FDT is at end of image */
+	fdt_addr = (ulong *)&_end;
+	if (!fdt_check_header(fdt_addr)) {
+		*err = 0;
+		return fdt_addr;
+	}
+
 #ifndef CONFIG_SPL_BUILD
 	boot_params_t *bp = boot_params_get_base();
 	if (bp->fdt_addr && !fdt_check_header(bp->fdt_addr)) {
@@ -38,17 +46,55 @@ void *board_fdt_blob_setup(int *err)
 	}
 #endif
 
-	/* FDT is at end of image */
-	fdt_addr = (ulong *)&_end;
-	if (!fdt_check_header(fdt_addr)) {
-		*err = 0;
-		return fdt_addr;
-	}
-
 	*err = -FDT_ERR_NOTFOUND;
-	return fdt_addr;
+	return NULL;
 }
 #endif
+
+int fdtdec_board_setup(const void *fdt_blob)
+{
+#if defined(CONFIG_LUA_SELECT_UART_FOR_CONSOLE)
+	int node = -1;
+	const char *str, *p;
+	char name[20];
+	int namelen;
+	int idx, ret;
+
+	str = fdtdec_get_chosen_prop(fdt_blob, "stdout-path");
+	if (str) {
+		p = strchr(str, ':');
+		namelen = p ? p - str : strlen(str);
+		memcpy(name, str, namelen);
+		node = fdt_path_offset_namelen(fdt_blob, str, namelen);
+		if (node < 0) {
+			printf("Invalid '%s' node\n", name);
+			return -ENODATA;
+		}
+
+		idx = name[namelen - 1] - '0';
+		if (idx == CONFIG_LUA_UART_INDEX)
+			return 0;
+
+		snprintf(name, namelen + 1, "serial%d", CONFIG_LUA_UART_INDEX);
+		if (p)
+			memcpy(name + namelen, str + namelen, 20 - namelen);
+
+		/* check for new UART name */
+		node = fdt_path_offset_namelen(fdt_blob, name, namelen);
+		if (node < 0) {
+			printf("Failed to get new '%s' node\n", name);
+			return -ENODATA;
+		}
+
+		node = fdt_path_offset(fdt_blob, "/chosen");
+		ret = fdt_setprop_string((void*)fdt_blob, node, "stdout-path", name);
+		if (ret)
+			return ret;
+	}
+#endif
+
+	return 0;
+}
 
 void reset_cpu(void)
 {
