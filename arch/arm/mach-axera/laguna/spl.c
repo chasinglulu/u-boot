@@ -96,7 +96,8 @@ void spl_soc_init(void)
 }
 #endif
 
-#if CONFIG_IS_ENABLED(LUA_OCM_TEST)
+#ifdef CONFIG_SPL_LUA_TEST
+#ifdef CONFIG_SPL_LUA_OCM_TEST
 static void spl_test_npu_ocm(void)
 {
 	struct unit_test *tests = UNIT_TEST_SUITE_START(laguna_spl_test);
@@ -107,14 +108,36 @@ static void spl_test_npu_ocm(void)
 	setup_caches();
 	ut_run_list("ocm-cacheable", "test_spl_", tests, n_ents, "npu_ocm_cacheable");
 }
+#endif
+
+#ifdef CONFIG_SPL_LUA_IRAM_TEST
+static void spl_test_safety_iram(void)
+{
+	struct unit_test *tests = UNIT_TEST_SUITE_START(laguna_spl_test);
+	const int n_ents = UNIT_TEST_SUITE_COUNT(laguna_spl_test);
+
+	ut_run_list("safety-iram", "test_spl_", tests, n_ents, "safety_iram");
+}
+#endif
+
+static void spl_lua_test(void)
+{
+#ifdef CONFIG_SPL_LUA_OCM_TEST
+	spl_test_npu_ocm();
+#endif
+
+#ifdef CONFIG_SPL_LUA_IRAM_TEST
+	spl_test_safety_iram();
+#endif
+}
 #else
-static inline void spl_test_npu_ocm(void) { }
+static inline void spl_lua_test(void) { }
 #endif
 
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
-	spl_test_npu_ocm();
+	spl_lua_test();
 }
 #endif
 

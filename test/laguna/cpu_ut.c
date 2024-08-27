@@ -141,6 +141,9 @@ static int safety_iram_rw(int size)
 		}
 	}
 
+	/* iram first 4K reserved for boot_params_t */
+	memset(buf, 0, SZ_4K);
+
 	if (count)
 		return -1;
 
@@ -156,6 +159,14 @@ static int test_safety_iram(struct unit_test_state *uts)
 }
 LAGUNA_TEST(test_safety_iram, UT_TESTF_CONSOLE_REC);
 
+static int test_spl_safety_iram(struct unit_test_state *uts)
+{
+	ut_assertok(safety_iram_rw(SAFETY_IRAM_SIZE));
+
+	printf("%s: pass\n", __func__);
+	return 0;
+}
+LAGUNA_SPL_TEST(test_spl_safety_iram, UT_TESTF_CONSOLE_REC);
 
 static int test_ddr(struct unit_test_state *uts)
 {

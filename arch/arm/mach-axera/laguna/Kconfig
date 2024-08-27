@@ -210,11 +210,23 @@ config LUA_SERVERIP
 	help
 	  specify sever IP address used for tftpboot.
 
-config SPL_LUA_OCM_TEST
-	bool "Enable OCM Stress Test in SPL"
+config SPL_LUA_TEST
+	bool "Enable Laguna testcases in SPL"
 	depends on SPL_UNIT_TEST
 	help
-	  This enables NPU subsystem OCM test in SPL.
+	  This enable all laguna testcases in SPL, such as NPU OCM, safety IRAM.
+
+config SPL_LUA_OCM_TEST
+	bool "Enable OCM Stress testcase in SPL"
+	depends on SPL_LUA_TEST
+	help
+	  This enables NPU subsystem OCM testcase in SPL.
+
+config SPL_LUA_IRAM_TEST
+	bool "Enable Safety IRAM testcase in SPL"
+	depends on SPL_LUA_TEST
+	help
+	  This enables Safety IRAM testcase in SPL.
 
 config LUA_SELECT_UART_FOR_CONSOLE
 	bool "Select which UART will use for console"
