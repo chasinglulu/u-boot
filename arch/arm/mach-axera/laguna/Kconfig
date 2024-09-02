@@ -180,6 +180,12 @@ config LUA_DSU_PMU_INIT
 	help
 	  This option enable DSU PMU registers write-accessible from EL1 non-secure.
 
+config LUA_RAS_INIT
+	bool "Enable Error Record Registers Access"
+	help
+	  This option enable RAS error record registers write-accessible
+	  from non-secure or secure EL1 and EL2.
+
 endmenu
 
 menu "MTD Settings"

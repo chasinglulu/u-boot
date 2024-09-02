@@ -10,6 +10,8 @@
 
 #define ACTLR_EL2_CLUSTERPMUEN  (1 << 12)
 #define ACTLR_EL3_CLUSTERPMUEN  (1 << 12)
+#define ACTLR_EL2_ERXPFGEN      (1 << 5)
+#define ACTLR_EL3_ERXPFGEN      (1 << 5)
 
 ENTRY(lowlevel_init)
 	mov	x29, lr			/* Save LR */
@@ -21,6 +23,15 @@ ENTRY(lowlevel_init)
 	msr ACTLR_EL2, x0
 	mrs x0, ACTLR_EL3
 	orr x0, x0, #ACTLR_EL3_CLUSTERPMUEN
+	msr ACTLR_EL3, x0
+#endif
+
+#if defined(CONFIG_LUA_RAS_INIT)
+	mrs x0, ACTLR_EL2
+	orr x0, x0, #ACTLR_EL2_ERXPFGEN
+	msr ACTLR_EL2, x0
+	mrs x0, ACTLR_EL3
+	orr x0, x0, #ACTLR_EL3_ERXPFGEN
 	msr ACTLR_EL3, x0
 #endif
 
