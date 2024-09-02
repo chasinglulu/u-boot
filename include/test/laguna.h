@@ -12,5 +12,6 @@
 #define LAGUNA_TEST(_name, _flags) UNIT_TEST(_name, _flags, laguna_test)
 #define LAGUNA_STRESS_TEST(_name, _flags) UNIT_TEST(_name, _flags, laguna_stress_test)
 #define LAGUNA_SPL_TEST(_name, _flags) UNIT_TEST(_name, _flags, laguna_spl_test)
+#define LAGUNA_RAS_TEST(_name, _flags) UNIT_TEST(_name, _flags, laguna_ras)
 
 #endif /* __TEST_LAGUNA_H__ */
