@@ -83,6 +83,7 @@ static struct cmd_tbl cmd_ut_sub[] = {
 #ifdef CONFIG_AXERA_LUA
 	U_BOOT_CMD_MKENT(laguna, CONFIG_SYS_MAXARGS, 1, do_ut_laguna, "", ""),
 	U_BOOT_CMD_MKENT(stress, CONFIG_SYS_MAXARGS, 1, do_ut_laguna_stress, "", ""),
+	U_BOOT_CMD_MKENT(ras, CONFIG_SYS_MAXARGS, 1, do_ut_ras_errors_injection, "", ""),
 #endif
 };
 
@@ -175,6 +176,7 @@ static char ut_help_text[] =
 #ifdef CONFIG_AXERA_LUA
 	"ut laguna [test-name] - test Axera Laguna SoC functions\n"
 	"ut stress [test-name] - stress Axera Laguna SoC functions\n"
+	"ut ras [test-name]    - inject RAS errors into Axera Laguna SoC\n"
 #endif
 	;
 #endif /* CONFIG_SYS_LONGHELP */
