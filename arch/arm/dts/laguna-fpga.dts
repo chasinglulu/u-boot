@@ -178,8 +178,8 @@
 			clock-names = "aclk_eqos", "ptp_ref",
 						  "ephy_ref", "rmii_phy",
 						  "rgmii_tx";
-			axera,syscon-eth0 = <&periph_glb 0x24>;
-			axera,syscon-pps = <&periph_glb 0x68>;
+			axera,syscon-eth0 = <&periph_glb LAGUNA_SYSCON_PERIPH_EMAC>;
+			axera,syscon-pps = <&periph_glb LAGUNA_SYSCON_PERIPH_EMAC1>;
 
 			// axera,syscon-eth0 = <&periph_glb 0x24>,
 			// 					<&periph_glb 0x68>;

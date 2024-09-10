@@ -1205,7 +1205,7 @@
 					clocks = <&clk_periph_glb>;
 					clock-names = "clk_periph_glb";
 					clock-output-names = "aclk_main_emac";
-					bit-shift = <13>;
+					bit-shift = <12>;
 					#clock-cells = <0>;
 				};
 			};
