@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
-
+#include "dt-bindings/mfd/laguna-sysctl.h"
 / {
 	glbctrlreg {
 		compatible = "simple-bus";
@@ -26,7 +26,7 @@
 				compatible = "axera,laguna-sysctl";
 				#syscon-cells = <2>;
 				regmap = <&safety_glb>;
-				offset = <0x48>;
+				offset = <0x8C>;
 				mask = <0x3>;
 				field-width = <2>;
 				u-boot,dm-pre-reloc;
@@ -78,7 +78,7 @@
 				compatible = "axera,laguna-sysctl";
 				#syscon-cells = <2>;
 				regmap = <&periph_glb>;
-				offset = <0x2C>;
+				offset = <LAGUNA_SYSCON_PERIPH_UART>;
 				mask = <0x3FF>;
 				field-width = <2>;
 				u-boot,dm-pre-reloc;
