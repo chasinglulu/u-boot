@@ -6,16 +6,20 @@
  */
 
 #include <asm/arch/bootparams.h>
+#include <dm/uclass.h>
 #include <common.h>
-#include <init.h>
 #include <fdt_support.h>
 #include <asm/sections.h>
 #include <linux/sizes.h>
 #include <exports.h>
 #include <env.h>
-#include <nand.h>
-#include <dm/uclass.h>
+#include <init.h>
+#if IS_ENABLED(CONFIG_MTD) || IS_ENABLED(CONFIG_DM_MTD)
 #include <mtd.h>
+#endif
+#if IS_ENABLED(CONFIG_CMD_NAND) && IS_ENABLED(CONFIG_MTD_RAW_NAND)
+#include <nand.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 

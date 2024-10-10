@@ -17,9 +17,9 @@ config AXERA_LMT
 config AXERA_LUA
 	bool "Support Laguna SoC"
 	select ARM64
-	select DM_ETH
-	select SUPPORT_SPL
 	select SPL
+	select SUPPORT_SPL
+	select SYS_MALLOC_F
 	help
 	  The Laguna SoC is a ARM-based SoC with a quad-core Cortex-A55
 	  and dual-core NPU. including 2M SRAM, 128K L2 cache per core,

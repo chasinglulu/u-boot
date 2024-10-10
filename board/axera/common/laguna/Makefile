@@ -2,4 +2,6 @@
 
 ifneq ($(CONFIG_LUA_NOR0)$(CONFIG_LUA_NOR1),)
 obj-y += mtdparts.o
+else
+obj-y += dummy.o
 endif
