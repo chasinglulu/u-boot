@@ -2006,13 +2006,9 @@ config ARCH_ROCKCHIP
 
 config ARCH_AXERA
 	bool "Support Axera SoCs"
-	select BLK
 	select DM
-	select DM_GPIO
-	select DM_MMC
 	select DM_SERIAL
 	select OF_CONTROL
-	select SYS_MALLOC_F
 
 config ARCH_AXERA_R5F
 	bool "Axera R5F based Safety Island"
