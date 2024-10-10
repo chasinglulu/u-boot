@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-2.0+
 
-menuconfig SOC_LUA
+menuconfig SOC_LAGUNA
 	bool "Laguna SoC drivers support"
-	depends on ARCH_AXERA
+	depends on LUA_SOC
 
-if SOC_LUA
+if SOC_LAGUNA
 
 config DM_GLBCON
 	bool "Support Subsystem Global Control Register Driver"
