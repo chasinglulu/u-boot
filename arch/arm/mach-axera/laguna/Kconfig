@@ -27,6 +27,12 @@ config TARGET_LUA_FPGA
 	  with a little function and physical connectors support like UART,
 	  JTAG, eMMC, USB-to-serial...
 
+config TARGET_LUA_ZEBU
+	bool "Laguna ZeBu Verification Platform"
+	select LUA_SOC
+	help
+	  ZeBu is a verification platform for Axera Laguna SoC.
+
 endchoice
 
 config LUA_SOC
@@ -286,5 +292,6 @@ config SYS_VENDOR
 source "board/axera/dvb/laguna/Kconfig"
 source "board/axera/qemu-virt/laguna/Kconfig"
 source "board/axera/fpga/laguna/Kconfig"
+source "board/axera/zebu/laguna/Kconfig"
 
 endif

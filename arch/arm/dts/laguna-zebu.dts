@@ -1,0 +1,40 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Laguna ZeBu Platform device tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/dts-v1/;
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Laguna ZeBu Platform";
+	compatible = "axera,laguna-zebu";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	chosen {
+		stdout-path = "serial1:115200n8";
+	};
+
+	memory {
+		reg = <0x1 0x00000000 0x2 0x00000000>;
+		device_type = "memory";
+	};
+
+	aliases {
+		serial1 = &serial1;
+	};
+
+	serial1: uart@0E403000 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0x0 0x0E403000 0x0 0x1000>;
+		reg-shift = <2>;
+		reg-io-width = <4>;
+		clock-frequency = <10000000>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
+		status = "okay";
+	};
+};

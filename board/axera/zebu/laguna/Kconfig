@@ -1,0 +1,6 @@
+if TARGET_LUA_ZEBU
+
+config SYS_BOARD
+	default "zebu"
+
+endif
