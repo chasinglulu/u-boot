@@ -13,10 +13,16 @@
 #include <asm/io.h>
 #include <mapmem.h>
 #include <init.h>
+#include <div64.h>
 #include <linux/delay.h>
+
+#define SAFETY_OCM_BASE     0x00200000
+#define LOOPS_EXP           0
+#define LOOPS               BIT(LOOPS_EXP)
 
 #define NPU_OCM_SIZE        SZ_2M
 #define SAFETY_IRAM_SIZE    SZ_64K
+#define SAFETY_OCM_SIZE     SZ_2M
 
 static int ocm_rw(uint64_t addr, int size)
 {
@@ -192,3 +198,155 @@ static int test_generic_timer(struct unit_test_state *uts)
 	return 0;
 }
 LAGUNA_TEST(test_generic_timer, UT_TESTF_CONSOLE_REC);
+
+static int read_perf(void *addr, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		readl(addr + i * 4);
+
+	return 0;
+}
+
+static int write_perf(void *addr, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		writel(i, addr + i * 4);
+
+	return 0;
+}
+
+static int rw_perf(void *addr, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++)
+		writel(i, addr + i * 4);
+
+	for (i = 0; i < count; i++)
+		readl(addr + i * 4);
+
+	return 0;
+}
+
+static int perf_test(void *buf, ulong size)
+{
+	u64 elapsed = 0;
+	u64 ticks, total;
+	int i;
+
+	/* Read-Write Case */
+	total = size * 1000000 * 2;
+	ticks = get_timer_us(0);
+	for (i = 0; i < LOOPS; i++)
+		rw_perf(buf, size / 4);
+	elapsed += get_timer_us(ticks);
+	elapsed >>= LOOPS_EXP;
+	elapsed <<= 20;
+	printf("       RW: [%lld.%-3lld] MB/s\n", total / elapsed, (total % elapsed) / 1000000);
+	invalidate_dcache_range((ulong)buf, (ulong)buf + size);
+	flush_dcache_range((ulong)buf, (ulong)buf + size);
+
+	/* Read Case */
+	total = size * 1000000;
+	elapsed = 0;
+	ticks = get_timer_us(0);
+	for (i = 0; i < LOOPS; i++)
+		read_perf(buf, size / 4);
+	elapsed += get_timer_us(ticks);
+	elapsed >>= LOOPS_EXP;
+	elapsed <<= 20;
+	printf("     Read: [%lld.%-3lld] MB/s\n", total / elapsed, (total % elapsed) / 1000000);
+	invalidate_dcache_range((ulong)buf, (ulong)buf + size);
+	flush_dcache_range((ulong)buf, (ulong)buf + size);
+
+	/* Write Case */
+	total = size * 1000000;
+	elapsed = 0;
+	ticks = get_timer_us(0);
+	for (i = 0; i < LOOPS; i++)
+		write_perf(buf, size / 4);
+	elapsed += get_timer_us(ticks);
+	elapsed >>= LOOPS_EXP;
+	elapsed <<= 20;
+	printf("    Write: [%lld.%-3lld] MB/s\n", total / elapsed, (total % elapsed) / 1000000);
+	invalidate_dcache_range((ulong)buf, (ulong)buf + size);
+	flush_dcache_range((ulong)buf, (ulong)buf + size);
+
+	return 0;
+}
+
+static int test_ocm_rw_perf(struct unit_test_state *uts)
+{
+	char *buf = map_sysmem(CONFIG_LUA_OCM_BASE, NPU_OCM_SIZE);
+
+	printf("NPU OCM Performance:\n");
+	ut_assertok(perf_test(buf, NPU_OCM_SIZE));
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_ocm_rw_perf, UT_TESTF_CONSOLE_REC);
+
+static int test_safety_iram_rw_perf(struct unit_test_state *uts)
+{
+	char *buf = map_sysmem(CONFIG_LUA_IRAM_BASE, SAFETY_IRAM_SIZE);
+
+	printf("Safety IRAM Performance:\n");
+	ut_assertok(perf_test(buf, SAFETY_IRAM_SIZE));
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_safety_iram_rw_perf, UT_TESTF_CONSOLE_REC);
+
+static int test_safety_ocm_rw_perf(struct unit_test_state *uts)
+{
+	char *buf = map_sysmem(SAFETY_OCM_BASE, SAFETY_OCM_SIZE);
+
+	printf("Safety OCM Performance:\n");
+	ut_assertok(perf_test(buf, SAFETY_OCM_SIZE));
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_safety_ocm_rw_perf, UT_TESTF_CONSOLE_REC);
+
+static int test_nocache_ocm_rw_perf(struct unit_test_state *uts)
+{
+	char *buf = map_sysmem(CONFIG_LUA_OCM_BASE, SZ_64K);
+
+	printf("NPU OCM With Cache Off Performance:\n");
+	dcache_disable();
+	ut_assertok(perf_test(buf, SZ_64K));
+	dcache_enable();
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_nocache_ocm_rw_perf, UT_TESTF_CONSOLE_REC);
+
+static int test_nocache_safety_iram_rw_perf(struct unit_test_state *uts)
+{
+	char *buf = map_sysmem(CONFIG_LUA_IRAM_BASE, SAFETY_IRAM_SIZE);
+
+	printf("Safety IRAM With Cache Off Performance:\n");
+	dcache_disable();
+	ut_assertok(perf_test(buf, SAFETY_IRAM_SIZE));
+	dcache_enable();
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_nocache_safety_iram_rw_perf, UT_TESTF_CONSOLE_REC);
+
+static int test_nocache_safety_ocm_rw_perf(struct unit_test_state *uts)
+{
+	char *buf = map_sysmem(SAFETY_OCM_BASE, SZ_64K);
+
+	printf("Safety OCM With Cache Off Performance:\n");
+	dcache_disable();
+	ut_assertok(perf_test(buf, SZ_64K));
+	dcache_enable();
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_nocache_safety_ocm_rw_perf, UT_TESTF_CONSOLE_REC);
