@@ -20,6 +20,15 @@ int do_ut_laguna(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 			       argv);
 }
 
+int do_ut_laguna_perf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	struct unit_test *tests = UNIT_TEST_SUITE_START(laguna_perf_test);
+	const int n_ents = UNIT_TEST_SUITE_COUNT(laguna_perf_test);
+
+	return cmd_ut_category("laguna", "laguna_perf_test_", tests, n_ents, argc,
+	           argv);
+}
+
 int do_ut_laguna_stress(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	struct unit_test *tests = UNIT_TEST_SUITE_START(laguna_stress_test);

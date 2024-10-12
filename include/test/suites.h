@@ -54,6 +54,7 @@ int do_ut_time(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 int do_ut_unicode(struct cmd_tbl *cmdtp, int flag, int argc,
 		  char *const argv[]);
 int do_ut_laguna(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
+int do_ut_laguna_perf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 int do_ut_laguna_stress(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 int do_ut_ras_errors_injection(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[]);
 

@@ -14,6 +14,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 typedef enum mmap_region_type {
+	MMIO_SAFETY_OCM,
 	MMIO_SAFETY_IRAM,
 #if defined(CONFIG_LUA_SAFETY_INIT)
 	MMIO_SAFETY_PERI,
@@ -28,6 +29,7 @@ typedef enum mmap_region_type {
 	MMIO_COUNT,
 } mmap_region_t;
 
+#define MMAP_SAFETY_OCM_BASE   0x00200000U
 #define MMAP_SAFETY_IRAM_BASE  0x00400000U
 #define MMAP_SAFETY_PERI_BASE  0x00440000U
 #define MMAP_COMMSYS_BASE      0x06000000U
@@ -39,13 +41,19 @@ typedef enum mmap_region_type {
 #define MMAP_DRAM_BASE         0x100000000UL
 
 static struct mm_region lua_mem_map[] = {
+	[MMIO_SAFETY_OCM] = {
+		.virt = MMAP_SAFETY_OCM_BASE,
+		.phys = MMAP_SAFETY_OCM_BASE,
+		.size = SZ_2M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+			PTE_BLOCK_INNER_SHARE
+	},
 	[MMIO_SAFETY_IRAM] = {
 		.virt = MMAP_SAFETY_IRAM_BASE,
 		.phys = MMAP_SAFETY_IRAM_BASE,
 		.size = SZ_64K,
-		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
-			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
-			PTE_BLOCK_UXN
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+			PTE_BLOCK_INNER_SHARE
 	},
 #if defined(CONFIG_LUA_SAFETY_INIT)
 	[MMIO_SAFETY_PERI] = {
