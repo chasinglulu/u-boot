@@ -14,6 +14,57 @@
 #include <syscon.h>
 #include <regmap.h>
 
+#define GATE_DRV_NAME "clk_gate"
+
+struct clk_gate_priv {
+	fdt_addr_t base;
+	uint32_t offset;
+	uint32_t mask;
+	bool invert_enable;
+};
+
+#if defined(CONFIG_CLK_AXERA_V2)
+static void clk_gate_endisable(struct clk *clk, int enable)
+{
+	struct clk_gate_priv *priv = dev_get_priv(clk->dev);
+	int set = clk->flags & CLK_GATE_SET_TO_DISABLE ? 1 : 0;
+	uint32_t val;
+
+	if (priv->mask < BIT(clk->id)) {
+		dev_err(clk->dev, "wrong ID [%lu]\n", clk->id);
+		return;
+	}
+
+	set ^= enable;
+	dev_err(clk->dev, "base: 0x%llx offset: 0x%x\n", priv->base, priv->offset);
+
+	if (clk->flags & CLK_GATE_HIWORD_MASK) {
+		val = BIT(clk->id + 16);
+		if (set)
+			val |= BIT(clk->id);
+	} else {
+		val = readl(priv->base + priv->offset);
+
+		if (set)
+			val |= BIT(clk->id);
+		else
+			val &= ~BIT(clk->id);
+	}
+
+	writel(val, priv->base + priv->offset);
+}
+static int clk_gate_of_xlate(struct clk *clk,
+                struct ofnode_phandle_args *args)
+{
+	if (args->args_count != 1)
+		return -EINVAL;
+
+	clk->id = args->args[0];
+	dev_err(clk->dev, "clk id: 0x%lx\n", clk->id);
+
+	return 0;
+}
+#elif defined(CONFIG_CLK_AXERA_V1)
 static void clk_gate_endisable(struct clk *clk, int enable)
 {
 	struct clk *clkp = dev_get_uclass_priv(clk->dev);
@@ -39,6 +90,17 @@ static void clk_gate_endisable(struct clk *clk, int enable)
 	writel(reg, gate->reg);
 }
 
+static int clk_gate_of_xlate(struct clk *clk,
+                struct ofnode_phandle_args *args)
+{
+	struct clk *clkp = dev_get_uclass_priv(clk->dev);
+
+	clk->id = dev_seq(clkp->dev);
+
+	return 0;
+}
+#endif
+
 static int clk_gate_enable(struct clk *clk)
 {
 	clk_gate_endisable(clk, 1);
@@ -53,6 +115,7 @@ static int clk_gate_disable(struct clk *clk)
 	return 0;
 }
 
+#ifdef CONFIG_CLK_AXERA_V1
 static ulong clk_gate_set_rate(struct clk *clk, ulong rate)
 {
 	struct clk *parent;
@@ -69,29 +132,81 @@ static ulong clk_gate_set_rate(struct clk *clk, ulong rate)
 
 	return rate;
 }
-
-static int clk_gate_of_xlate(struct clk *clk,
-			struct ofnode_phandle_args *args)
+#else
+ulong clk_gate_get_rate_v2(struct clk *clk)
 {
-	struct clk *clkp = dev_get_uclass_priv(clk->dev);
-
-	clk->id = dev_seq(clkp->dev);
-
 	return 0;
 }
+#endif
 
-const struct clk_ops ax_clk_gate_ops = {
+const struct clk_ops axera_clk_gate_ops = {
 	.enable = clk_gate_enable,
 	.disable = clk_gate_disable,
+#ifdef CONFIG_CLK_AXERA_V1
 	.get_rate = clk_generic_get_rate,
 	.set_rate = clk_gate_set_rate,
+#else
+	.get_rate = clk_gate_get_rate_v2,
+#endif
 	.of_xlate = clk_gate_of_xlate,
 };
 
+static int clk_gate_probe(struct udevice *dev)
+{
+	struct clk_gate_priv *priv;
+	ofnode regmap;
+	uint32_t phandle;
+
+	if (device_is_compatible(dev, GATE_DRV_NAME))
+		return 0;
+
+	priv = dev_get_priv(dev);
+
+	ofnode_read_u32(dev_ofnode(dev), "regmap", &phandle);
+	regmap = ofnode_get_by_phandle(phandle);
+	priv->base = ofnode_get_addr(regmap);
+	dev_err(dev, "%s: base: 0x%llx\n", __func__, priv->base);
+
+	priv->offset = dev_read_u32_default(dev, "offset", -1);
+	if (priv->offset == ~0U) {
+		dev_err(dev, "Failed to get 'offset' property\n");
+		return -ENODATA;
+	}
+
+	priv->mask = dev_read_u32_default(dev, "mask", 0);
+	if (!priv->mask) {
+		dev_err(dev, "Failed to get 'mask' property\n");
+		return -ENODATA;
+	}
+
+	priv->invert_enable = dev_read_bool(dev, "invert-enable");
+
+	dev_info(dev, "Probe sucessfully\n");
+	return 0;
+}
+
+static const struct udevice_id clk_gate_of_ids[] = {
+	{ .compatible = "axera,lua-clock-gate" },
+	{ /* sentinel */ },
+};
+
+U_BOOT_DRIVER(axera_clk_gate) = {
+	.name = GATE_DRV_NAME,
+	.id = UCLASS_CLK,
+	.of_match = clk_gate_of_ids,
+	.probe = clk_gate_probe,
+	.ops = &axera_clk_gate_ops,
+	.flags = DM_FLAG_PRE_RELOC,
+#ifdef CONFIG_CLK_AXERA_V2
+	.priv_auto = sizeof(struct clk_gate_priv),
+#endif
+};
+
+#if defined(CONFIG_CLK_AXERA_V1)
 static struct clk *__clk_register_gate(struct device *dev, const char *name,
-			      const char *parent_name, unsigned long flags,
-			      void __iomem *reg, u8 bit_idx,
-			      u8 clk_gate_flags, spinlock_t *lock)
+                  const char *parent_name, unsigned long flags,
+                  void __iomem *reg, u8 bit_idx,
+                  u8 clk_gate_flags, spinlock_t *lock)
 {
 	struct clk_gate *gate;
 	struct clk *clk;
@@ -116,7 +231,7 @@ static struct clk *__clk_register_gate(struct device *dev, const char *name,
 	clk = &gate->clk;
 	clk->flags = flags;
 
-	ret = clk_register(clk, "ax_clk_gate", name, parent_name);
+	ret = clk_register(clk, GATE_DRV_NAME, name, parent_name);
 	if (ret) {
 		kfree(gate);
 		return ERR_PTR(ret);
@@ -124,13 +239,6 @@ static struct clk *__clk_register_gate(struct device *dev, const char *name,
 
 	return clk;
 }
-
-U_BOOT_DRIVER(ax_clk_gate) = {
-	.name = "ax_clk_gate",
-	.id = UCLASS_CLK,
-	.ops = &ax_clk_gate_ops,
-	.flags = DM_FLAG_PRE_RELOC,
-};
 
 static int gate_clk_bind(struct udevice *dev)
 {
@@ -180,7 +288,7 @@ static int gate_clk_bind(struct udevice *dev)
 
 static const struct udevice_id gate_clk_of_match[] = {
 	{ .compatible = "axera,lua-gate-clocks" },
-	{ },
+	{ /* sentinel */ },
 };
 
 U_BOOT_DRIVER(gate_clk) = {
@@ -189,3 +297,4 @@ U_BOOT_DRIVER(gate_clk) = {
 	.of_match = gate_clk_of_match,
 	.bind = gate_clk_bind,
 };
+#endif
