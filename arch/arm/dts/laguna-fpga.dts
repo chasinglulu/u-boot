@@ -7,7 +7,9 @@
 
 /dts-v1/;
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/reset/laguna-sysctl.h>
+#include <dt-bindings/mfd/laguna-syscon.h>
+#include <dt-bindings/mfd/laguna-cru.h>
+#include <dt-bindings/reset/laguna-reset.h>
 
 #include "laguna-global-ctrl.dtsi"
 #include "laguna-fpga-clocks.dtsi"
@@ -83,8 +85,8 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 167 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <10000000>;
-			resets = <&periph_sysrst0 LAGUNA_PERI_UART1_PRST>,
-					 <&periph_sysrst0 LAGUNA_PERI_UART1_RST>;
+			resets = <&periph_sysrst0 PERIPH_UART1_SW_PRST>,
+					 <&periph_sysrst0 PERIPH_UART2_SW_PRST>;
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
@@ -102,8 +104,8 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <10000000>;
-			resets = <&periph_sysrst0 LAGUNA_PERI_UART2_PRST>,
-					 <&periph_sysrst0 LAGUNA_PERI_UART2_RST>;
+			resets = <&periph_sysrst0 PERIPH_UART2_SW_PRST>,
+					 <&periph_sysrst0 PERIPH_UART2_SW_PRST>;
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 2 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
@@ -119,8 +121,8 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <10000000>;
-			resets = <&periph_sysrst0 LAGUNA_PERI_UART3_PRST>,
-					 <&periph_sysrst0 LAGUNA_PERI_UART3_RST>;
+			resets = <&periph_sysrst0 PERIPH_UART3_SW_PRST>,
+					 <&periph_sysrst0 PERIPH_UART3_SW_PRST>;
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 4 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
@@ -136,8 +138,8 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <10000000>;
-			resets = <&periph_sysrst0 LAGUNA_PERI_UART4_PRST>,
-					 <&periph_sysrst0 LAGUNA_PERI_UART4_RST>;
+			resets = <&periph_sysrst0 PERIPH_UART4_SW_PRST>,
+					 <&periph_sysrst0 PERIPH_UART4_SW_PRST>;
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 6 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
@@ -153,8 +155,8 @@
 			reg-io-width = <4>;
 			interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH>;
 			clock-frequency = <10000000>;
-			resets = <&periph_sysrst0 LAGUNA_PERI_UART5_PRST>,
-					 <&periph_sysrst0 LAGUNA_PERI_UART5_RST>;
+			resets = <&periph_sysrst0 PERIPH_UART5_SW_PRST>,
+					 <&periph_sysrst0 PERIPH_UART5_SW_PRST>;
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 8 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
@@ -170,7 +172,7 @@
 			max-speed = <100>;
 			phy-handle = <&phy0>;
 			phy-mode = "gmii";
-			resets = <&periph_sysrst1 LAGUNA_PERI_EMAC_ARST>;
+			resets = <&periph_sysrst1 MAIN_EMAC_SW_ARST>;
 			reset-names = "arst";
 			clocks = <&aclk_main_emac>, <&clk_periph_emac_ptp>,
 					 <&clk_main_ephy_ref>, <&clk_main_rmii_phy>,
