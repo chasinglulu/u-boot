@@ -9,6 +9,19 @@ config CLK_AXERA
 	help
 	  Enables the clock translation layer from DT to device clocks.
 
+choice
+	prompt "Axera Clock Driver Version"
+	depends on CLK_AXERA
+	default CLK_AXERA_V2
+
+config CLK_AXERA_V1
+	bool "V1"
+
+config CLK_AXERA_V2
+	bool "V2"
+
+endchoice
+
 config SPL_CLK_AXERA
 	bool "Clock support for Axera SoC family of devices in SPL"
 	depends on CLK && SPL

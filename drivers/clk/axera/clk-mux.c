@@ -15,6 +15,72 @@
 #include <syscon.h>
 #include <regmap.h>
 
+#define MUX_DRV_NAME "clk_mux"
+
+struct bit_map {
+	uint32_t offset;
+	uint32_t width;
+};
+
+struct clk_mux_priv {
+	fdt_addr_t base;
+	uint32_t offset;
+	uint32_t mask;
+	uint32_t clk_nums;
+	struct bit_map *array;
+	uint32_t *clk_parent_nums;
+};
+
+#if defined(CONFIG_CLK_AXERA_V2)
+static int clk_mux_of_xlate_v2(struct clk *clk,
+                struct ofnode_phandle_args *args)
+{
+	if (args->args_count != 1)
+		return -EINVAL;
+
+	clk->id = args->args[0];
+	dev_dbg(clk->dev, "clk id: 0x%lx\n", clk->id);
+
+	return 0;
+}
+
+static int clk_mux_set_parent_v2(struct clk *clk, struct clk *parent)
+{
+	return 0;
+}
+
+ulong clk_mux_get_rate_v2(struct clk *clk)
+{
+	struct udevice *dev = clk->dev;
+	struct clk_mux_priv *priv = dev_get_priv(dev);
+	struct bit_map *map = priv->array + clk->id;
+	struct clk parent;
+	uint32_t reg, index = 0;
+	ulong rate;
+	int ret, i;
+
+	for (i = 0; i < clk->id; i++)
+		index += priv->clk_parent_nums[i];
+
+	reg = readl(priv->base + priv->offset);
+	index += (reg >> map->offset) & BIT(map->width);
+	dev_dbg(dev, "index %u\n", index);
+
+	ret = clk_get_by_index(dev, index, &parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%ld' clock [%d]\n", clk->id, ret);
+		return 0;
+	}
+
+	rate = clk_get_rate(&parent);
+	if (rate == -ENOSYS)
+		return 0;
+
+	dev_dbg(dev, "rate: %lu\n", rate);
+
+	return rate;
+}
+#elif defined(CONFIG_CLK_AXERA_V1)
 static int clk_mux_val_to_index(struct clk *clk, u32 *table, unsigned int flags,
 			 unsigned int val)
 {
@@ -118,6 +184,16 @@ static int clk_mux_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
+static int clk_mux_of_xlate(struct clk *clk,
+                struct ofnode_phandle_args *args)
+{
+	struct clk *clkp = dev_get_uclass_priv(clk->dev);
+
+	clk->id = dev_seq(clkp->dev);
+
+	return 0;
+}
+
 static ulong clk_mux_set_rate(struct clk *clk, ulong rate)
 {
 	struct clk *parent;
@@ -149,25 +225,103 @@ static ulong clk_mux_round_rate(struct clk *clk, ulong rate)
 	dev_dbg(clk->dev, "rate=%ld\n", rate);
 	return rate;
 }
+#endif
 
-static int clk_mux_of_xlate(struct clk *clk,
-			struct ofnode_phandle_args *args)
-{
-	struct clk *clkp = dev_get_uclass_priv(clk->dev);
-
-	clk->id = dev_seq(clkp->dev);
-
-	return 0;
-}
-
-const struct clk_ops ax_clk_mux_ops = {
-	.get_rate = clk_generic_get_rate,
+const struct clk_ops axera_clk_mux_ops = {
+#ifdef CONFIG_CLK_AXERA_V1
 	.set_parent = clk_mux_set_parent,
+	.get_rate = clk_generic_get_rate,
 	.set_rate = clk_mux_set_rate,
 	.round_rate = clk_mux_round_rate,
 	.of_xlate = clk_mux_of_xlate,
+#else
+	.set_parent = clk_mux_set_parent_v2,
+	.get_rate = clk_mux_get_rate_v2,
+	.of_xlate = clk_mux_of_xlate_v2,
+#endif
 };
 
+static const struct udevice_id clk_mux_of_ids[] = {
+	{ .compatible = "axera,lua-clock-mux" },
+	{ /* sentinel */ },
+};
+
+static int clk_mux_probe(struct udevice *dev)
+{
+	struct clk_mux_priv *priv;
+	ofnode regmap;
+	uint32_t phandle;
+	int ret;
+
+	if (device_is_compatible(dev, MUX_DRV_NAME) ||
+	     !device_is_compatible(dev, clk_mux_of_ids[0].compatible))
+		return 0;
+
+	priv = dev_get_priv(dev);
+	ret = ofnode_read_u32(dev_ofnode(dev), "regmap", &phandle);
+	if (ret) {
+		dev_err(dev, "Failed to find 'regmap' property\n");
+		return ret;
+	}
+	regmap = ofnode_get_by_phandle(phandle);
+	if (!ofnode_valid(regmap)) {
+		dev_dbg(dev, "unable to find regmap phandle\n");
+		return -EINVAL;
+	}
+	priv->base = ofnode_get_addr(regmap);
+
+	priv->offset = dev_read_u32_default(dev, "offset", -1);
+	if (priv->offset == ~0U) {
+		dev_err(dev, "Failed to get 'offset' property\n");
+		return -ENODATA;
+	}
+
+	priv->mask = dev_read_u32_default(dev, "mask", 0);
+	if (!priv->mask) {
+		dev_err(dev, "Failed to get 'mask' property\n");
+		return -ENODATA;
+	}
+
+	priv->clk_nums = dev_read_string_count(dev, "clock-output-names");
+	dev_dbg(dev, "clk total: %d", priv->clk_nums);
+	assert(priv->clk_nums > 0);
+
+	priv->array = kzalloc(priv->clk_nums * sizeof(struct bit_map), GFP_KERNEL);
+	if (IS_ERR_OR_NULL(priv->array)) {
+		dev_err(dev, "Out of memory\n");
+		return -ENOMEM;
+	}
+	dev_read_u32_array(dev, "bit-map", (uint32_t *)priv->array, priv->clk_nums * 2);
+
+	priv->clk_parent_nums = kzalloc(priv->clk_nums * sizeof(uint32_t), GFP_KERNEL);
+	if (IS_ERR_OR_NULL(priv->array)) {
+		dev_err(dev, "Out of memory\n");
+		ret = -ENOMEM;
+		goto failed;
+	}
+	dev_read_u32_array(dev, "clock-parent-nums", priv->clk_parent_nums, priv->clk_nums);
+
+	dev_dbg(dev, "Probe sucessfully\n");
+	return 0;
+
+failed:
+	free(priv->array);
+	return ret;
+}
+
+U_BOOT_DRIVER(axera_clk_mux) = {
+	.name = MUX_DRV_NAME,
+	.id = UCLASS_CLK,
+	.of_match = clk_mux_of_ids,
+	.probe = clk_mux_probe,
+	.ops = &axera_clk_mux_ops,
+	.flags = DM_FLAG_PRE_RELOC,
+#ifdef CONFIG_CLK_AXERA_V2
+	.priv_auto = sizeof(struct clk_mux_priv),
+#endif
+};
+
+#if defined(CONFIG_CLK_AXERA_V1)
 static struct clk *__clk_hw_register_mux_table(struct device *dev, const char *name,
 		const char * const *parent_names, u8 num_parents,
 		unsigned long flags,
@@ -212,7 +366,7 @@ static struct clk *__clk_hw_register_mux_table(struct device *dev, const char *n
 	 * Changing parent would require changing internals of udevice struct
 	 * for the corresponding clock (to do that define .set_parent() method).
 	 */
-	ret = clk_register(clk, "ax_clk_mux", name,
+	ret = clk_register(clk, MUX_DRV_NAME, name,
 			   parent_names[__clk_mux_get_parent(clk)]);
 	if (ret) {
 		kfree(mux);
@@ -251,33 +405,36 @@ static struct clk *__clk_register_mux(struct device *dev, const char *name,
 				      NULL);
 }
 
-U_BOOT_DRIVER(ax_clk_mux) = {
-	.name = "ax_clk_mux",
-	.id = UCLASS_CLK,
-	.ops = &ax_clk_mux_ops,
-	.flags = DM_FLAG_PRE_RELOC,
-};
-
 static int mux_clk_bind(struct udevice *dev)
 {
-	ofnode subnode;
-	const char *name;
-	struct clk *clk;
-	void __iomem *reg;
+	struct ofnode_phandle_args args;
 	int shift, width, count;
-	const char ** parents;
-	struct regmap *regmap;
+	ofnode subnode, regmap;
+	const char *name, **parents;
+	uint32_t phandle, offset;
+	struct clk *clk;
+	fdt_addr_t base;
 	ulong flags = 0;
-	int offset;
-	int i;
+	int i, ret;
 
-	regmap = syscon_regmap_lookup_by_phandle(dev, "regmap");
-	if (IS_ERR(regmap)) {
-		dev_err(dev, "Failed to get regmap\n");
-		return -ENODEV;
+	ret = ofnode_read_u32(dev_ofnode(dev), "regmap", &phandle);
+	if (ret) {
+		dev_err(dev, "Failed to find 'regmap' property\n");
+		return ret;
 	}
-	offset = dev_read_u32_default(dev, "offset", 0);
-	reg = (void *)regmap->ranges->start;
+
+	regmap = ofnode_get_by_phandle(phandle);
+	if (!ofnode_valid(regmap)) {
+		dev_dbg(dev, "unable to find regmap phandle\n");
+		return -EINVAL;
+	}
+	base = ofnode_get_addr(regmap);
+
+	offset = dev_read_u32_default(dev, "offset", -1U);
+	if (offset == ~0U) {
+		dev_err(dev, "Failed to get 'offset' property\n");
+		return -ENODATA;
+	}
 
 	dev_for_each_subnode(subnode, dev) {
 		name = ofnode_get_name(subnode);
@@ -298,12 +455,9 @@ static int mux_clk_bind(struct udevice *dev)
 		parents = kzalloc(count * sizeof(parents), GFP_KERNEL);
 
 		for (i = 0; i < count; i++) {
-			struct ofnode_phandle_args args;
-			int ret;
-
 			ret = ofnode_parse_phandle_with_args(subnode, "clocks",
-								"#clock-cells", 0,
-								i, &args);
+						"#clock-cells", 0,
+						i, &args);
 
 			parents[i] = ofnode_get_name(args.node);
 		}
@@ -312,7 +466,7 @@ static int mux_clk_bind(struct udevice *dev)
 			flags |= CLK_SET_RATE_PARENT;
 
 		clk = __clk_register_mux(NULL, name, parents,
-				count, flags, reg + offset,
+				count, flags, (void *)base + offset,
 				shift, width, 0);
 		if (IS_ERR(clk))
 			dev_warn(dev, "Failed to register '%s' clk\n", name);
@@ -327,7 +481,7 @@ static int mux_clk_bind(struct udevice *dev)
 
 static const struct udevice_id mux_clk_of_match[] = {
 	{ .compatible = "axera,lua-mux-clocks" },
-	{ },
+	{ /* sentinel */ },
 };
 
 U_BOOT_DRIVER(mux_clk) = {
@@ -336,3 +490,4 @@ U_BOOT_DRIVER(mux_clk) = {
 	.of_match = mux_clk_of_match,
 	.bind = mux_clk_bind,
 };
+#endif

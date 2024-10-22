@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0+
  *
- * Device Tree Source for each subsystem clock and reset ctrl
+ * Device Tree Source for main domain each subsystem clock and reset ctrl
  *
  * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
 
 / {
-	cru {
+	main-cru {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -1208,7 +1208,7 @@
 				};
 			};
 
-			periph_sysrst0: periph-reset@0 {
+			periph_sysrst_0: periph-reset@0 {
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&periph_cru>;
@@ -1217,7 +1217,7 @@
 				assert-high = <1>;
 			};
 
-			periph_sysrst1: periph-reset@1 {
+			periph_sysrst_1: periph-reset@1 {
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&periph_cru>;

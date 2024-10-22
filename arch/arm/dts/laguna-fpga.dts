@@ -10,10 +10,16 @@
 #include <dt-bindings/mfd/laguna-syscon.h>
 #include <dt-bindings/mfd/laguna-cru.h>
 #include <dt-bindings/reset/laguna-reset.h>
+#include <dt-bindings/clock/laguna-clock.h>
 
 #include "laguna-global-ctrl.dtsi"
+#ifdef CONFIG_CLK_AXERA_V1
 #include "laguna-fpga-clocks.dtsi"
 #include "laguna-cru.dtsi"
+#else
+#include "laguna-fpga-clocks-v2.dtsi"
+#include "laguna-cru-v2.dtsi"
+#endif
 / {
 	model = "Laguna FPGA Platform";
 	compatible = "axera,laguna-fpga";
@@ -31,7 +37,7 @@
 	};
 
 	aliases {
-		serial0 = &serial0;
+//		serial0 = &serial0;
 		serial1 = &serial1;
 		serial2 = &serial2;
 		serial3 = &serial3;
@@ -63,6 +69,7 @@
 		u-boot,dm-spl;
 		ranges;
 
+#if 0
 		serial0: uart@00602000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x0 0x00602000 0x0 0x1000>;
@@ -77,6 +84,7 @@
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 		};
+#endif
 
 		serial1: uart@0E403000 {
 			compatible = "snps,dw-apb-uart";
@@ -90,8 +98,14 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+#ifdef CONFIG_CLK_AXERA_V1
 			clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
 			clock-names = "clk_periph_uart1", "pclk_periph_uart1";
+#else
+			clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART1>,
+			         <&periph_clk_gate_0 CLK_PERIPH_UART1>;
+			clock-names = "pclk", "clk";
+#endif
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "okay";
@@ -109,8 +123,14 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 2 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+#ifdef CONFIG_CLK_AXERA_V1
 			clocks = <&clk_periph_uart2>, <&pclk_periph_uart2>;
 			clock-names = "clk_periph_uart2", "pclk_periph_uart2";
+#else
+			clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART2>,
+			         <&periph_clk_gate_0 CLK_PERIPH_UART2>;
+			clock-names = "pclk", "clk";
+#endif
 			status = "okay";
 		};
 
@@ -126,8 +146,14 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 4 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+#ifdef CONFIG_CLK_AXERA_V1
 			clocks = <&clk_periph_uart3>, <&pclk_periph_uart3>;
 			clock-names = "clk_periph_uart3", "pclk_periph_uart3";
+#else
+			clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART3>,
+			         <&periph_clk_gate_0 CLK_PERIPH_UART3>;
+			clock-names = "pclk", "clk";
+#endif
 			status = "okay";
 		};
 
@@ -143,8 +169,14 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 6 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+#ifdef CONFIG_CLK_AXERA_V1
 			clocks = <&clk_periph_uart4>, <&pclk_periph_uart4>;
 			clock-names = "clk_periph_uart4", "pclk_periph_uart4";
+#else
+			clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART4>,
+			         <&periph_clk_gate_0 CLK_PERIPH_UART4>;
+			clock-names = "pclk", "clk";
+#endif
 			status = "okay";
 		};
 
@@ -160,8 +192,14 @@
 			reset-names = "prst", "rst";
 			syscons = <&uart_xfer_sel 8 UART_XFER_RS232_2LINE>;
 			syscon-names = "xfersel";
+#ifdef CONFIG_CLK_AXERA_V1
 			clocks = <&clk_periph_uart5>, <&pclk_periph_uart5>;
 			clock-names = "clk_periph_uart5", "pclk_periph_uart5";
+#else
+			clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART5>,
+			         <&periph_clk_gate_0 CLK_PERIPH_UART5>;
+			clock-names = "pclk", "clk";
+#endif
 			status = "okay";
 		};
 
@@ -174,12 +212,14 @@
 			phy-mode = "gmii";
 			resets = <&periph_sysrst1 MAIN_EMAC_SW_ARST>;
 			reset-names = "arst";
+#ifdef CONFIG_CLK_AXERA_V1
 			clocks = <&aclk_main_emac>, <&clk_periph_emac_ptp>,
 					 <&clk_main_ephy_ref>, <&clk_main_rmii_phy>,
 					 <&clk_main_rgmii_tx>;
 			clock-names = "aclk_eqos", "ptp_ref",
 						  "ephy_ref", "rmii_phy",
 						  "rgmii_tx";
+#endif
 			axera,syscon-eth0 = <&periph_glb LAGUNA_SYSCON_PERIPH_EMAC>;
 			axera,syscon-pps = <&periph_glb LAGUNA_SYSCON_PERIPH_EMAC1>;
 

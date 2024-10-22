@@ -19,6 +19,8 @@
 #include <syscon.h>
 #include <regmap.h>
 
+#define DIV_DRV_NAME "clk_div"
+
 #define CLK_DIVIVER_UPDATE_BIT   BIT(31)
 
 static unsigned int __clk_divider_get_table_div(const struct clk_div_table *table,
@@ -177,6 +179,13 @@ const struct clk_ops ax_clk_divider_ops = {
 	.set_rate = clk_divider_set_rate,
 };
 
+U_BOOT_DRIVER(ax_clk_divider) = {
+	.name = DIV_DRV_NAME,
+	.id = UCLASS_CLK,
+	.ops = &ax_clk_divider_ops,
+	.flags = DM_FLAG_PRE_RELOC,
+};
+
 static struct clk *_register_divider(struct device *dev, const char *name,
 		const char *parent_name, unsigned long flags,
 		void __iomem *reg, u8 shift, u8 width,
@@ -209,7 +218,7 @@ static struct clk *_register_divider(struct device *dev, const char *name,
 	clk = &div->clk;
 	clk->flags = flags;
 
-	ret = clk_register(clk, "ax_clk_divider", name, parent_name);
+	ret = clk_register(clk, DIV_DRV_NAME, name, parent_name);
 	if (ret) {
 		kfree(div);
 		return ERR_PTR(ret);
@@ -231,13 +240,6 @@ static struct clk *__clk_register_divider(struct device *dev, const char *name,
 		return ERR_CAST(clk);
 	return clk;
 }
-
-U_BOOT_DRIVER(ax_clk_divider) = {
-	.name	= "ax_clk_divider",
-	.id	= UCLASS_CLK,
-	.ops	= &ax_clk_divider_ops,
-	.flags = DM_FLAG_PRE_RELOC,
-};
 
 static int divider_clk_bind(struct udevice *dev)
 {
@@ -300,7 +302,7 @@ static int divider_clk_bind(struct udevice *dev)
 
 static const struct udevice_id divider_clk_of_match[] = {
 	{.compatible = "axera,lua-divider-clock"},
-	{}
+	{ /* sentinel */ }
 };
 
 U_BOOT_DRIVER(divider_clk) = {

@@ -1,0 +1,439 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source (V2) for main domain each subsystem clock and reset ctrl
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	main-cru-v2 {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		common_cru: common-cru@06101000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x06101000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			common_clk_mux: common_clk_mux {
+				compatible = "axera,lua-clock-mux";
+				regmap = <&common_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_COMM_CLK_MUX_0>;
+				mask = <0x3F>;
+				clock-parent-nums = <ACLK_TOP0_PARENT_NUM>, <ACLK_TOP1_PARENT_NUM>,
+				                    <ACLK_TOP2_PARENT_NUM>, <PCLK_TOP_PARENT_NUM>,
+				                    <CLK_COMM_TMR_PARENT_NUM>, <CLK_COMM_WWDT_PARENT_NUM>;
+				bit-map = <ACLK_TOP0_OFFSET ACLK_TOP0_WIDTH>,
+				          <ACLK_TOP1_OFFSET ACLK_TOP1_WIDTH>,
+				          <ACLK_TOP2_OFFSET ACLK_TOP2_WIDTH>,
+				          <PCLK_TOP_OFFSET PCLK_TOP_WIDTH>,
+				          <CLK_COMM_TMR_OFFSET CLK_COMM_TMR_WIDTH>,
+				          <CLK_COMM_WWDT_OFFSET CLK_COMM_WWDT_WIDTH>;
+				clocks = <&fab_pll_24m &fab_pll_300m &fab_pll_400m &fab_pll_500m &fab_pll_600m>,
+				         <&fab_pll_24m &fab_pll_300m &fab_pll_400m &fab_pll_500m &fab_pll_600m &fab_pll_800m>,
+				         <&fab_pll_24m &fab_pll_300m &fab_pll_400m &fab_pll_500m &fab_pll_600m>,
+				         <&fab_pll_24m &fab_pll_100m &fab_pll_200m>,
+				         <&fake_32k &fab_pll_24m>,
+				         <&fake_32k &main_xtal_24m>;
+				clock-names = "aclk_top0_sel", "aclk_top1_sel",
+				              "aclk_top2_sel", "pclk_top_sel",
+				              "clk_comm_tmr_sel", "clk_comm_wwdt_sel";
+				clock-output-names = "aclk_top0_mux", "aclk_top1_mux",
+				                     "aclk_top2_mux", "pclk_top_mux",
+				                     "clk_comm_tmr_mux", "clk_comm_wwdt_mux";
+			};
+
+			common_clk_mux_gate: common_clk_mux_gate {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&common_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_COMM_CLK_M_EB_0>;
+				mask = <0x7>;
+				clocks = <&common_clk_mux CLK_COMM_TMR>, <&common_clk_mux CLK_COMM_WWDT>;
+				clock-names = "clk_comm_tmr_eb", "clk_comm_wwdt_eb";
+				clock-output-names = "clk_comm_tmr", "clk_comm_wwdt";
+			};
+
+			common_clk_gate: common_clk_gate {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&common_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_COMM_CLK_G_EB_0>;
+				mask = <0x3FFFFF>;
+				clocks = <&clk_comm_24m>, <&clk_comm_24m>,
+				         <&clk_comm_24m>, <&clk_comm_24m>,
+				         <&common_clk_mux_gate CLK_COMM_TMR_EB>, <&common_clk_mux_gate CLK_COMM_TMR_EB>,
+				         <&common_clk_mux_gate CLK_COMM_TMR_EB>, <&common_clk_mux_gate CLK_COMM_TMR_EB>,
+				         <&clk_comm_24m>, <&clk_comm_24m>,
+				         <&clk_comm_24m>, <&clk_comm_24m>,
+				         <&common_clk_mux_gate CLK_COMM_WWDT_EB>, <&common_clk_mux_gate CLK_COMM_WWDT_EB>,
+				         <&common_clk_mux_gate CLK_COMM_WWDT_EB>, <&common_clk_mux_gate CLK_COMM_WWDT_EB>,
+				         <&common_clk_mux PCLK_TOP>, <&common_clk_mux PCLK_TOP>,
+				         <&common_clk_mux PCLK_TOP>, <&clk_comm_24m>,
+				         <&clk_comm_24m>, <&common_clk_mux ACLK_TOP0>,
+				         <&common_clk_mux ACLK_TOP0>, <&clk_comm_24m>,
+				         <&clk_comm_24m>, <&clk_comm_24m>,
+				         <&common_clk_mux ACLK_TOP0>, <&common_clk_mux ACLK_TOP0>,
+				         <&clk_comm_24m>, <&common_clk_mux PCLK_TOP>,
+				         <&clk_comm_24m>, <&clk_comm_24m>;
+				clock-names = "pclk_tmr32_0_eb", "pclk_tmr32_1_eb",
+				              "pclk_tmr32_2_eb", "pclk_tmr32_3_eb",
+				              "tclk_tmr32_0_eb", "tclk_tmr32_1_eb",
+				              "tclk_tmr32_2_eb", "tclk_tmr32_3_eb",
+				              "pclk_wwdt0_eb", "pclk_wwdt1_eb",
+				              "pclk_wwdt2_eb", "pclk_wwdt3_eb",
+				              "tclk_wwdt0_eb", "tclk_wwdt1_eb",
+				              "tclk_wwdt2_eb", "tclk_wwdt3_eb",
+				              "pclk_axera_sw_int1_eb", "pclk_perf_mnr_lat0_eb",
+				              "pclk_perf_mnr_lat1_eb", "clk_perf_mnr_lat0_24m_eb",
+				              "clk_perf_mnr_lat1_24m_eb", "aclk_perf_mnr_lat0_eb",
+				              "aclk_perf_mnr_lat1_eb", "pclk_pll_ctrl2_eb",
+				              "pclk_a55_dbg_mnr_eb", "pclk_ocm_dbg_mnr_eb",
+				              "aclk_ocm_dbg_mnr_eb", "aclk_a55_dbg_mnr_eb",
+				              "clk_deb_gpio_eb", "clk_comm_tlb_eb",
+				              "pclk_comm_clk_mnr_eb";
+				clock-clock-names = "pclk_tmr32_0", "pclk_tmr32_1",
+				                    "pclk_tmr32_2", "pclk_tmr32_3",
+				                    "tclk_tmr32_0", "tclk_tmr32_1",
+				                    "tclk_tmr32_2", "tclk_tmr32_3",
+				                    "pclk_wwdt0", "pclk_wwdt1",
+				                    "pclk_wwdt2", "pclk_wwdt3",
+				                    "tclk_wwdt0", "tclk_wwdt1",
+				                    "tclk_wwdt2", "tclk_wwdt3",
+				                    "pclk_axera_sw_int1", "pclk_perf_mnr_lat0",
+				                    "pclk_perf_mnr_lat1", "clk_perf_mnr_lat0_24m",
+				                    "clk_perf_mnr_lat1_24m", "aclk_perf_mnr_lat0",
+				                    "aclk_perf_mnr_lat1", "pclk_pll_ctrl2",
+				                    "pclk_a55_dbg_mnr", "pclk_ocm_dbg_mnr",
+				                    "aclk_ocm_dbg_mnr", "aclk_a55_dbg_mnr",
+				                    "clk_deb_gpio", "clk_comm_tlb",
+				                    "pclk_comm_clk_mnr";
+			};
+
+			common_sysrst: common-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&common_cru>;
+				offset = <LAGUNA_COMM_SW_RST_0>;
+				mask = <0x7FFFFFFF>;
+				assert-high = <1>;
+			};
+		};
+
+		ddr_cru: ddr-cru@0A000000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0A000000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		flash_cru: flash-cru@0C001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0C001000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash_clk_mux: flash_clk_mux {
+				compatible = "axera,lua-clock-mux";
+				regmap = <&flash_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_FLASH_CLK_MUX_0>;
+				mask = <0x3F>;
+				bit-map = <CLK_FLASH_GLB_OFFSET CLK_FLASH_GLB_WIDTH>,
+				          <CLK_FLASH_OSPI_OFFSET CLK_FLASH_OSPI_WIDTH>,
+				          <CLK_FLASH_SER_OFFSET CLK_FLASH_SDM_WIDTH>,
+				          <CLK_FLASH_SER_OFFSET CLK_FLASH_SER_WIDTH>;
+				clock-parent-nums = <CLK_FLASH_GLB_PARENT_NUM>,
+				                    <CLK_FLASH_OSPI_PARENT_NUM>,
+				                    <CLK_FLASH_SDM_PARENT_NUM>,
+				                    <CLK_FLASH_SER_PARENT_NUM>;
+				clocks = <&fab_pll_24m &fab_pll_200m &fab_pll_300m &fab_pll_400m>,
+				         <&fab_pll_24m &fab_pll_400m &fab_pll_600m &fab_pll_800m>,
+				         <&fab_pll_150m &fab_pll_200m>,
+				         <&fab_pll_24m &fab_pll_200m>;
+				clock-names = "clk_flash_glb_sel", "clk_flash_ospi_sel",
+				              "clk_flash_sdm_sel", "clk_flash_ser_sel";
+				clock-output-names = "clk_flash_glb_mux", "clk_flash_ospi_mux",
+				                     "clk_flash_ospi_mux", "clk_flash_ser_mux";
+			};
+
+			flash_clk_mux_gate: flash_clk_mux_gate {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&flash_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_FLASH_CLK_M_EB_0>;
+				mask = <0x7>;
+				clocks = <&flash_clk_mux CLK_FLASH_OSPI>,
+				         <&flash_clk_mux CLK_FLASH_SDM>,
+				         <&flash_clk_mux CLK_FLASH_SER>;
+				clock-names = "clk_flash_ospi_eb", "clk_flash_sdm_eb",
+				              "clk_flash_ser_eb";
+				clock-output-names = "clk_flash_ospi", "clk_flash_sdm",
+				                     "clk_flash_ser";
+			};
+
+			flash_clk_gate: flash_clk_gate {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&flash_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_FLASH_CLK_G_EB_0>;
+				mask = <0x3FFFFF>;
+				clocks = <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux CLK_FLASH_GLB>,
+				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux_gate CLK_FLASH_SDM_EB>,
+				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux_gate CLK_FLASH_SDM_EB>,
+				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux CLK_FLASH_GLB>,
+				         <&flash_clk_mux_gate CLK_FLASH_SER_EB>, <&flash_clk_mux CLK_FLASH_GLB>,
+				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux_gate CLK_FLASH_SER_EB>,
+				         <&clk_flash_24m>, <&flash_clk_mux CLK_FLASH_GLB>,
+				         <&clk_flash_24m>, <&flash_clk_mux CLK_FLASH_GLB>,
+				         <&clk_flash_24m>, <&clk_flash_24m>,
+				         <&flash_clk_mux CLK_FLASH_GLB>, <&clk_flash_24m>,
+				         <&flash_clk_mux CLK_FLASH_GLB>, <&clk_flash_24m>;
+				clock-names = "hclk_flash_ospi_eb", "pclk_flash_dma_per0_eb",
+				              "aclk_flash_dma_per0_eb", "sdmclk_sd_eb",
+				              "clk_sd_eb", "sdmclk_emmc_eb",
+				              "clk_emmc_eb", "pclk_flash_spi_m7_eb",
+				              "clk_flash_spi_m7_eb", "pclk_flash_i2c9_eb",
+				              "clk_flash_i2c9_eb", "pclk_flash_gpio6_eb",
+				              "clk_flash_gpio6_eb", "pclk_flash_pinmux_eb",
+				              "pclk_flash_dbgmnr_eb", "aclk_flash_dbgmnr_eb",
+				              "clk_flash_lpc_eb", "clk_flash_bw_lmt_24m_eb",
+				              "aclk_flash_bw_lmt_eb", "clk_flash_tlb_eb",
+				              "pclk_flash_iso_eb", "clk_flash_iso_24m_eb";
+				clock-output-names = "hclk_flash_ospi", "pclk_flash_dma_per0",
+				                     "aclk_flash_dma_per0", "sdmclk_sd",
+				                     "clk_sd", "sdmclk_emmc",
+				                     "clk_emmc", "pclk_flash_spi_m7",
+				                     "clk_flash_spi_m7", "pclk_flash_i2c9",
+				                     "clk_flash_i2c9", "pclk_flash_gpio6",
+				                     "clk_flash_gpio6", "pclk_flash_pinmux",
+				                     "pclk_flash_dbgmnr", "aclk_flash_dbgmnr",
+				                     "clk_flash_lpc", "clk_flash_bw_lmt_24m",
+				                     "aclk_flash_bw_lmt", "clk_flash_tlb",
+				                     "pclk_flash_iso", "clk_flash_iso_24m";
+			};
+
+			flash_sysrst: flash-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&flash_cru>;
+				offset = <LAGUNA_FLASH_SW_RST_0>;
+				mask = <0x3FFFFF>;
+				assert-high = <1>;
+			};
+		};
+
+		periph_cru: periph-cru@0E001000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x0E001000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			periph_clk_div: periph_clk_div {
+				compatible = "axera,lua-clk-div";
+				regmap = <&periph_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_PERIPH_CLK_M_DIV_0>;
+				mask = <0xFFF>;
+				bit-map = <SCLK_I2S_M_DIVN_OFFSET SCLK_I2S_M_DIVN_WIDTH SCLK_I2S_M_DIVN_UPDATE>,
+				          <CLK_I2S_REF_DIVN_OFFSET CLK_I2S_REF_DIVN_WIDTH CLK_I2S_REF_DIVN_UPDATE>;
+				clocks = <&periph_clk_mux SCLK_I2S_M>, <&periph_clk_mux CLK_I2S_REF>;
+				clock-names = "sclk_i2s_m_mux", "clk_i2s_ref_mux";
+				clock-output-names = "sclk_i2s_m_div", "clk_i2s_ref_div";
+			};
+
+			periph_clk_mux: periph_clk_mux {
+				compatible = "axera,lua-clock-mux";
+				regmap = <&periph_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_PERIPH_CLK_MUX_0>;
+				mask = <0xFFFF>;
+				bit-map = <CLK_PERIPH_GLB_OFFSET CLK_PERIPH_GLB_WIDTTH>,
+				          <SCLK_I2S_M_OFFSET SCLK_I2S_M_WIDTH>,
+				          <CLK_PERIPH_GPIO_OFFSET CLK_PERIPH_GPIO_WIDTH>,
+				          <CLK_PERIPH_SER_OFFSET CLK_PERIPH_SER_WIDTH>,
+				          <PCLK_USB_PHY_BUS_OFFSET PCLK_USB_PHY_BUS_WIDTH>,
+				          <CLK_MAIN_RGMII_TX_OFFSET CLK_MAIN_RGMII_TX_WIDTH>,
+				          <CLK_MAIN_CAN_PE_OFFSET CLK_MAIN_CAN_PE_WIDTH>,
+				          <CLK_MAIN_EPHY_REF_OFFSET CLK_MAIN_EPHY_REF_WIDTH>,
+				          <CLK_I2S_REF_OFFSET CLK_I2S_REF_WIDTH>;
+				clock-parent-nums = <CLK_PERIPH_GLB_PARENT_NUM>, <SCLK_I2S_M_PARENT_NUM>,
+				                    <CLK_PERIPH_GPIO_PARENT_NUM>, <CLK_PERIPH_SER_PARENT_NUM>,
+				                    <PCLK_USB_PHY_BUS_PARENT_NUM>, <CLK_MAIN_RGMII_TX_PARENT_NUM>,
+				                    <CLK_MAIN_CAN_PE_PARENT_NUM>, <CLK_MAIN_EPHY_REF_PARENT_NUM>,
+				                    <CLK_I2S_REF_PARENT_NUM>;
+				clocks = <&fab_pll_24m &fab_pll_200m &fab_pll_300m &fab_pll_400m>,
+				         <&apll_13p28m &apll_16p6m &apll_19p92m>,
+				         <&fake_32k &fab_pll_24m>,
+				         <&fab_pll_24m &fab_pll_100m &fab_pll_200m>,
+				         <&fab_pll_24m &fab_pll_60m>,
+				         <&epll_5m &epll_50m &epll_250m>,
+				         <&fab_pll_20m &fab_pll_40m &fab_pll_80m>,
+				         <&fab_pll_24m &epll_25m &epll_50m &epll_125m>,
+				         <&apll_9p96m &apll_16p6m &fab_pll_24m &epll_25m>;
+				clock-name = "clk_periph_glb_sel", "sclk_i2s_m_sel", "clk_periph_gpio_sel",
+				             "clk_periph_ser_sel", "pclk_usb_phy_bus_sel", "clk_main_rgmii_tx_sel",
+				             "clk_main_can_pe_sel", "clk_main_ephy_ref_sel", "clk_i2s_ref_sel";
+				clock-output-names = "clk_periph_glb_mux", "sclk_i2s_m_mux",
+				                     "clk_periph_gpio_mux", "clk_periph_ser_mux",
+				                     "pclk_usb_phy_bus_mux", "clk_main_rgmii_tx_mux",
+				                     "clk_main_can_pe_mux", "clk_main_ephy_ref_mux",
+				                     "clk_i2s_ref_mux";
+			};
+
+			periph_clk_mux_gate: periph_clk_mux_gate {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&periph_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_PERIPH_CLK_M_EB_0>;
+				mask = <0x3FF>;
+				clocks = <&periph_clk_div SCLK_I2S_M_DIVN>,
+				         <&periph_clk_mux CLK_PERIPH_GPIO>,
+				         <&periph_clk_mux CLK_PERIPH_SER>,
+				         <&fab_pll_60m>,
+				         <&periph_clk_main_rgmii_tx_div2>,
+				         <&epll_50m>,
+				         <&periph_clk_mux CLK_MAIN_CAN_PE>,
+				         <&periph_clk_mux CLK_MAIN_EPHY_REF>,
+				         <&clk_periph_emac_ptp_div2>,
+				         <&periph_clk_div CLK_I2S_REF_DIVN>;
+				clock-names = "sclk_i2s_m_eb", "clk_periph_gpio_eb",
+				              "clk_periph_ser_eb", "utmi_refclk_eb",
+				              "clk_main_rgmii_tx_eb", "clk_main_rmii_phy_eb",
+				              "clk_main_can_pe_eb", "clk_main_ephy_ref_eb",
+				              "clk_periph_emac_ptp_eb", "clk_i2s_ref_eb";
+				clock-output-names = "sclk_i2s_m", "clk_periph_gpio", "clk_periph_ser",
+				                     "utmi_refclk", "clk_main_rgmii_tx", "clk_main_rmii_phy",
+				                     "clk_main_can_pe", "clk_main_ephy_ref", "clk_periph_emac_ptp",
+				                     "clk_i2s_ref";
+			};
+
+			periph_clk_gate_0: periph_clk_gate@0 {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&periph_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_PERIPH_CLK_G_EB_0>;
+				mask = <0xFFFFFFFF>;
+				clocks = <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_GPIO_EB>, <&periph_clk_mux_gate CLK_PERIPH_GPIO_EB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux PCLK_USB_PHY_BUS>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>;
+				clock-names = "pclk_periph_spi_s_eb", "clk_periph_spi_s_eb",
+				              "pclk_periph_gpio4_eb", "pclk_periph_gpio5_eb",
+				              "clk_periph_gpio4_eb", "clk_periph_gpio5_eb",
+				              "pclk_i2s_m_eb", "pclk_i2s_s_eb",
+				              "pclk_periph_pinreg_eb", "pclk_periph_uart1_eb",
+				              "pclk_periph_uart2_eb", "pclk_periph_uart3_eb",
+				              "pclk_periph_uart4_eb", "pclk_periph_uart5_eb",
+				              "clk_periph_uart1_eb", "clk_periph_uart2_eb",
+				              "clk_periph_uart3_eb", "clk_periph_uart4_eb",
+				              "clk_periph_uart5_eb", "pclk_periph_i2c4_eb",
+				              "pclk_periph_i2c5_eb", "pclk_periph_i2c7_eb",
+				              "pclk_periph_i2c8_eb", "clk_periph_i2c4_eb",
+				              "clk_periph_i2c5_eb", "clk_periph_i2c7_eb",
+				              "clk_periph_i2c8_eb", "pclk_periph_spi_m5_eb",
+				              "clk_periph_spi_m5_eb", "pclk_usb_phy_eb",
+				              "aclk_usb_ctrl_eb", "pclk_periph_crc_engine_eb";
+				clock-output-name = "pclk_periph_spi_s", "clk_periph_spi_s",
+				                    "pclk_periph_gpio4", "pclk_periph_gpio5",
+				                    "clk_periph_gpio4", "clk_periph_gpio5",
+				                    "pclk_i2s_m", "pclk_i2s_s",
+				                    "pclk_periph_pinreg", "pclk_periph_uart1",
+				                    "pclk_periph_uart2", "pclk_periph_uart3",
+				                    "pclk_periph_uart4", "pclk_periph_uart5",
+				                    "clk_periph_uart1", "clk_periph_uart2",
+				                    "clk_periph_uart3", "clk_periph_uart4",
+				                    "clk_periph_uart5", "pclk_periph_i2c4",
+				                    "pclk_periph_i2c5", "pclk_periph_i2c7",
+				                    "pclk_periph_i2c8", "clk_periph_i2c4",
+				                    "clk_periph_i2c5", "clk_periph_i2c7",
+				                    "clk_periph_i2c8", "pclk_periph_spi_m5",
+				                    "clk_periph_spi_m5", "pclk_usb_phy",
+				                    "aclk_usb_ctrl", "pclk_periph_crc_engine";
+			};
+
+			periph_clk_gate_1: periph_clk_gate@1 {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_PERIPH_CLK_G_EB_1>;
+				mask = <0x1FFFFF>;
+				#clock-cells = <1>;
+				clocks = <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux_gate CLK_MAIN_CAN_PE_EB>,
+				         <&periph_clk_mux_gate CLK_MAIN_CAN_PE_EB>, <&tclk_sen_timestamp1>,
+				         <&tclk_sen_timestamp1>, <&clk_periph_24m>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&clk_periph_24m>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&clk_periph_24m>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&clk_periph_24m>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&clk_periph_24m>;
+				clock-names = "clk_periph_crc_engine_eb", "pclk_periph_ax_dma_per_eb",
+				              "clk_periph_ax_dma_per_eb", "pclk_periph_ax_dma_eb",
+				              "clk_periph_ax_dma_eb", "pclk_can0_eb",
+				              "pclk_can1_eb", "clk_can0_core_eb",
+				              "clk_can1_core_eb", "time_stamp_clk_can0_eb",
+				              "time_stamp_clk_can1_eb", "clk_periph_lpc_eb",
+				              "aclk_main_emac_eb", "clk_periph_dma_bw_lmt_24m_eb",
+				              "aclk_periph_dma_bw_lmt_eb", "pclk_periph_dma_bw_lmt_eb",
+				              "pclk_periph_dma_per_dbgmnr_eb", "aclk_periph_dma_per_dbgmnr_eb",
+				              "clk_periph_tlb_eb", "pclk_periph_iso_eb",
+				              "clk_periph_iso_24m_eb";
+				clock-output-name = "clk_periph_crc_engine", "pclk_periph_ax_dma_per",
+				                    "clk_periph_ax_dma_per", "pclk_periph_ax_dma",
+				                    "clk_periph_ax_dma", "pclk_can0",
+				                    "pclk_can1", "clk_can0_core",
+				                    "clk_can1_core", "time_stamp_clk_can0",
+				                    "time_stamp_clk_can1", "clk_periph_lpc",
+				                    "aclk_main_emac", "clk_periph_dma_bw_lmt_24m",
+				                    "aclk_periph_dma_bw_lmt", "pclk_periph_dma_bw_lmt",
+				                    "pclk_periph_dma_per_dbgmnr", "aclk_periph_dma_per_dbgmnr",
+				                    "clk_periph_tlb", "pclk_periph_iso",
+				                    "clk_periph_iso_24m";
+			};
+
+			periph_sysrst_0: periph-reset@0 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_PERIPH_SW_RST_0>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+
+			periph_sysrst_1: periph-reset@1 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_PERIPH_SW_RST_1>;
+				mask = <0xFFFFFF>;
+				assert-high = <1>;
+			};
+
+			periph_can_sysrst: periph-can-reset {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&periph_cru>;
+				offset = <LAGUNA_PERIPH_CAN_SOFT_RESET>;
+				mask = <0x3>;
+				assert-high = <1>;
+			};
+		};
+	};
+};
