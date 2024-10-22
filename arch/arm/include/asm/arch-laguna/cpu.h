@@ -1,0 +1,37 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+
+#ifndef ASM_LAGUNA_CPU_
+#define ASM_LAGUNA_CPU_
+
+typedef enum mmap_region_type {
+	MMIO_SAFETY_OCM,
+	MMIO_SAFETY_IRAM,
+#if defined(CONFIG_LUA_SAFETY_INIT)
+	MMIO_SAFETY_PERI,
+#endif
+	MMIO_COMMSYS,
+	MMIO_CPUSYS,
+	MMIO_FLASHSYS,
+	MMIO_PERISYS,
+	MMIO_NPU_OCM,
+	MMIO_TOP,
+	MMIO_DRAM,
+	MMIO_COUNT,
+} mmap_region_t;
+
+#define MMAP_SAFETY_OCM_BASE   0x00200000U
+#define MMAP_SAFETY_IRAM_BASE  0x00400000U
+#define MMAP_SAFETY_PERI_BASE  0x00440000U
+#define MMAP_COMMSYS_BASE      0x06000000U
+#define MMAP_CPUSYS_BASE       0x08000000U
+#define MMAP_FLASHSYS_BASE     0x0C000000U
+#define MMAP_PERISYS_BASE      0x0E000000U
+#define MMAP_NPUOCM_BASE       0x14000000U
+#define MMAP_TOP_BASE          0x18000000U
+#define MMAP_DRAM_BASE         0x100000000UL
+
+#endif

@@ -209,6 +209,19 @@ config LUA_AB
 	  the A/B suffix is never used in any partition names stored
 	  in descriptors.
 
+config LUA_R5F_DEMO_CV
+	bool "Load R5F Demo for CV"
+	help
+	  This option is used to enable function that load R5F
+	  demo for CV verification.
+
+config LUA_R5F_CPU_RELEASE_ADDR
+	hex "R5F cpu release address"
+	default 0x6C4054
+	depends on LUA_R5F_DEMO_CV
+	help
+	  This enable r5f cpu to exit loop and start the demo.
+
 config LUA_CUSTOM_SERVERIP
 	bool "Custom severip"
 	help
