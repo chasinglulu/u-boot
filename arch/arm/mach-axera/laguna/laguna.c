@@ -5,40 +5,12 @@
 
 #include <common.h>
 #include <asm/armv8/mmu.h>
+#include <asm/arch/cpu.h>
 #include <linux/sizes.h>
 #include <asm/sections.h>
 #include <fdt_support.h>
 #include <init.h>
 #include <cpu_func.h>
-
-DECLARE_GLOBAL_DATA_PTR;
-
-typedef enum mmap_region_type {
-	MMIO_SAFETY_OCM,
-	MMIO_SAFETY_IRAM,
-#if defined(CONFIG_LUA_SAFETY_INIT)
-	MMIO_SAFETY_PERI,
-#endif
-	MMIO_COMMSYS,
-	MMIO_CPUSYS,
-	MMIO_FLASHSYS,
-	MMIO_PERISYS,
-	MMIO_NPU_OCM,
-	MMIO_TOP,
-	MMIO_DRAM,
-	MMIO_COUNT,
-} mmap_region_t;
-
-#define MMAP_SAFETY_OCM_BASE   0x00200000U
-#define MMAP_SAFETY_IRAM_BASE  0x00400000U
-#define MMAP_SAFETY_PERI_BASE  0x00440000U
-#define MMAP_COMMSYS_BASE      0x06000000U
-#define MMAP_CPUSYS_BASE       0x08000000U
-#define MMAP_FLASHSYS_BASE     0x0C000000U
-#define MMAP_PERISYS_BASE      0x0E000000U
-#define MMAP_NPUOCM_BASE       0x14000000U
-#define MMAP_TOP_BASE          0x18000000U
-#define MMAP_DRAM_BASE         0x100000000UL
 
 static struct mm_region lua_mem_map[] = {
 	[MMIO_SAFETY_OCM] = {

@@ -6,8 +6,11 @@
  */
 
 #include <asm/arch/bootparams.h>
+#include <asm/arch/cpu.h>
+#include <cpu_func.h>
 #include <dm/uclass.h>
 #include <common.h>
+#include <asm/io.h>
 #include <fdt_support.h>
 #include <asm/sections.h>
 #include <linux/sizes.h>
@@ -115,6 +118,28 @@ ulong board_get_usable_ram_top(ulong total_size)
 	/* TODO: detect size dynamically */
 	return CONFIG_LUA_DRAM_BASE + SZ_4G - 1;
 }
+
+#ifdef CONFIG_BOARD_LATE_INIT
+#ifdef CONFIG_LUA_R5F_DEMO_CV
+#include "demo_cv.h"
+void load_r5f_demo_into_ocm(void)
+{
+	printf("Loading R5F Demo into safety OCM...\n");
+	writel(0, CONFIG_LUA_R5F_CPU_RELEASE_ADDR);
+	memcpy((void *)MMAP_SAFETY_OCM_BASE, demo_cv_bin, demo_cv_bin_len);
+	flush_dcache_all();
+	printf("Release R5F CPU to run...\n");
+	writel(MMAP_SAFETY_OCM_BASE, CONFIG_LUA_R5F_CPU_RELEASE_ADDR);
+}
+#else
+void inline load_r5f_demo_into_ocm(void) {}
+#endif
+int board_late_init(void)
+{
+	load_r5f_demo_into_ocm();
+	return 0;
+}
+#endif
 
 #ifdef CONFIG_LAST_STAGE_INIT
 int last_stage_init(void)
