@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
-#include "dt-bindings/mfd/laguna-sysctl.h"
+
 / {
 	glbctrlreg {
 		compatible = "simple-bus";

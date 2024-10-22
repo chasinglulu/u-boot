@@ -5,7 +5,6 @@
  * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
 
-#include <dt-bindings/mfd/laguna-sysctl.h>
 / {
 	cru {
 		compatible = "simple-bus";
@@ -49,10 +48,10 @@
 				mask = <0x1FFF>;
 
 				aclk_top0: aclk_top0 {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv2>,
-							 <&fab_pll_div2_lv1_0>, <&epll_div3_lv0>,
-							 <&fab_pll_div2_lv1>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_300m>,
+							 <&fab_pll_400m>, <&epll_500m>,
+							 <&fab_pll_600m>;
 					clock-names = "fab_pll_24m", "fab_pll_300m",
 								  "fab_pll_400m", "epll_500m",
 								  "fab_pll_600m";
@@ -63,10 +62,10 @@
 				};
 
 				aclk_top1: aclk_top1 {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv2>,
-							 <&fab_pll_div2_lv1_0>, <&epll_div3_lv0>,
-							 <&fab_pll_div2_lv1>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_300m>,
+							 <&fab_pll_400m>, <&epll_500m>,
+							 <&fab_pll_600m>;
 					clock-names = "fab_pll_24m", "fab_pll_300m",
 								  "fab_pll_400m", "epll_500m",
 								  "fab_pll_600m_90";
@@ -77,10 +76,10 @@
 				};
 
 				aclk_top2: aclk_top2 {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv2>,
-							 <&fab_pll_div2_lv1_0>, <&epll_div3_lv0>,
-							 <&fab_pll_div2_lv1>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_300m>,
+							 <&fab_pll_400m>, <&epll_500m>,
+							 <&fab_pll_600m>;
 					clock-names = "fab_pll_24m", "fab_pll_300m",
 								  "fab_pll_400m", "epll_500m",
 								  "fab_pll_600m_180";
@@ -91,9 +90,9 @@
 				};
 
 				pclk_top: pclk_top {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv3_0>,
-							 <&fab_pll_div2_lv2_0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_100m>,
+							 <&fab_pll_200m>;
 					clock-names = "fab_pll_24m", "fab_pll_100m",
 								  "fab_pll_200m";
 					#clock-cells = <0>;
@@ -103,8 +102,8 @@
 				};
 
 				clk_mux_comm_tmr: clk_mux_comm_tmr {
-					compatible = "mux-clk";
-					clocks = <&fake_32khz>, <&fab_pll_div5_lv3>;
+					compatible = "clk_mux";
+					clocks = <&fake_32k>, <&fab_pll_24m>;
 					clock-names = "fake_32k", "fab_pll_24m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_mux_comm_tmr";
@@ -113,8 +112,8 @@
 				};
 
 				clk_mux_comm_wwdt: clk_mux_comm_wwdt {
-					compatible = "mux-clk";
-					clocks = <&fake_32khz>, <&main_xtal_24mhz>;
+					compatible = "clk_mux";
+					clocks = <&fake_32k>, <&main_xtal_24m>;
 					clock-name = "fake_32k", "main_xtal_24m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_mux_comm_wwdt";
@@ -128,7 +127,6 @@
 				regmap = <&comm_cru>;
 				offset = <0x20>;
 				mask = <0x3>;
-
 
 				clk_comm_tmr: clk_comm_tmr {
 					compatible = "clk_gate";
@@ -304,7 +302,7 @@
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&comm_cru>;
-				offset = <LAGUNA_SYSCTL_COMM_SWRST>;
+				offset = <LAGUNA_COMM_SW_RST_0>;
 				mask = <0x7FFFFFFF>;
 				assert-high = <1>;
 			};
@@ -320,7 +318,7 @@
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&cpu_cru>;
-				offset = <LAGUNA_SYSCTL_CPU_SWRST>;
+				offset = <LAGUNA_CPU_SW_RST_0>;
 				mask = <0x3F>;
 				assert-high = <1>;
 			};
@@ -346,9 +344,9 @@
 				mask = <0x3F>;
 
 				clk_flash_glb: clk_flash_glb {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv2_0>,
-							 <&fab_pll_div2_lv2>, <&fab_pll_div2_lv1_0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_200m>,
+							 <&fab_pll_300m>, <&fab_pll_400m>;
 					clock-names = "fab_pll_24m", "fab_pll_200m",
 								  "fab_pll_300m", "fab_pll_400m";
 					#clock-cells = <0>;
@@ -358,9 +356,9 @@
 				};
 
 				clk_mux_flash_ospi: clk_mux_flash_ospi {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv1_0>,
-							 <&fab_pll_div2_lv1>, <&fab_pll_div3_lv0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_400m>,
+							 <&fab_pll_600m>, <&fab_pll_800m>;
 					clock-names = "fab_pll_24m", "fab_pll_400m",
 								  "fab_pll_600m", "fab_pll_800m";
 					#clock-cells = <0>;
@@ -370,8 +368,8 @@
 				};
 
 				clk_mux_flash_sdm: clk_mux_flash_sdm {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div2_lv3_2>, <&fab_pll_div2_lv2_0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_150m>, <&fab_pll_200m>;
 					clock-names = "fab_pll_150m", "fab_pll_200m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_mux_flash_sdm";
@@ -380,8 +378,8 @@
 				};
 
 				clk_mux_flash_ser: clk_mux_flash_ser {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv2_0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_200m>;
 					clock-names = "fab_pll_24m", "fab_pll_200m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_mux_flash_ser";
@@ -561,7 +559,7 @@
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&flash_cru>;
-				offset = <LAGUNA_SYSCTL_FLASH_SWRST>;
+				offset = <LAGUNA_FLASH_SW_RST_0>;
 				mask = <0x3FFFFF>;
 				assert-high = <1>;
 			};
@@ -580,9 +578,9 @@
 				mask = <0xFFFF>;
 
 				clk_periph_glb: clk_periph_glb {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv2_0>,
-							 <&fab_pll_div2_lv2>, <&fab_pll_div2_lv1_0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_200m>,
+							 <&fab_pll_300m>, <&fab_pll_400m>;
 					clock-names = "fab_pll_24m", "fab_pll_200m",
 								  "fab_pll_300m", "fab_pll_400m";
 					#clock-cells = <0>;
@@ -592,9 +590,9 @@
 				};
 
 				mux_sclk_i2s_m: mux_sclk_i2s_m {
-					compatible = "mux-clk";
-					clocks = <&apll_div5_lv2>, <&apll_div5_lv3>,
-							 <&apll_div5_lv2_0>;
+					compatible = "clk_mux";
+					clocks = <&apll_13p28m>, <&apll_16p6m>,
+							 <&apll_19p92m>;
 					clock-names = "apll_16p384m", "apll_20p48m",
 								  "apll_24p576m";
 					#clock-cells = <0>;
@@ -604,8 +602,8 @@
 				};
 
 				clk_mux_periph_gpio: clk_mux_periph_gpio {
-					compatible = "mux-clk";
-					clocks = <&fake_32khz>, <&fab_pll_div5_lv3>;
+					compatible = "clk_mux";
+					clocks = <&fake_32k>, <&fab_pll_24m>;
 					clock-names = "fake_32k", "fab_pll_24m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_mux_periph_gpio";
@@ -614,9 +612,9 @@
 				};
 
 				clk_mux_periph_ser: clk_mux_periph_ser {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv3_0>,
-							 <&fab_pll_div2_lv2_0>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_100m>,
+							 <&fab_pll_200m>;
 					clock-names = "fab_pll_24m", "fab_pll_100m",
 								  "fab_pll_200m";
 					#clock-cells = <0>;
@@ -626,8 +624,8 @@
 				};
 
 				pclk_usb_phy_bus: pclk_usb_phy_bus {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&fab_pll_div2_lv3>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&fab_pll_60m>;
 					clock-names = "fab_pll_24m", "fab_pll_60m";
 					#clock-cells = <0>;
 					clock-output-names = "pclk_usb_phy_bus";
@@ -636,9 +634,9 @@
 				};
 
 				clk_mux_main_rgmii_tx: clk_mux_main_rgmii_tx {
-					compatible = "mux-clk";
-					clocks = <&epll_div5_lv4>, <&epll_div3_lv2>,
-							 <&epll_div2_lv1>;
+					compatible = "clk_mux";
+					clocks = <&epll_5m>, <&epll_50m>,
+							 <&epll_250m>;
 					clock-names = "epll_5m", "epll_50m",
 								  "epll_250m";
 					#clock-cells = <0>;
@@ -648,9 +646,9 @@
 				};
 
 				clk_mux_main_can_pe: clk_mux_main_can_pe {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div2_lv3_1>, <&fab_pll_div2_lv2_1>,
-							 <&fab_pll_div6_lv1>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_20m>, <&fab_pll_40m>,
+							 <&fab_pll_80m>;
 					clock-names = "fab_pll_20m", "fab_pll_40m",
 								  "fab_pll_80m";
 					#clock-cells = <0>;
@@ -660,9 +658,9 @@
 				};
 
 				clk_mux_main_ephy_ref: clk_mux_main_ephy_ref {
-					compatible = "mux-clk";
-					clocks = <&fab_pll_div5_lv3>, <&epll_div2_lv3>,
-							 <&epll_div3_lv2>, <&epll_div2_lv2>;
+					compatible = "clk_mux";
+					clocks = <&fab_pll_24m>, <&epll_25m>,
+							 <&epll_50m>, <&epll_125m>;
 					clock-names = "fab_pll_24m", "epll_25m",
 								  "epll_50m", "epll_125m";
 					#clock-cells = <0>;
@@ -672,9 +670,9 @@
 				};
 
 				clk_mux_i2s_ref: clk_mux_i2s_ref {
-					compatible = "mux-clk";
-					clocks = <&apll_div10_lv2>, <&apll_div5_lv3>,
-							 <&fab_pll_div5_lv3>, <&epll_div2_lv3>;
+					compatible = "clk_mux";
+					clocks = <&apll_9p96m>, <&apll_16p6m>,
+							 <&fab_pll_24m>, <&epll_25m>;
 					clock-names = "apll_12p288m", "apll_20p48m",
 								  "fab_pll_24m", "epll_25m";
 					#clock-cells = <0>;
@@ -748,7 +746,7 @@
 
 				utmi_refclk: utmi_refclk {
 					compatible = "clk_gate";
-					clocks = <&fab_pll_div5_lv3>;
+					clocks = <&fab_pll_24m>;
 					clock-names = "fab_pll_24m";
 					#clock-cells = <0>;
 					clock-output-names = "utmi_refclk";
@@ -766,7 +764,7 @@
 
 				clk_main_rmii_phy: clk_main_rmii_phy {
 					compatible = "clk_gate";
-					clocks = <&epll_div3_lv2>;
+					clocks = <&epll_50m>;
 					clock-names = "epll_50m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_main_rmii_phy";
@@ -793,7 +791,7 @@
 
 				clk_periph_emac_ptp: clk_periph_emac_ptp {
 					compatible = "clk_gate";
-					clocks = <&fab_pll_div2_lv3_0>;
+					clocks = <&fab_pll_100m>;
 					clock-names = "fab_pll_100m";
 					#clock-cells = <0>;
 					clock-output-names = "clk_periph_emac_ptp";
@@ -1214,7 +1212,7 @@
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&periph_cru>;
-				offset = <LAGUNA_SYSCTL_PERIPH_SWRST0>;
+				offset = <LAGUNA_PERIPH_SW_RST_0>;
 				mask = <0xFFFFFFFF>;
 				assert-high = <1>;
 			};
@@ -1223,7 +1221,7 @@
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&periph_cru>;
-				offset = <LAGUNA_SYSCTL_PERIPH_SWRST1>;
+				offset = <LAGUNA_PERIPH_SW_RST_1>;
 				mask = <0xFFFFFF>;
 				assert-high = <1>;
 			};
@@ -1232,38 +1230,10 @@
 				compatible = "axera,lua-rst", "syscon-reset";
 				#reset-cells = <1>;
 				regmap = <&periph_cru>;
-				offset = <LAGUNA_SYSCTL_PERIPH_CAN_SWRST>;
+				offset = <LAGUNA_PERIPH_CAN_SOFT_RESET>;
 				mask = <0x3>;
 				assert-high = <1>;
 			};
-		};
-
-		isp_cru: isp-cru@10001000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x10001000 0x00 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
-		mm_cru: mm-cru@12004000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x12004000 0x00 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
-		npu_cru: npu-cru@14310000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x14310000 0x00 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
-
-		vpu_cru: vpu-cru@16001000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x16001000 0x00 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 		};
 	};
 };
