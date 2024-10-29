@@ -14,32 +14,12 @@
 		u-boot,dm-spl;
 		ranges;
 
-		safety_glb: safety-glb@00601000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x00601000 0x00 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			u-boot,dm-pre-reloc;
-			u-boot,dm-spl;
-
-			safety_uart_xfer_sel: safety-uart-xfer-sel {
-				compatible = "axera,laguna-sysctl";
-				#syscon-cells = <2>;
-				regmap = <&safety_glb>;
-				offset = <0x8C>;
-				mask = <0x3>;
-				field-width = <2>;
-				u-boot,dm-pre-reloc;
-				u-boot,dm-spl;
-			};
-		};
-
 		common_glb: common-glb@06100000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x06100000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x00 0x00 0x06100000 0x1000>;
+			status = "disabled";
 		};
 
 		cpu_glb: cpu-glb@08010000 {
@@ -47,7 +27,7 @@
 			reg = <0x00 0x08010000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x00 0x00 0x08010000 0x1000>;
+			status = "disabled";
 		};
 
 		ddr_glb: ddr-glb@0A001000 {
@@ -55,7 +35,7 @@
 			reg = <0x00 0x0A001000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x00 0x00 0x0A001000 0x1000>;
+			status = "disabled";
 		};
 
 		flash_glb: flash-glb@0C000000 {
@@ -63,7 +43,7 @@
 			reg = <0x00 0x0C000000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x00 0x00 0x0C000000 0x1000>;
+			status = "disabled";
 		};
 
 		periph_glb: periph-glb@0E000000 {
@@ -73,6 +53,7 @@
 			#size-cells = <1>;
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
+			status = "disabled";
 
 			uart_xfer_sel: uart-xfer-sel {
 				compatible = "axera,laguna-sysctl";
@@ -86,52 +67,12 @@
 			};
 		};
 
-		isp_glb: isp-glb@10000000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x10000000 0x00 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x00 0x00 0x10000000 0x1000>;
-		};
-
-		sen_glb: sen-glb@11000000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x11000000 0x00 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x00 0x00 0x11000000 0x1000>;
-		};
-
-		mm_glb: mm-glb@12000000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x12000000 0x00 0x4000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x00 0x00 0x12000000 0x4000>;
-		};
-
-		npu_glb: npu-glb@14300000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x14300000 0x00 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x00 0x00 0x14300000 0x10000>;
-		};
-
-		vpu_glb: vpu-glb@16000000 {
-			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x16000000 0x00 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x00 0x00 0x16000000 0x1000>;
-		};
-
 		top_sec_glb: top-sec-glb@18000000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x18000000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x00 0x00 0x18000000 0x1000>;
+			status = "disabled";
 		};
 
 		top_glb: top-glb@18008000 {
@@ -139,7 +80,7 @@
 			reg = <0x00 0x18008000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x00 0x00 0x18008000 0x1000>;
+			status = "disabled";
 		};
 	};
 };
