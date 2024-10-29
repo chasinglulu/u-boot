@@ -1,0 +1,308 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for Laguna safety domain clock tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	safety-clocks {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		safe_fake_32k: safe_fake_32k {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32000>;
+			clock-output-names = "safe_fake_32k";
+		};
+
+		safe_xtal_24m: safe_xtal_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <24000000>;
+			clock-output-names = "safe_xtal_24m";
+		};
+
+		safe_fab_pll_1200m: safe_fab_pll_1200m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_2400m>;
+			clock-names = "safe_fab_pll_2400m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_1200m";
+		};
+
+		safe_fab_pll_800m: safe_fab_pll_800m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_2400m>;
+			clock-names = "safe_fab_pll_2400m";
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "safe_fab_pll_800m";
+		};
+
+		safe_fab_pll_600m: safe_fab_pll_600m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_1200m>;
+			clock-names = "safe_fab_pll_1200m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_600m";
+		};
+
+		safe_fab_pll_480m: safe_fab_pll_480m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_2400m>;
+			clock-names = "safe_fab_pll_2400m";
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "safe_fab_pll_480m";
+		};
+
+		safe_fab_pll_400m: safe_fab_pll_400m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_800m>;
+			clock-names = "safe_fab_pll_800m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_400m";
+		};
+
+		safe_fab_pll_300m: safe_fab_pll_300m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_600m>;
+			clock-names = "safe_fab_pll_600m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_300m";
+		};
+
+		safe_fab_pll_200m: safe_fab_pll_200m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_400m>;
+			clock-names = "safe_fab_pll_400m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_200m";
+		};
+
+		safe_fab_pll_120m: safe_fab_pll_120m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_600m>;
+			clock-names = "safe_fab_pll_600m";
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "safe_fab_pll_120m";
+		};
+
+		safe_fab_pll_100m: safe_fab_pll_100m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_200m>;
+			clock-names = "safe_fab_pll_200m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_100m";
+		};
+
+		safe_fab_pll_80m: safe_fab_pll_80m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_480m>;
+			clock-names = "safe_fab_pll_480m";
+			clock-mult = <1>;
+			clock-div = <6>;
+			clock-output-names = "safe_fab_pll_80m";
+		};
+
+		safe_fab_pll_60m: safe_fab_pll_60m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_120m>;
+			clock-names = "safe_fab_pll_120m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_60m";
+		};
+
+		safe_fab_pll_40m: safe_fab_pll_40m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_80m>;
+			clock-names = "safe_fab_pll_80m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_40m";
+		};
+
+		safe_fab_pll_30m: safe_fab_pll_30m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_60m>;
+			clock-names = "safe_fab_pll_60m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_30m";
+		};
+
+		safe_fab_pll_24m: safe_fab_pll_24m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_60m>;
+			clock-names = "safe_fab_pll_60m";
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "safe_fab_pll_24m";
+		};
+
+		safe_fab_pll_20m: safe_fab_pll_20m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_40m>;
+			clock-names = "safe_fab_pll_40m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_20m";
+		};
+
+		safe_fab_pll_12m: safe_fab_pll_12m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_24m>;
+			clock-names = "safe_fab_pll_24m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_fab_pll_12m";
+		};
+
+		safe_fab_pll_8m: safe_fab_pll_8m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_24m>;
+			clock-names = "safe_fab_pll_24m";
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "safe_fab_pll_8m";
+		};
+
+		safe_rpll_24p9m: safe_rpll_24p9m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_rpll_996m>;
+			clock-names = "safe_rpll_996m";
+			clock-mult = <1>;
+			clock-div = <16>;
+			clock-output-names = "safe_rpll_24p9m";
+		};
+
+		safe_epll_500m: safe_epll_500m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_1500m>;
+			clock-names = "safe_epll_1500m";
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "safe_epll_500m";
+		};
+
+		safe_epll_250m: safe_epll_250m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_500m>;
+			clock-names = "safe_epll_500m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_epll_250m";
+		};
+
+		safe_epll_150m: safe_epll_150m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_1500m>;
+			clock-names = "safe_epll_1500m";
+			clock-mult = <1>;
+			clock-div = <10>;
+			clock-output-names = "safe_epll_150m";
+		};
+
+		safe_epll_125m: safe_epll_125m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_250m>;
+			clock-names = "safe_epll_250m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_epll_125m";
+		};
+
+		safe_epll_50m: safe_epll_50m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_150m>;
+			clock-names = "safe_epll_150m";
+			clock-mult = <1>;
+			clock-div = <3>;
+			clock-output-names = "safe_epll_50m";
+		};
+
+		safe_epll_25m: safe_epll_25m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_50m>;
+			clock-names = "safe_epll_50m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "safe_epll_25m";
+		};
+
+		safe_epll_5m: safe_epll_5m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_epll_25m>;
+			clock-names = "safe_epll_25m";
+			clock-mult = <1>;
+			clock-div = <5>;
+			clock-output-names = "safe_epll_5m";
+		};
+
+		clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safety_clk_mux CLK_SAFE_RGMII_TX>;
+			clock-names = "clk_safe_rgmii_tx_div2";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "clk_safe_rgmii_tx_div2";
+		};
+
+		clk_safe_emac_ptp_div2: clk_safe_emac_ptp_div2 {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_100m>;
+			clock-names = "safe_fab_pll_100m";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "clk_safe_emac_ptp_div2";
+		};
+
+		clk_safe_24m: clk_safe_24m {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&safe_fab_pll_24m>;
+			clock-names = "safe_fab_pll_24m";
+			clock-mult = <1>;
+			clock-div = <1>;
+			clock-output-names = "clk_safe_24m";
+		};
+	};
+};

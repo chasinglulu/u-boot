@@ -1,0 +1,168 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for Laguna safety domain FPGA clock tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	safety-clocks {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		safe_fake_32k: safe_fake_32k {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32000>;
+			clock-output-names = "safe_fake_32k";
+		};
+
+		safe_xtal_24m: safe_xtal_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_xtal_24m";
+		};
+
+		safe_rpll_996m: safe_rpll_996m{
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_rpll_996m";
+		};
+
+		safe_fab_pll_800m: safe_fab_pll_800m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_800m";
+		};
+
+		safe_fab_pll_600m: safe_fab_pll_600m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_600m";
+		};
+
+		safe_fab_pll_400m: safe_fab_pll_400m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_400m";
+		};
+
+		safe_fab_pll_300m: safe_fab_pll_300m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_300m";
+		};
+
+		safe_fab_pll_200m: safe_fab_pll_200m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_200m";
+		};
+
+		safe_fab_pll_100m: safe_fab_pll_100m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_100m";
+		};
+
+		safe_fab_pll_80m: safe_fab_pll_80m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_80m";
+		};
+
+		safe_fab_pll_40m: safe_fab_pll_40m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_40m";
+		};
+
+		safe_fab_pll_24m: safe_fab_pll_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_24m";
+		};
+
+		safe_fab_pll_20m: safe_fab_pll_20m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_20m";
+		};
+
+		safe_fab_pll_8m: safe_fab_pll_8m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_fab_pll_8m";
+		};
+
+		safe_epll_250m: safe_epll_250m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_epll_250m";
+		};
+
+		safe_epll_125m: safe_epll_125m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_epll_125m";
+		};
+
+		safe_epll_50m: safe_epll_50m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_epll_50m";
+		};
+
+		safe_epll_25m: safe_epll_25m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_epll_25m";
+		};
+
+		safe_epll_5m: safe_epll_5m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "safe_epll_5m";
+		};
+
+		clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_safe_rgmii_tx_div2";
+		};
+
+		clk_safe_emac_ptp_div2: clk_safe_emac_ptp_div2 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_safe_emac_ptp_div2";
+		};
+
+		clk_safe_24m: clk_safe_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_safe_24m";
+		};
+	};
+};

@@ -1,0 +1,365 @@
+
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source (V2) for safety domain clock and reset ctrl
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	safety-cru-v2 {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		safety_cru: safety-cru@00600000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x00600000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			safety_clk_mux: safety_clk_mux {
+				compatible = "axera,lua-clock-mux";
+				regmap = <&common_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_SAFETY_CLK_MUX_0>;
+				mask = <0x3FFFF>;
+				clock-parent-nums = <CLK_SAFE_R5F_PARENT_NUM>, <CLK_SAFE_QSPI_PARENT_NUM>,
+				                    <CLK_SAFE_CE_BUS_PARENT_NUM>, <CLK_SAFE_GPIO_PARENT_NUM>,
+				                    <CLK_SAFE_TMR0_PARENT_NUM>, <CLK_SAFE_TMR1_PARENT_NUM>,
+				                    <CLK_SAFE_WDT_PARENT_NUM>, <CLK_SAFE_SER_PARENT_NUM>,
+				                    <CLK_SAFE_RGMII_TX_PARENT_NUM>, <CLK_SAFE_CAN_PE_PARENT_NUM>,
+				                    <CLK_SAFE_EPHY_REF_PARENT_NUM>;
+				bit-map = <CLK_SAFE_R5F_OFFSET CLK_SAFE_R5F_WIDTH>,
+				          <CLK_SAFE_QSPI_OFFSET CLK_SAFE_QSPI_WIDTH>,
+				          <CLK_SAFE_CE_BUS_OFFSET CLK_SAFE_CE_BUS_WIDTH>,
+				          <CLK_SAFE_GPIO_OFFSET CLK_SAFE_GPIO_WIDTH>,
+				          <CLK_SAFE_TMR0_OFFSET CLK_SAFE_TMR0_WIDTH>,
+				          <CLK_SAFE_TMR1_OFFSET CLK_SAFE_TMR1_WIDTH>,
+				          <CLK_SAFE_WDT_OFFSET CLK_SAFE_WDT_WIDTH>,
+				          <CLK_SAFE_SER_OFFSET CLK_SAFE_SER_WIDTH>,
+				          <CLK_SAFE_RGMII_TX_OFFSET CLK_SAFE_RGMII_TX_WIDTH>,
+				          <CLK_SAFE_CAN_PE_OFFSET CLK_SAFE_CAN_PE_WIDTH>,
+				          <CLK_SAFE_EPHY_REF_OFFSET CLK_SAFE_EPHY_REF_WIDTH>;
+				clocks = <&safe_fab_pll_24m &safe_fab_pll_600m &safe_fab_pll_800m &safe_rpll_996m>,
+				         <&safe_fab_pll_24m &safe_fab_pll_200m &safe_fab_pll_300m &safe_fab_pll_400m>,
+				         <&safe_fab_pll_24m &safe_fab_pll_400m &safe_fab_pll_600m>,
+				         <&safe_fake_32k &safe_xtal_24m>,
+				         <&safe_fake_32k &safe_xtal_24m>,
+				         <&safe_fake_32k &safe_xtal_24m>,
+				         <&safe_fake_32k &safe_xtal_24m>,
+				         <&safe_fab_pll_24m &safe_fab_pll_100m &safe_fab_pll_200m>,
+				         <&safe_epll_5m &safe_epll_50m &safe_epll_250m>,
+				         <&safe_fab_pll_20m &safe_fab_pll_40m &safe_fab_pll_80m>,
+				         <&safe_xtal_24m &safe_epll_25m &safe_epll_50m &safe_epll_125m>;
+				clock-names = "clk_safe_r5f_sel", "clk_safe_qspi_sel",
+				              "clk_safe_ce_bus_sel", "clk_safe_gpio_sel",
+				              "clk_safe_tmr0_sel", "clk_safe_tmr1_sel",
+				              "clk_safe_wdt_sel", "clk_safe_ser_sel",
+				              "clk_safe_rgmii_tx_sel", "clk_safe_can_pe_sel",
+				              "clk_safe_ephy_ref_sel";
+				clock-output-names = "clk_safe_r5f_mux", "clk_safe_qspi_mux",
+				                     "clk_safe_ce_bus_mux", "clk_safe_gpio_mux",
+				                     "clk_safe_tmr0_mux", "clk_safe_tmr1_mux",
+				                     "clk_safe_wdt_mux", "clk_safe_ser_mux",
+				                     "clk_safe_rgmii_tx_mux", "clk_safe_can_pe_mux",
+				                     "clk_safe_ephy_ref";
+			};
+
+			safety_clk_mux_gate: safety_clk_mux_gate {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&safety_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_SAFETY_CLK_M_EB_0>;
+				mask = <0xFFF>;
+				clocks = <&safety_clk_mux CLK_SAFE_QSPI>, <&safety_clk_mux CLK_SAFE_GPIO>,
+				         <&safety_clk_mux CLK_SAFE_TMR0>, <&safety_clk_mux CLK_SAFE_TMR1>,
+				         <&safety_clk_mux CLK_SAFE_WDT>, <&safety_clk_mux CLK_SAFE_SER>,
+				         <&clk_safe_rgmii_tx_div2>, <&safe_epll_50m>,
+				         <&safety_clk_mux CLK_SAFE_CAN_PE>, <&safety_clk_mux CLK_SAFE_EPHY_REF>,
+				         <&clk_safe_emac_ptp_div2>, <&safe_fab_pll_8m>;
+				clock-names = "clk_safe_qspi_eb", "clk_safe_gpio_eb",
+				              "clk_safe_tmr0_eb", "clk_safe_tmr1_eb",
+				              "clk_safe_wdt_eb", "clk_safe_ser_eb",
+				              "clk_safe_rgmii_tx_eb", "clk_safe_rmii_phy_eb",
+				              "clk_safe_can_pe_eb", "clk_safe_ephy_ref_eb",
+				              "clk_safe_emac_ptp_eb", "clk_safe_8m_eb";
+				clock-output-names = "clk_safe_qspi", "clk_safe_gpio",
+				                     "clk_safe_tmr0", "clk_safe_tmr1",
+				                     "clk_safe_wdt", "clk_safe_ser",
+				                     "clk_safe_rgmii_tx", "clk_safe_rmii_phy",
+				                     "clk_safe_can_pe", "clk_safe_ephy_ref",
+				                     "clk_safe_emac_ptp", "clk_safe_8m";
+			};
+
+			safety_clk_gate_0: safety_clk_gate@0 {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&safety_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_SAFETY_CLK_G_EB_0>;
+				mask = <0xFFFFFFFF>;
+				clocks = <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux_gate CLK_SAFE_8M_EB>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>;
+				clock-names = "pclk_safe_spi_s_eb", "clk_safe_spi_s_eb",
+				              "hclk_safe_qspi_eb", "aclk_safe_emac_eb",
+				              "pclk_safe_axera_sw_int1_eb", "pclk_safe_axera_pwm1_eb",
+				              "clk_safe_axera_pwm11_eb", "clk_safe_axera_pwm12_eb",
+				              "clk_safe_axera_pwm13_eb", "clk_safe_axera_pwm14_eb",
+				              "clk_safe_axera_pwm15_eb", "clk_safe_axera_pwm16_eb",
+				              "clk_safe_axera_pwm17_eb", "clk_safe_axera_pwm18_eb",
+				              "pclk_safe_axera_pwm2_eb", "clk_safe_axera_pwm21_eb",
+				              "clk_safe_axera_pwm22_eb", "clk_safe_axera_pwm23_eb",
+				              "clk_safe_axera_pwm24_eb", "clk_safe_axera_pwm25_eb",
+				              "clk_safe_axera_pwm26_eb", "clk_safe_axera_pwm27_eb",
+				              "clk_safe_axera_pwm28_eb", "pclk_safe_axera_ecap_eb",
+				              "clk_safe_axera_ecap_eb", "pclk_safe_gzip_eb",
+				              "aclk_safe_gzip_eb", "pclk_safe_fw0_eb",
+				              "pclk_safe_fw1_eb", "pclk_safe_fw2_eb",
+				              "pclk_safe_crc_engine_eb", "clk_safe_crc_engine_eb";
+				clock-output-names = "pclk_safe_spi_s", "clk_safe_spi_s",
+				                     "hclk_safe_qspi", "aclk_safe_emac",
+				                     "pclk_safe_axera_sw_int1", "pclk_safe_axera_pwm1",
+				                     "clk_safe_axera_pwm11", "clk_safe_axera_pwm12",
+				                     "clk_safe_axera_pwm13", "clk_safe_axera_pwm14",
+				                     "clk_safe_axera_pwm15", "clk_safe_axera_pwm16",
+				                     "clk_safe_axera_pwm17", "clk_safe_axera_pwm18",
+				                     "pclk_safe_axera_pwm2", "clk_safe_axera_pwm21",
+				                     "clk_safe_axera_pwm22", "clk_safe_axera_pwm23",
+				                     "clk_safe_axera_pwm24", "clk_safe_axera_pwm25",
+				                     "clk_safe_axera_pwm26", "clk_safe_axera_pwm27",
+				                     "clk_safe_axera_pwm28", "pclk_safe_axera_ecap",
+				                     "clk_safe_axera_ecap", "pclk_safe_gzip",
+				                     "aclk_safe_gzip", "pclk_safe_fw0",
+				                     "pclk_safe_fw1", "pclk_safe_fw2",
+				                     "pclk_safe_crc_engine", "clk_safe_crc_engine";
+			};
+
+			safety_clk_gate_1: safety_clk_gate@1 {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&safety_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_SAFETY_CLK_G_EB_1>;
+				mask = <0xFFFFFFFF>;
+				clocks = <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux_gate CLK_SAFE_SER_EB>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
+				         <&clk_safe_24m>, <&clk_safe_24m>;
+				clock-names = "pclk_safe_ax_dma_per_eb", "clk_safe_ax_dma_per_eb",
+				              "pclk_safe_ax_dma_eb", "clk_safe_ax_dma_eb",
+				              "pclk_safe_uart0_eb", "clk_safe_uart0_eb",
+				              "pclk_safe_spi_m1_eb", "clk_safe_spi_m1_eb",
+				              "pclk_safe_spi_m2_eb", "clk_safe_spi_m2_eb",
+				              "pclk_safe_spi_m3_eb", "clk_safe_spi_m3_eb",
+				              "pclk_safe_spi_m4_eb", "clk_safe_spi_m4_eb",
+				              "pclk_safe_spi_m6_eb", "clk_safe_spi_m6_eb",
+				              "pclk_safe_i2c2_eb", "pclk_safe_i2c3_eb",
+				              "clk_safe_i2c2_eb", "clk_safe_i2c3_eb",
+				              "pclk_safe_can2_eb", "pclk_safe_can3_eb",
+				              "pclk_safe_can4_eb", "pclk_safe_can5_eb",
+				              "pclk_safe_can6_eb", "clk_safe_can2_core_eb",
+				              "clk_safe_can3_core_eb", "clk_safe_can4_core_eb",
+				              "clk_safe_can5_core_eb", "clk_safe_can6_core_eb",
+				              "time_stamp_clk_safe_can2_eb", "time_stamp_clk_safe_can3_eb";
+				clock-output-names = "pclk_safe_ax_dma_per", "clk_safe_ax_dma_per",
+				                     "pclk_safe_ax_dma", "clk_safe_ax_dma",
+				                     "pclk_safe_uart0", "clk_safe_uart0",
+				                     "pclk_safe_spi_m1", "clk_safe_spi_m1",
+				                     "pclk_safe_spi_m2", "clk_safe_spi_m2",
+				                     "pclk_safe_spi_m3", "clk_safe_spi_m3",
+				                     "pclk_safe_spi_m4", "clk_safe_spi_m4",
+				                     "pclk_safe_spi_m6", "clk_safe_spi_m6",
+				                     "pclk_safe_i2c2", "pclk_safe_i2c3",
+				                     "clk_safe_i2c2", "clk_safe_i2c3",
+				                     "pclk_safe_can2", "pclk_safe_can3",
+				                     "pclk_safe_can4", "pclk_safe_can5",
+				                     "pclk_safe_can6", "clk_safe_can2_core",
+				                     "clk_safe_can3_core", "clk_safe_can4_core",
+				                     "clk_safe_can5_core", "clk_safe_can6_core",
+				                     "time_stamp_clk_safe_can2", "time_stamp_clk_safe_can3";
+			};
+
+			safety_clk_gate_2: safety_clk_gate@2 {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&safety_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_SAFETY_CLK_G_EB_2>;
+				mask = <0xFFFFFFFF>;
+				clocks = <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>, <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux_gate CLK_SAFE_TMR0_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_TMR0_EB>, <&safety_clk_mux_gate CLK_SAFE_TMR0_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_TMR0_EB>, <&safety_clk_mux_gate CLK_SAFE_TMR1_EB>;
+				clock-names = "time_stamp_clk_safe_can4_eb", "time_stamp_clk_safe_can5_eb",
+				              "time_stamp_clk_safe_can6_eb", "pclk_safe_gpio1_eb",
+				              "pclk_safe_gpio2_eb", "pclk_safe_gpio3_eb",
+				              "clk_safe_gpio1_eb", "clk_safe_gpio2_eb",
+				              "clk_safe_gpio3_eb", "pclk_safe_mailbox_eb",
+				              "pclk_safe_spinlock_eb", "pclk_safe_r5f0_dbgmnr_eb",
+				              "pclk_safe_r5f1_dbgmnr_eb", "pclk_safe_dma_per_dbgmnr_eb",
+				              "pclk_safe_ocm_dbgmnr_eb", "aclk_safe_r5f0_dbgmnr_eb",
+				              "aclk_safe_r5f1_dbgmnr_eb", "aclk_safe_dma_per_dbgmnr_eb",
+				              "aclk_safe_ocm_dbgmnr_eb", "pclk_safe_tmr32_4_eb",
+				              "pclk_safe_tmr32_5_eb", "pclk_safe_tmr32_6_eb",
+				              "pclk_safe_tmr32_7_eb", "pclk_safe_tmr32_8_eb",
+				              "pclk_safe_tmr32_9_eb", "pclk_safe_tmr32_10_eb",
+				              "pclk_safe_tmr32_11_eb", "tclk_safe_tmr32_4_eb",
+				              "tclk_safe_tmr32_5_eb", "tclk_safe_tmr32_6_eb",
+				              "tclk_safe_tmr32_7_eb", "tclk_safe_tmr32_8_eb";
+				clock-output-names = "time_stamp_clk_safe_can4", "time_stamp_clk_safe_can5",
+				                     "time_stamp_clk_safe_can6", "pclk_safe_gpio1",
+				                     "pclk_safe_gpio2", "pclk_safe_gpio3",
+				                     "clk_safe_gpio1", "clk_safe_gpio2",
+				                     "clk_safe_gpio3", "pclk_safe_mailbox",
+				                     "pclk_safe_spinlock", "pclk_safe_r5f0_dbgmnr",
+				                     "pclk_safe_r5f1_dbgmnr", "pclk_safe_dma_per_dbgmnr",
+				                     "pclk_safe_ocm_dbgmnr", "aclk_safe_r5f0_dbgmnr",
+				                     "aclk_safe_r5f1_dbgmnr", "aclk_safe_dma_per_dbgmnr",
+				                     "aclk_safe_ocm_dbgmnr", "pclk_safe_tmr32_4",
+				                     "pclk_safe_tmr32_5", "pclk_safe_tmr32_6",
+				                     "pclk_safe_tmr32_7", "pclk_safe_tmr32_8",
+				                     "pclk_safe_tmr32_9", "pclk_safe_tmr32_10",
+				                     "pclk_safe_tmr32_11", "tclk_safe_tmr32_4",
+				                     "tclk_safe_tmr32_5", "tclk_safe_tmr32_6",
+				                     "tclk_safe_tmr32_7", "tclk_safe_tmr32_8";
+			};
+
+			safety_clk_gate_3: safety_clk_gate@3 {
+				compatible = "axera,lua-clock-gate";
+				regmap = <&safety_cru>;
+				#clock-cells = <1>;
+				offset = <LAGUNA_SAFETY_CLK_G_EB_3>;
+				mask = <0xFFFFFFFF>;
+				clocks = <&safety_clk_mux_gate CLK_SAFE_TMR1_EB>, <&safety_clk_mux_gate CLK_SAFE_TMR1_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_TMR1_EB>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux_gate CLK_SAFE_WDT_EB>,
+				         <&safety_clk_mux_gate CLK_SAFE_WDT_EB>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_CE_BUS>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&safety_clk_mux_gate CLK_SAFE_SER_EB>;
+				clock-names = "tclk_safe_tmr32_9_eb", "tclk_safe_tmr32_10_eb",
+				              "tclk_safe_tmr32_11_eb", "pclk_safe_wwdt4_eb",
+				              "pclk_safe_wwdt5_eb", "tclk_safe_wwdt4_eb",
+				              "tclk_safe_wwdt5_eb", "clk_safe_thm_adc_eb",
+				              "pclk_safe_thm_adc_eb", "pclk_safe_ce_eb",
+				              "clk_safe_ce_cnt_eb", "clk_safe_ce_eb",
+				              "pclk_safe_timestamp0_eb", "clk_safe_timestamp0_eb",
+				              "pclk_r5f0_addr_remap_eb", "pclk_r5f1_addr_remap_eb",
+				              "pclk_safety_clk_mnr_eb", "pclk_iso_m7_eb",
+				              "pclk_iso_m8_eb", "pclk_iso_m9_eb",
+				              "pclk_iso_m10_eb", "pclk_iso_s0_eb",
+				              "pclk_iso_s1_eb", "clk_iso_m7_24m_eb",
+				              "clk_iso_m8_24m_eb", "clk_iso_m9_24m_eb",
+				              "clk_iso_m10_24m_eb", "clk_iso_s0_24m_eb",
+				              "clk_iso_s1_24m_eb", "pclk_safe_i2c10_eb",
+				              "clk_safe_i2c10_eb";
+				clock-output-names = "tclk_safe_tmr32_9", "tclk_safe_tmr32_10",
+				                     "tclk_safe_tmr32_11", "pclk_safe_wwdt4",
+				                     "pclk_safe_wwdt5", "tclk_safe_wwdt4",
+				                     "tclk_safe_wwdt5", "clk_safe_thm_adc",
+				                     "pclk_safe_thm_adc", "pclk_safe_ce",
+				                     "clk_safe_ce_cnt", "clk_safe_ce",
+				                     "pclk_safe_timestamp0", "clk_safe_timestamp0",
+				                     "pclk_r5f0_addr_remap", "pclk_r5f1_addr_remap",
+				                     "pclk_safety_clk_mnr", "pclk_iso_m7",
+				                     "pclk_iso_m8", "pclk_iso_m9",
+				                     "pclk_iso_m10", "pclk_iso_s0",
+				                     "pclk_iso_s1", "clk_iso_m7_24m",
+				                     "clk_iso_m8_24m", "clk_iso_m9_24m",
+				                     "clk_iso_m10_24m", "clk_iso_s0_24m",
+				                     "clk_iso_s1_24m", "pclk_safe_i2c10",
+				                     "clk_safe_i2c10";
+			};
+
+			safety_sysrst_0: safety-reset@0 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&safety_cru>;
+				offset = <LAGUNA_SAFETY_SW_RST_0>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+
+			safety_sysrst_1: safety-reset@1 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&safety_cru>;
+				offset = <LAGUNA_SAFETY_SW_RST_1>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+
+			safety_sysrst_2: safety-reset@2 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&safety_cru>;
+				offset = <LAGUNA_SAFETY_SW_RST_2>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+
+			safety_sysrst_3: safety-reset@3 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&safety_cru>;
+				offset = <LAGUNA_SAFETY_SW_RST_3>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+
+			safety_sysrst_4: safety-reset@4 {
+				compatible = "axera,lua-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&safety_cru>;
+				offset = <LAGUNA_SAFETY_SW_RST_4>;
+				mask = <0xFFFFFFFF>;
+				assert-high = <1>;
+			};
+		};
+	};
+};

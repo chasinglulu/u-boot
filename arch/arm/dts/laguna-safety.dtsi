@@ -1,0 +1,58 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Laguna SoC Safety Domain device tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	aliases {
+		serial0 = &serial0;
+	};
+
+	safety {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
+		ranges;
+
+		safety_glb: safety-glb@00601000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x00601000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "disabled";
+
+			safety_uart_xfer_sel: safety-uart-xfer-sel {
+				compatible = "axera,laguna-sysctl";
+				#syscon-cells = <2>;
+				regmap = <&safety_glb>;
+				offset = <LAGUNA_SYSCON_SAFETY_UART>;
+				mask = <0x3>;
+				field-width = <2>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
+		};
+
+		serial0: uart@00602000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x00602000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			clock-frequency = <10000000>;
+			resets = <&safety_sysrst_1 SAFE_UART0_SW_PRST>,
+			         <&safety_sysrst_1 SAFE_UART0_SW_RST>;
+			reset-names = "prst", "rst";
+			syscons = <&safety_uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "disabled";
+		};
+	};
+};
