@@ -6,7 +6,10 @@
 #ifndef LAGUNA_SYSCON_H
 #define LAGUNA_SYSCON_H
 
-/* glb register */
+/* safety glb register */
+#define LAGUNA_SYSCON_SAFETY_UART       0x8C
+
+/* periph glb register */
 #define LAGUNA_SYSCON_PERIPH_EMAC       0x28
 #define LAGUNA_SYSCON_PERIPH_UART       0x30
 #define LAGUNA_SYSCON_PERIPH_EMAC1      0x6C

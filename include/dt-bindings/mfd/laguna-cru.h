@@ -6,6 +6,19 @@
 #ifndef LAGUNA_CRU_H
 #define LAGUNA_CRU_H
 
+/* safety clock & rst */
+#define LAGUNA_SAFETY_CLK_MUX_0          0x00
+#define LAGUNA_SAFETY_CLK_M_EB_0         0x20
+#define LAGUNA_SAFETY_CLK_G_EB_0         0x40
+#define LAGUNA_SAFETY_CLK_G_EB_1         0x44
+#define LAGUNA_SAFETY_CLK_G_EB_2         0x48
+#define LAGUNA_SAFETY_CLK_G_EB_3         0x4C
+#define LAGUNA_SAFETY_SW_RST_0           0x120
+#define LAGUNA_SAFETY_SW_RST_1           0x124
+#define LAGUNA_SAFETY_SW_RST_2           0x128
+#define LAGUNA_SAFETY_SW_RST_3           0x12C
+#define LAGUNA_SAFETY_SW_RST_4           0x130
+
 /* cpu clock & rst */
 #define LAGUNA_CPU_CLK_MUX_0             0x00
 #define LAGUNA_CPU_CLK_G_EB_0            0x40

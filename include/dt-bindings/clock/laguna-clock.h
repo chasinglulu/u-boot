@@ -6,6 +6,203 @@
 #ifndef LAGUNA_CLOCK_H
 #define LAGUNA_CLOCK_H
 
+/* safety subsystem clk_mux_0 register */
+#define CLK_SAFE_R5F                    0
+#define CLK_SAFE_QSPI                   1
+#define CLK_SAFE_CE_BUS                 2
+#define CLK_SAFE_GPIO                   3
+#define CLK_SAFE_TMR0                   4
+#define CLK_SAFE_TMR1                   5
+#define CLK_SAFE_WDT                    6
+#define CLK_SAFE_SER                    7
+#define CLK_SAFE_RGMII_TX               8
+#define CLK_SAFE_CAN_PE                 9
+#define CLK_SAFE_EPHY_REF               10
+
+#define CLK_SAFE_R5F_PARENT_NUM         4
+#define CLK_SAFE_QSPI_PARENT_NUM        4
+#define CLK_SAFE_CE_BUS_PARENT_NUM      3
+#define CLK_SAFE_GPIO_PARENT_NUM        2
+#define CLK_SAFE_TMR0_PARENT_NUM        2
+#define CLK_SAFE_TMR1_PARENT_NUM        2
+#define CLK_SAFE_WDT_PARENT_NUM         2
+#define CLK_SAFE_SER_PARENT_NUM         3
+#define CLK_SAFE_RGMII_TX_PARENT_NUM    3
+#define CLK_SAFE_CAN_PE_PARENT_NUM      3
+#define CLK_SAFE_EPHY_REF_PARENT_NUM    4
+
+#define CLK_SAFE_R5F_OFFSET             0
+#define CLK_SAFE_QSPI_OFFSET            2
+#define CLK_SAFE_CE_BUS_OFFSET          4
+#define CLK_SAFE_GPIO_OFFSET            6
+#define CLK_SAFE_TMR0_OFFSET            7
+#define CLK_SAFE_TMR1_OFFSET            8
+#define CLK_SAFE_WDT_OFFSET             9
+#define CLK_SAFE_SER_OFFSET             10
+#define CLK_SAFE_RGMII_TX_OFFSET        12
+#define CLK_SAFE_CAN_PE_OFFSET          14
+#define CLK_SAFE_EPHY_REF_OFFSET        16
+#define CLK_SAFE_R5F_WIDTH              2
+#define CLK_SAFE_QSPI_WIDTH             2
+#define CLK_SAFE_CE_BUS_WIDTH           2
+#define CLK_SAFE_GPIO_WIDTH             1
+#define CLK_SAFE_TMR0_WIDTH             1
+#define CLK_SAFE_TMR1_WIDTH             1
+#define CLK_SAFE_WDT_WIDTH              1
+#define CLK_SAFE_SER_WIDTH              2
+#define CLK_SAFE_RGMII_TX_WIDTH         2
+#define CLK_SAFE_CAN_PE_WIDTH           2
+#define CLK_SAFE_EPHY_REF_WIDTH         2
+
+/* safety subsystem clk_m_eb_0 register */
+#define CLK_SAFE_QSPI_EB                0
+#define CLK_SAFE_GPIO_EB                1
+#define CLK_SAFE_TMR0_EB                2
+#define CLK_SAFE_TMR1_EB                3
+#define CLK_SAFE_WDT_EB                 4
+#define CLK_SAFE_SER_EB                 5
+#define CLK_SAFE_RGMII_TX_EB            6
+#define CLK_SAFE_RMII_PHY_EB            7
+#define CLK_SAFE_CAN_PE_EB              8
+#define CLK_SAFE_EPHY_REF_EB            9
+#define CLK_SAFE_EMAC_PTP_EB            10
+#define CLK_SAFE_8M_EB                  11
+
+/* safety subsystem clk_g_eb_0 register */
+#define PCLK_SAFE_SPI_S                 0
+#define CLK_SAFE_SPI_S                  1
+#define HCLK_SAFE_QSPI                  2
+#define ACLK_SAFE_EMAC                  3
+#define PCLK_SAFE_AXERA_SW_INT1         4
+#define PCLK_SAFE_AXERA_PWM1            5
+#define CLK_SAFE_AXERA_PWM11            6
+#define CLK_SAFE_AXERA_PWM12            7
+#define CLK_SAFE_AXERA_PWM13            8
+#define CLK_SAFE_AXERA_PWM14            9
+#define CLK_SAFE_AXERA_PWM15            10
+#define CLK_SAFE_AXERA_PWM16            11
+#define CLK_SAFE_AXERA_PWM17            12
+#define CLK_SAFE_AXERA_PWM18            13
+#define PCLK_SAFE_AXERA_PWM2            14
+#define CLK_SAFE_AXERA_PWM21            15
+#define CLK_SAFE_AXERA_PWM22            16
+#define CLK_SAFE_AXERA_PWM23            17
+#define CLK_SAFE_AXERA_PWM24            18
+#define CLK_SAFE_AXERA_PWM25            19
+#define CLK_SAFE_AXERA_PWM26            20
+#define CLK_SAFE_AXERA_PWM27            21
+#define CLK_SAFE_AXERA_PWM28            22
+#define PCLK_SAFE_AXERA_ECAP            23
+#define CLK_SAFE_AXERA_ECAP             24
+#define PCLK_SAFE_GZIP                  25
+#define ACLK_SAFE_GZIP                  26
+#define PCLK_SAFE_FW0                   27
+#define PCLK_SAFE_FW1                   28
+#define PCLK_SAFE_FW2                   29
+#define PCLK_SAFE_CRC_ENGINE            30
+#define CLK_SAFE_CRC_ENGINE             31
+
+/* safety subsystem clk_g_eb_1 register */
+#define PCLK_SAFE_AX_DMA_PER            0
+#define CLK_SAFE_AX_DMA_PER             1
+#define PCLK_SAFE_AX_DMA                2
+#define CLK_SAFE_AX_DMA                 3
+#define PCLK_SAFE_UART0                 4
+#define CLK_SAFE_UART0                  5
+#define PCLK_SAFE_SPI_M1                6
+#define CLK_SAFE_SPI_M1                 7
+#define PCLK_SAFE_SPI_M2                8
+#define CLK_SAFE_SPI_M2                 9
+#define PCLK_SAFE_SPI_M3                10
+#define CLK_SAFE_SPI_M3                 11
+#define PCLK_SAFE_SPI_M4                12
+#define CLK_SAFE_SPI_M4                 13
+#define PCLK_SAFE_SPI_M6                14
+#define CLK_SAFE_SPI_M6                 15
+#define PCLK_SAFE_I2C2                  16
+#define PCLK_SAFE_I2C3                  17
+#define CLK_SAFE_I2C2                   18
+#define CLK_SAFE_I2C3                   19
+#define PCLK_SAFE_CAN2                  20
+#define PCLK_SAFE_CAN3                  21
+#define PCLK_SAFE_CAN4                  22
+#define PCLK_SAFE_CAN5                  23
+#define PCLK_SAFE_CAN6                  24
+#define CLK_SAFE_CAN2_CORE              25
+#define CLK_SAFE_CAN3_CORE              26
+#define CLK_SAFE_CAN4_CORE              27
+#define CLK_SAFE_CAN5_CORE              28
+#define CLK_SAFE_CAN6_CORE              29
+#define TIME_STAMP_CLK_SAFE_CAN2        30
+#define TIME_STAMP_CLK_SAFE_CAN3        31
+
+/* safety subsystem clk_g_eb_2 register */
+#define TIME_STAMP_CLK_SAFE_CAN4        0
+#define TIME_STAMP_CLK_SAFE_CAN5        1
+#define TIME_STAMP_CLK_SAFE_CAN6        2
+#define PCLK_SAFE_GPIO1                 3
+#define PCLK_SAFE_GPIO2                 4
+#define PCLK_SAFE_GPIO3                 5
+#define CLK_SAFE_GPIO1                  6
+#define CLK_SAFE_GPIO2                  7
+#define CLK_SAFE_GPIO3                  8
+#define PCLK_SAFE_MAILBOX               9
+#define PCLK_SAFE_SPINLOCK              10
+#define PCLK_SAFE_R5F0_DBGMNR           11
+#define PCLK_SAFE_R5F1_DBGMNR           12
+#define PCLK_SAFE_DMA_PER_DBGMNR        13
+#define PCLK_SAFE_OCM_DBGMNR            14
+#define ACLK_SAFE_R5F0_DBGMNR           15
+#define ACLK_SAFE_R5F1_DBGMNR           16
+#define ACLK_SAFE_DMA_PER_DBGMNR        17
+#define ACLK_SAFE_OCM_DBGMNR            18
+#define PCLK_SAFE_TMR32_4               19
+#define PCLK_SAFE_TMR32_5               20
+#define PCLK_SAFE_TMR32_6               21
+#define PCLK_SAFE_TMR32_7               22
+#define PCLK_SAFE_TMR32_8               23
+#define PCLK_SAFE_TMR32_9               24
+#define PCLK_SAFE_TMR32_10              25
+#define PCLK_SAFE_TMR32_11              26
+#define TCLK_SAFE_TMR32_4               27
+#define TCLK_SAFE_TMR32_5               28
+#define TCLK_SAFE_TMR32_6               29
+#define TCLK_SAFE_TMR32_7               30
+#define TCLK_SAFE_TMR32_8               31
+
+/* safety subsystem clk_g_eb_3 register */
+#define TCLK_SAFE_TMR32_9               0
+#define TCLK_SAFE_TMR32_10              1
+#define TCLK_SAFE_TMR32_11              2
+#define PCLK_SAFE_WWDT4                 3
+#define PCLK_SAFE_WWDT5                 4
+#define TCLK_SAFE_WWDT4                 5
+#define TCLK_SAFE_WWDT5                 6
+#define CLK_SAFE_THM_ADC                7
+#define PCLK_SAFE_THM_ADC               8
+#define PCLK_SAFE_CE                    9
+#define CLK_SAFE_CE_CNT                 10
+#define CLK_SAFE_CE                     11
+#define PCLK_SAFE_TIMESTAMP0            12
+#define CLK_SAFE_TIMESTAMP0             13
+#define PCLK_R5F0_ADDR_REMAP            14
+#define PCLK_R5F1_ADDR_REMAP            15
+#define PCLK_SAFETY_CLK_MNR             16
+#define PCLK_ISO_M7                     17
+#define PCLK_ISO_M8                     18
+#define PCLK_ISO_M9                     19
+#define PCLK_ISO_M10                    20
+#define PCLK_ISO_S0                     21
+#define PCLK_ISO_S1                     22
+#define CLK_ISO_M7_24M                  23
+#define CLK_ISO_M8_24M                  24
+#define CLK_ISO_M9_24M                  25
+#define CLK_ISO_M10_24M                 26
+#define CLK_ISO_S0_24M                  27
+#define CLK_ISO_S1_24M                  28
+#define PCLK_SAFE_I2C10                 29
+#define CLK_SAFE_I2C10                  30
+
 /* common subsystem clk_mux_0 register */
 #define ACLK_TOP0                       0
 #define ACLK_TOP1                       1
@@ -13,6 +210,13 @@
 #define PCLK_TOP                        3
 #define CLK_COMM_TMR                    4
 #define CLK_COMM_WWDT                   5
+
+#define ACLK_TOP0_PARENT_NUM            5
+#define ACLK_TOP1_PARENT_NUM            6
+#define ACLK_TOP2_PARENT_NUM            5
+#define PCLK_TOP_PARENT_NUM             3
+#define CLK_COMM_TMR_PARENT_NUM         2
+#define CLK_COMM_WWDT_PARENT_NUM        2
 
 #define ACLK_TOP0_OFFSET                0
 #define ACLK_TOP0_WIDTH                 3
@@ -70,6 +274,11 @@
 #define CLK_FLASH_SDM                   2
 #define CLK_FLASH_SER                   3
 
+#define CLK_FLASH_GLB_PARENT_NUM        4
+#define CLK_FLASH_OSPI_PARENT_NUM       4
+#define CLK_FLASH_SDM_PARENT_NUM        2
+#define CLK_FLASH_SER_PARENT_NUM        2
+
 #define CLK_FLASH_GLB_OFFSET            0
 #define CLK_FLASH_OSPI_OFFSET           2
 #define CLK_FLASH_SDM_OFFSET            4
@@ -118,6 +327,16 @@
 #define CLK_MAIN_CAN_PE                 6
 #define CLK_MAIN_EPHY_REF               7
 #define CLK_I2S_REF                     8
+
+#define CLK_PERIPH_GLB_PARENT_NUM       4
+#define SCLK_I2S_M_PARENT_NUM           3
+#define CLK_PERIPH_GPIO_PARENT_NUM      2
+#define CLK_PERIPH_SER_PARENT_NUM       3
+#define PCLK_USB_PHY_BUS_PARENT_NUM     2
+#define CLK_MAIN_RGMII_TX_PARENT_NUM    3
+#define CLK_MAIN_CAN_PE_PARENT_NUM      3
+#define CLK_MAIN_EPHY_REF_PARENT_NUM    4
+#define CLK_I2S_REF_PARENT_NUM          4
 
 #define CLK_PERIPH_GLB_OFFSET           0
 #define CLK_PERIPH_GLB_WIDTTH           2
