@@ -3,7 +3,7 @@
 # Copyright (C) 2024 Charleye <wangkart@aliyun.com>
 #
 
-obj-y += common.o lowlevel.o laguna.o
+obj-y += common.o lowlevel.o memmap.o
 
 ifdef CONFIG_SPL_BUILD
 obj-y += spl.o
