@@ -20,13 +20,6 @@ int board_early_init_f(void)
 }
 #endif
 
-#ifdef CONFIG_BOARD_LATE_INIT
-int board_late_init(void)
-{
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_DESIGNWARE_SPI
 int dw_spi_get_clk(struct udevice *bus, ulong *rate)
 {

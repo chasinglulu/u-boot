@@ -1,0 +1,243 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Laguna Qemu Virtual Platform device tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/mfd/laguna-syscon.h>
+#include <dt-bindings/mfd/laguna-cru.h>
+#include <dt-bindings/reset/laguna-reset.h>
+#include <dt-bindings/clock/laguna-clock.h>
+
+#include "laguna-global-ctrl.dtsi"
+#include "laguna-clocks-fpga.dtsi"
+#include "laguna-gpios.dtsi"
+#ifdef CONFIG_CLK_AXERA_V2
+#include "laguna-cru-v2.dtsi"
+#elif defined(CONFIG_CLK_AXERA_V1)
+#include "laguna-cru.dtsi"
+#endif
+#include "laguna.dtsi"
+
+/ {
+	model = "Laguna Qemu Virtual Platform";
+	compatible = "axera,laguna-virt";
+	#address-cells = <2>;
+	#size-cells = <2>;
+	interrupt-parent = <&gic>;
+
+	chosen {
+		stdout-path = "serial1:115200n8";
+	};
+
+	memory {
+		reg = <0x1 0x00000000 0x2 0x00000000>;
+		device_type = "memory";
+	};
+
+	boot-device {
+		compatible = "boot-device-gpio";
+		gpios = <&gpio0_a 0 GPIO_ACTIVE_HIGH>,
+				<&gpio0_a 1 GPIO_ACTIVE_HIGH>,
+				<&gpio0_a 2 GPIO_ACTIVE_HIGH>;
+		u-boot,env-variable = "bootdevice";
+		dev-eMMC = <0x01>;
+		dev-NOR = <0x02>;
+		dev-NAND = <0x03>;
+		dev-UART = <0x04>;
+		u-boot,dm-spl;
+	};
+
+	soc {
+		mmc0: mmc@0C010000 {
+			compatible = "axera,lua-dwcmshc";
+			reg = <0x0 0x0C010000 0x0 0x2000>;
+			interrupts = <0x0 0x0 0x4>;
+			max-frequency = <200000000>;
+			sdhci-caps-mask = <0xffffffff 0xffffffff>;
+			sdhci-caps = <0x00000070 0x156ecc02>;
+			bus-width = <8>;
+			cap-mmc-highspeed;
+			mmc-ddr-1_8v;
+			mmc-hs200-1_8v;
+			non-removable;
+			no-sdio;
+			no-sd;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+		};
+
+		mmc1: mmc@0C012000 {
+			compatible = "axera,lua-dwcmshc";
+			reg = <0x0 0x0C012000 0x0 0x2000>;
+			interrupts = <0x0 0xa 0x4>;
+			max-frequency = <200000000>;
+			bus-width = <8>;
+			mmc-ddr-1_8v;
+			mmc-hs200-1_8v;
+			status = "disabled";
+		};
+
+		usb0: usb0@0E100000 {
+			compatible = "axera,laguna-dwc3";
+			reg = <0x0 0x0E100000 0x0 0x100000>;
+			#address-cells = <2>;
+			#size-cells = <2>;
+
+			dwc3: usb@0E200000 {
+				compatible = "snps,dwc3";
+				reg = <0x0 0x0E200000 0x0 0x00200000>;
+				// interrupts = <0 132 4>;
+				// interrupt-names = "dwc_usb3";
+				#stream-id-cells = <1>;
+				snps,quirk-frame-length-adjustment = <0x20>;
+				snps,refclk_fladj;
+				snps,enable_guctl1_resume_quirk;
+				snps,enable_guctl1_ipd_quirk;
+				snps,xhci-stream-quirk;
+				dr_mode = "otg";
+				phy-names = "usb3-phy";
+				/* dma-coherent; */
+			};
+		};
+
+		spi: spi@0C040000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible ="snps,dwc-ssi-1.01a";
+			reg = <0x0 0x0C040000 0x0 0x1000>;
+			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
+			/* Could possibly go up to 200 MHz */
+			spi-max-frequency = <100000000>;
+			num-cs = <4>;
+			reg-io-width = <4>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+
+			spi-flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <50000000>;
+				spi-tx-bus-width = <4>;
+				spi-rx-bus-width = <4>;
+				m25p,fast-read;
+				broken-flash-reset;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
+
+			spi-nand@1 {
+				compatible = "spi-nand";
+				spi-max-frequency = <40000000>;
+				reg = <1>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
+		};
+	};
+};
+
+&periph_glb {
+	status = "okay";
+};
+
+&serial1 {
+#ifdef CONFIG_CLK_AXERA_V1
+	clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART1>,
+	         <&periph_clk_gate_0 CLK_PERIPH_UART1>;
+#endif
+	clock-names = "apb_pclk", "baudclk";
+	status = "okay";
+};
+
+&serial2 {
+#ifdef CONFIG_CLK_AXERA_V1
+	clocks = <&clk_periph_uart2>, <&pclk_periph_uart2>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART2>,
+	         <&periph_clk_gate_0 CLK_PERIPH_UART2>;
+#endif
+	clock-names = "apb_pclk", "baudclk";
+	status = "okay";
+};
+
+&serial3 {
+#ifdef CONFIG_CLK_AXERA_V1
+	clocks = <&clk_periph_uart3>, <&pclk_periph_uart3>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART3>,
+	         <&periph_clk_gate_0 CLK_PERIPH_UART3>;
+#endif
+	clock-names = "apb_pclk", "baudclk";
+	status = "okay";
+};
+
+&serial4 {
+#ifdef CONFIG_CLK_AXERA_V1
+	clocks = <&clk_periph_uart4>, <&pclk_periph_uart4>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART4>,
+	         <&periph_clk_gate_0 CLK_PERIPH_UART4>;
+#endif
+	clock-names = "apb_pclk", "baudclk";
+	status = "okay";
+};
+
+&serial5 {
+#ifdef CONFIG_CLK_AXERA_V1
+	clocks = <&clk_periph_uart5>, <&pclk_periph_uart5>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART5>,
+	         <&periph_clk_gate_0 CLK_PERIPH_UART5>;
+#endif
+	clock-names = "apb_pclk", "baudclk";
+	status = "okay";
+};
+
+&eth1 {
+	phy-handle = <&phy1>;
+	status = "okay";
+#ifdef CONFIG_CLK_AXERA_V1
+	clocks = <&aclk_main_emac>,
+	         <&clk_periph_emac_ptp>,
+	         <&clk_main_ephy_ref>,
+	         <&clk_main_rmii_phy>,
+	         <&clk_main_rgmii_tx>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	clocks = <&periph_clk_gate_1 ACLK_MAIN_EMAC>,
+	         <&periph_clk_mux_gate CLK_PERIPH_EMAC_PTP_EB>,
+	         <&periph_clk_mux_gate CLK_MAIN_EPHY_REF_EB>,
+	         <&periph_clk_mux_gate CLK_MAIN_RMII_PHY_EB>,
+	         <&periph_clk_mux_gate CLK_MAIN_RGMII_TX_EB>;
+#endif
+	clock-names = "aclk_eqos", "ptp_ref",
+	              "ephy_ref", "rmii_phy",
+	              "rgmii_tx";
+
+	snps,en-tx-lpi-clockgating;
+	snps,en-lpi;
+	snps,write-requests = <2>;
+	snps,read-requests = <16>;
+	snps,burst-map = <0x7>;
+	snps,txpbl = <8>;
+	snps,rxpbl = <2>;
+	dma-coherent;
+
+	mdio {
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+		phy1: phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			device_type = "ethernet-phy";
+			reg = <0x1>;
+		};
+	};
+};
