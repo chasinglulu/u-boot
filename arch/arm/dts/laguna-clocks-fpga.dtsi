@@ -1,0 +1,231 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Device Tree Source for Laguna main domain FPGA clock tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	main-clocks {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		fake_32k: fake_32k {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32000>;
+			clock-output-names = "fake_32k";
+		};
+
+		main_xtal_24m: main_xtal_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "main_xtal_24m";
+		};
+
+		clk_comm_24m: clk_comm_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_comm_24m";
+		};
+
+		clk_flash_24m: clk_flash_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_flash_24m";
+		};
+
+		clk_periph_24m: clk_periph_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_periph_24m";
+		};
+
+		periph_clk_main_rgmii_tx_div2: periph_clk_main_rgmii_tx_div2 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "periph_clk_main_rgmii_tx_div2";
+		};
+
+		clk_periph_emac_ptp_div2: clk_periph_emac_ptp_div2 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "clk_periph_emac_ptp_div2";
+		};
+
+		tclk_sen_timestamp1: tclk_sen_timestamp1 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "tclk_sen_timestamp1";
+		};
+
+		fab_pll_800m: fab_pll_800m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_800m";
+		};
+
+		fab_pll_600m: fab_pll_600m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_600m";
+		};
+
+		fab_pll_500m: fab_pll_500m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_500m";
+		};
+
+		fab_pll_400m: fab_pll_400m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_400m";
+		};
+
+		fab_pll_300m: fab_pll_300m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_300m";
+		};
+
+		fab_pll_200m: fab_pll_200m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_200m";
+		};
+
+		fab_pll_150m: fab_pll_150m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_150m";
+		};
+
+		fab_pll_100m: fab_pll_100m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_100m";
+		};
+
+		fab_pll_80m: fab_pll_80m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_80m";
+		};
+
+		fab_pll_60m: fab_pll_60m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_60m";
+		};
+
+		fab_pll_40m: fab_pll_40m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_40m";
+		};
+
+		fab_pll_24m: fab_pll_24m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_24m";
+		};
+
+		fab_pll_20m: fab_pll_20m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "fab_pll_20m";
+		};
+
+		epll_500m: epll_500m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "epll_500m";
+		};
+
+		epll_250m: epll_250m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "epll_250m";
+		};
+
+		epll_125m: epll_125m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "epll_125m";
+		};
+
+		epll_50m: epll_50m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "epll_50m";
+		};
+
+		epll_25m: epll_25m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "epll_25m";
+		};
+
+		epll_5m: epll_5m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "epll_5m";
+		};
+
+		apll_19p92m: apll_19p92m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "apll_19p92m";
+		};
+
+		apll_16p6m: apll_16p6m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "apll_16p6m";
+		};
+
+		apll_13p28m: apll_13p28m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "apll_13p28m";
+		};
+
+		apll_9p96m: apll_9p96m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "apll_9p96m";
+		};
+	};
+};
