@@ -108,9 +108,9 @@ static int eqos_probe_resources_lua(struct udevice *dev)
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
-	ret = reset_get_by_name(dev, "arst", &eqos->reset_ctl);
+	ret = reset_get_by_name(dev, "emac_arst", &eqos->reset_ctl);
 	if (ret) {
-		pr_err("reset_get_by_name(rst) failed: %d", ret);
+		pr_err("reset_get_by_name(emac_arst) failed: %d", ret);
 		return ret;
 	}
 

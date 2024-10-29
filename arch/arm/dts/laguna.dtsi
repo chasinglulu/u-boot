@@ -1,0 +1,149 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * Laguna SoC Main Domain device tree
+ *
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+ */
+
+/ {
+	model = "Axera Laguna Automotive SoC";
+	compatible = "axera,laguna";
+	#address-cells = <2>;
+	#size-cells = <2>;
+	interrupt-parent = <&gic>;
+
+	aliases {
+		serial1 = &serial1;
+		serial2 = &serial2;
+		serial3 = &serial3;
+		serial4 = &serial4;
+		serial5 = &serial5;
+	};
+
+	firmware {
+		psci: psci {
+			compatible = "arm,psci-0.2";
+			method = "smc";
+			status = "disabled";
+		};
+	};
+
+	gic: interrupt-controller@08000000 {
+		compatible = "arm,gic-400";
+		#interrupt-cells = <3>;
+		#address-cells = <2>;
+		#size-cells = <2>;
+		interrupt-controller;
+		reg = <0x0 0x08001000 0x0 0x1000>,
+			  <0x0 0x08002000 0x0 0x2000>;
+		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	timer {
+		compatible = "arm,armv7-timer";
+		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>,
+				<GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>,
+				<GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>,
+				<GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(8) | IRQ_TYPE_LEVEL_HIGH)>;
+		clock-frequency = <24000000>;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
+		ranges;
+
+		serial1: uart@0E403000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E403000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 167 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <10000000>;
+			resets = <&periph_sysrst_0 PERIPH_UART1_SW_PRST>,
+					 <&periph_sysrst_0 PERIPH_UART1_SW_RST>;
+			reset-names = "apb_prst", "baudrst";
+			syscons = <&uart_xfer_sel 0 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "disabled";
+		};
+
+		serial2: uart@0E404000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E404000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <10000000>;
+			resets = <&periph_sysrst_0 PERIPH_UART2_SW_PRST>,
+					 <&periph_sysrst_0 PERIPH_UART2_SW_RST>;
+			reset-names = "apb_prst", "baudrst";
+			syscons = <&uart_xfer_sel 2 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			status = "disabled";
+		};
+
+		serial3: uart@0E405000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E405000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <10000000>;
+			resets = <&periph_sysrst_0 PERIPH_UART3_SW_PRST>,
+					 <&periph_sysrst_0 PERIPH_UART3_SW_RST>;
+			reset-names = "apb_prst", "baudrst";
+			syscons = <&uart_xfer_sel 4 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			status = "disabled";
+		};
+
+		serial4: uart@0E410000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E410000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <10000000>;
+			resets = <&periph_sysrst_0 PERIPH_UART4_SW_PRST>,
+					 <&periph_sysrst_0 PERIPH_UART4_SW_RST>;
+			reset-names = "apb_prst", "baudrst";
+			syscons = <&uart_xfer_sel 6 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			status = "disabled";
+		};
+
+		serial5: uart@0E411000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x0 0x0E411000 0x0 0x1000>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH>;
+			clock-frequency = <10000000>;
+			resets = <&periph_sysrst_0 PERIPH_UART5_SW_PRST>,
+					 <&periph_sysrst_0 PERIPH_UART5_SW_RST>;
+			reset-names = "apb_prst", "baudrst";
+			syscons = <&uart_xfer_sel 8 UART_XFER_RS232_2LINE>;
+			syscon-names = "xfersel";
+			status = "disabled";
+		};
+
+		eth1: ethernet@0E014000{
+			compatible = "axera,lua-dwmac-eqos";
+			reg = <0x0 0xE014000 0x0 0x4000>;
+			clock-frequency = <10000000>;
+			max-speed = <100>;
+			phy-mode = "gmii";
+			resets = <&periph_sysrst_1 MAIN_EMAC_SW_ARST>;
+			reset-names = "emac_arst";
+			axera,syscon-eth0 = <&periph_glb LAGUNA_SYSCON_PERIPH_EMAC>;
+			axera,syscon-pps = <&periph_glb LAGUNA_SYSCON_PERIPH_EMAC1>;
+			status = "disabled";
+		};
+	};
+};
