@@ -20,6 +20,14 @@
 		serial5 = &serial5;
 	};
 
+	config {
+		env: environment {
+			stdout = "uart@0E403000";
+			stdin = "uart@0E403000";
+			stderr = "uart@0E403000";
+		};
+	};
+
 	firmware {
 		psci: psci {
 			compatible = "arm,psci-0.2";

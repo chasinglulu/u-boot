@@ -168,9 +168,6 @@
 #include <config_distro_bootcmd.h>
 
 #define CONFIG_EXTRA_ENV_SETTINGS                                             \
-		"stdout=serial\0"                                                     \
-		"stdin=serial\0"                                                      \
-		"stderr=serial\0"                                                     \
 		"autoload=0\0"                                                        \
 		"scriptaddr=" __stringify(CONFIG_LUA_SCRIPT_LOAD_ADDR) "\0"           \
 		"fdt_addr_r=" __stringify(CONFIG_LUA_FDT_LOAD_ADDR) "\0"              \
