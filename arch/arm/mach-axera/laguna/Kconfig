@@ -233,7 +233,7 @@ config LUA_SERVERIP
 	string "serverip used for tftpboot"
 	default 10.0.2.5
 	help
-	  specify sever IP address used for tftpboot.
+	  Specify sever IP address used for tftpboot.
 
 config SPL_LUA_TEST
 	bool "Enable Laguna testcases in SPL"
@@ -258,34 +258,20 @@ config LUA_SELECT_UART_FOR_CONSOLE
 	help
 	  This is able to select given UART as console.
 
-config LUA_UART_INDEX
-	int
-	depends on LUA_SELECT_UART_FOR_CONSOLE
-	range 0 5
-	default 1 if LUA_UART1
-	default 0 if LUA_SAFETY_UART0
-
-config DEBUG_UART1_LUA
-	bool
-	depends on LUA_SELECT_UART_FOR_CONSOLE
-
-config DEBUG_UART0_LUA
-	bool
-	depends on LUA_SELECT_UART_FOR_CONSOLE
-
 choice
-	prompt "UART used for console in Laguna"
+	prompt "UART index"
 	depends on LUA_SELECT_UART_FOR_CONSOLE
-	default LUA_UART1
+	default LUA_MAIN_UART1
 
 config LUA_SAFETY_UART0
 	bool "Safety UART0"
-	select DEBUG_UART0_LUA
 	select LUA_SAFETY_INIT
 
-config LUA_UART1
+config LUA_MAIN_UART1
 	bool "Main UART1"
-	select DEBUG_UART1_LUA
+
+config LUA_MAIN_UART2
+	bool "Main UART2"
 
 endchoice
 

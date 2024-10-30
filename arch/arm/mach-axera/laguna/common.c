@@ -17,6 +17,8 @@
 #include <exports.h>
 #include <env.h>
 #include <init.h>
+#include <log.h>
+#include <stdio_dev.h>
 #if IS_ENABLED(CONFIG_MTD) || IS_ENABLED(CONFIG_DM_MTD)
 #include <mtd.h>
 #endif
@@ -58,49 +60,156 @@ void *board_fdt_blob_setup(int *err)
 }
 #endif
 
-int fdtdec_board_setup(const void *fdt_blob)
+#ifdef CONFIG_LUA_SELECT_UART_FOR_CONSOLE
+#if CONFIG_LUA_SAFETY_UART0
+#define CONFIG_LUA_UART_INDEX    0
+#elif CONFIG_LUA_MAIN_UART1
+#define CONFIG_LUA_UART_INDEX    1
+#elif CONFIG_LUA_MAIN_UART2
+#define CONFIG_LUA_UART_INDEX    2
+#endif
+
+#if defined(CONFIG_ENV_IMPORT_FDT) && !defined(CONFIG_SPL_BUILD)
+static int fdt_blob_setup_stdio(void *fdt, const char *name)
 {
-#if defined(CONFIG_LUA_SELECT_UART_FOR_CONSOLE)
-	int node = -1;
-	const char *str, *p;
-	char name[20];
-	int namelen;
-	int idx, ret;
+	int envoffset, i, offset;
+	const char *namep, *data;
+	int ret;
 
-	str = fdtdec_get_chosen_prop(fdt_blob, "stdout-path");
-	if (str) {
-		p = strchr(str, ':');
-		namelen = p ? p - str : strlen(str);
-		memcpy(name, str, namelen);
-		node = fdt_path_offset_namelen(fdt_blob, str, namelen);
-		if (node < 0) {
-			printf("Invalid '%s' node\n", name);
-			return -ENODATA;
+	envoffset = fdt_path_offset(fdt, CONFIG_ENV_FDT_PATH);
+	if (envoffset < 0) {
+		printf("failed to find '%s' node\n", CONFIG_ENV_FDT_PATH);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < MAX_FILES; i++) {
+		for (offset = fdt_first_property_offset(fdt, envoffset);
+			offset > 0;
+			offset = fdt_next_property_offset(fdt, offset)) {
+				data = fdt_getprop_by_offset(fdt, offset,
+					&namep, NULL);
+
+				if (!memcmp(stdio_names[i], namep, strlen(stdio_names[i])))
+					break;
 		}
-
-		idx = name[namelen - 1] - '0';
-		if (idx == CONFIG_LUA_UART_INDEX)
-			return 0;
-
-		snprintf(name, namelen + 1, "serial%d", CONFIG_LUA_UART_INDEX);
-		if (p)
-			memcpy(name + namelen, str + namelen, 20 - namelen);
-
-		/* check for new UART name */
-		node = fdt_path_offset_namelen(fdt_blob, name, namelen);
-		if (node < 0) {
-			printf("Failed to get new '%s' node\n", name);
-			return -ENODATA;
-		}
-
-		node = fdt_path_offset(fdt_blob, "/chosen");
-		ret = fdt_setprop_string((void*)fdt_blob, node, "stdout-path", name);
+		ret = fdt_setprop_string(fdt, envoffset, stdio_names[i], name);
 		if (ret)
 			return ret;
 	}
-#endif
 
 	return 0;
+}
+#else
+static inline int fdt_blob_setup_stdio(void *fdt, const char *name) { return 0; }
+#endif
+
+static int fdt_blob_setup_console(void *fdt)
+{
+	int aliasoffset, offset, node = -1;
+	const char *str, *p, *name;
+	char data[32];
+	int namelen, len;
+	int idx, ret;
+
+	str = fdtdec_get_chosen_prop(fdt, "stdout-path");
+	if (!str) {
+		printf("failed to find 'stdout-path' property\n");
+		return -EINVAL;
+	}
+
+	p = strchr(str, ':');
+	namelen = p ? p - str : strlen(str);
+
+	node = fdt_path_offset_namelen(fdt, str, namelen);
+	if (node < 0) {
+		printf("invaild path '%s'\n", str);
+		return -EINVAL;
+	}
+
+	if (*str != '/') {
+		/*
+		 * Deal with things like
+		 * stdout-path = "serial0:115200n8";
+		 *
+		 * We need to look up the alias and then follow it to
+		 * the correct node.
+		 */
+		idx = str[namelen - 1] - '0';
+		if (idx == CONFIG_LUA_UART_INDEX)
+			return 0;
+
+		assert(namelen < 32);
+		memcpy(data, str, namelen);
+		data[namelen - 1]= '0' + CONFIG_LUA_UART_INDEX;
+		data[namelen] = '\0';
+	} else {
+		/*
+		 * Deal with things like
+		 * stdout-path = "/soc/uart@0E403000:115200n8";
+		 * stdout-path = &serial1;
+		 *
+		 * We need to look up the path and then follow it to
+		 * the correct node.
+		 */
+		aliasoffset = fdt_path_offset(fdt, "/aliases");
+		if (aliasoffset < 0) {
+			printf("failed to find '/aliases' node\n");
+			return -EINVAL;
+		}
+		for (offset = fdt_first_property_offset(fdt, aliasoffset);
+			offset > 0;
+			offset = fdt_next_property_offset(fdt, offset)) {
+				name = fdt_getprop_by_offset(fdt, offset,
+					&p, NULL);
+
+				if (!memcmp(name, str, namelen))
+					break;
+		}
+		if (offset < 0) {
+			printf("failed to find '%s' in aliases properties\n", str);
+			return -ENODATA;
+		}
+
+		len = strlen(p);
+		idx = p[len - 1] - '0';
+		if (idx == CONFIG_LUA_UART_INDEX)
+			return 0;
+
+		memcpy(data, p, len);
+		data[len - 1] = '0' + CONFIG_LUA_UART_INDEX;
+		data[len] = '\0';
+	}
+
+	/* validate new uart name */
+	node = fdt_path_offset_namelen(fdt, data, strlen(data));
+	if (node < 0) {
+		printf("Invaild '%s' node\n", data);
+		return -ENODATA;
+	}
+
+#ifndef CONFIG_SPL_BUILD
+	const char *nodename;
+	nodename = fdt_get_alias_namelen(fdt, data, strlen(data));
+	p = strrchr(nodename, '/');
+	if (p)
+		fdt_blob_setup_stdio(fdt, p + 1);
+#endif
+
+	/* update property data */
+	node = fdt_path_offset(fdt, "/chosen");
+	ret = fdt_setprop_string(fdt, node, "stdout-path", data);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+#else
+static inline int fdt_blob_setup_console(void *fdt) { return 0; }
+#endif
+
+int fdtdec_board_setup(const void *blob)
+{
+	return fdt_blob_setup_console((void *)blob);
 }
 
 void reset_cpu(void)
