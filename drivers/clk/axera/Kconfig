@@ -15,9 +15,11 @@ choice
 	default CLK_AXERA_V2
 
 config CLK_AXERA_V1
+	depends on CLK_CCF
 	bool "V1"
 
 config CLK_AXERA_V2
+	depends on !CLK_CCF
 	bool "V2"
 
 endchoice

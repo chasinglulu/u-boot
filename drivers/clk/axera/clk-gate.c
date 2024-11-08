@@ -81,7 +81,8 @@ static ulong clk_gate_get_rate_v2(struct clk *clk)
 	}
 
 	rate = clk_get_rate(&parent);
-	if (rate == -ENOSYS)
+	if (rate == (ulong)-ENOSYS ||
+	    rate == (ulong)-ENXIO)
 		return 0;
 
 	return rate;
@@ -92,6 +93,7 @@ static ulong clk_gate_set_rate_v2(struct clk *clk, ulong rate)
 	struct udevice *dev = clk->dev;
 	ulong id = clk->id;
 	struct clk parent;
+	ulong freq;
 	int ret;
 
 	ret = clk_get_by_index(dev, id, &parent);
@@ -100,12 +102,13 @@ static ulong clk_gate_set_rate_v2(struct clk *clk, ulong rate)
 		return 0;
 	}
 
-	rate = clk_set_rate(&parent, rate);
-	if (rate == -ENOSYS)
+	freq = clk_set_rate(&parent, rate);
+	if (freq == (ulong)-ENOSYS ||
+	    freq == (ulong)-ENXIO)
 		return 0;
 
-	dev_dbg(dev, "rate = %lu\n", rate);
-	return rate;
+	dev_dbg(dev, "new freq = %lu\n", freq);
+	return freq;
 }
 #elif defined(CONFIG_CLK_AXERA_V1)
 static void clk_gate_endisable(struct clk *clk, int enable)

@@ -12,8 +12,6 @@
 #include <clk-uclass.h>
 #include <asm/io.h>
 #include <linux/clk-provider.h>
-#include <syscon.h>
-#include <regmap.h>
 
 #define MUX_DRV_NAME "clk_mux"
 
@@ -31,58 +29,9 @@ struct clk_mux_priv {
 	uint32_t *clk_parent_nums;
 };
 
-#if defined(CONFIG_CLK_AXERA_V2)
-static int clk_mux_of_xlate_v2(struct clk *clk,
-                struct ofnode_phandle_args *args)
-{
-	if (args->args_count != 1)
-		return -EINVAL;
-
-	clk->id = args->args[0];
-	dev_dbg(clk->dev, "clk id: 0x%lx\n", clk->id);
-
-	return 0;
-}
-
-static int clk_mux_set_parent_v2(struct clk *clk, struct clk *parent)
-{
-	return 0;
-}
-
-ulong clk_mux_get_rate_v2(struct clk *clk)
-{
-	struct udevice *dev = clk->dev;
-	struct clk_mux_priv *priv = dev_get_priv(dev);
-	struct bit_map *map = priv->array + clk->id;
-	struct clk parent;
-	uint32_t reg, index = 0;
-	ulong rate;
-	int ret, i;
-
-	for (i = 0; i < clk->id; i++)
-		index += priv->clk_parent_nums[i];
-
-	reg = readl(priv->base + priv->offset);
-	index += (reg >> map->offset) & BIT(map->width);
-	dev_dbg(dev, "index %u\n", index);
-
-	ret = clk_get_by_index(dev, index, &parent);
-	if (ret) {
-		dev_err(dev, "failed to get '%ld' clock [%d]\n", clk->id, ret);
-		return 0;
-	}
-
-	rate = clk_get_rate(&parent);
-	if (rate == -ENOSYS)
-		return 0;
-
-	dev_dbg(dev, "rate: %lu\n", rate);
-
-	return rate;
-}
-#elif defined(CONFIG_CLK_AXERA_V1)
-static int clk_mux_val_to_index(struct clk *clk, u32 *table, unsigned int flags,
-			 unsigned int val)
+#if defined(CONFIG_CLK_AXERA_V1)
+static int clk_mux_val_to_index(struct clk *clk, u32 *table,
+                unsigned int flags, unsigned int val)
 {
 	struct clk_mux *mux = to_clk_mux(clk);
 	int num_parents = mux->num_parents;
@@ -108,7 +57,8 @@ static int clk_mux_val_to_index(struct clk *clk, u32 *table, unsigned int flags,
 	return val;
 }
 
-static unsigned int __clk_mux_index_to_val(u32 *table, unsigned int flags, u8 index)
+static unsigned int
+__clk_mux_index_to_val(u32 *table, unsigned int flags, u8 index)
 {
 	unsigned int val = index;
 
@@ -138,7 +88,7 @@ static u8 __clk_mux_get_parent(struct clk *clk)
 }
 
 static int clk_fetch_parent_index(struct clk *clk,
-				  struct clk *parent)
+                struct clk *parent)
 {
 	struct clk_mux *mux = to_clk_mux(clk);
 
@@ -209,34 +159,154 @@ static ulong clk_mux_set_rate(struct clk *clk, ulong rate)
 	dev_dbg(clk->dev, "rate=%ld\n", rate);
 	return rate;
 }
-
-static ulong clk_mux_round_rate(struct clk *clk, ulong rate)
+#elif defined(CONFIG_CLK_AXERA_V2)
+static int clk_mux_of_xlate_v2(struct clk *clk,
+                struct ofnode_phandle_args *args)
 {
-	struct clk *parent;
+	if (args->args_count != 1)
+		return -EINVAL;
 
-	if ((clk->flags & CLK_SET_RATE_PARENT) == 0)
-		return -ENOSYS;
+	clk->id = args->args[0];
+	dev_dbg(clk->dev, "clk id: 0x%lx\n", clk->id);
 
-	parent = clk_get_parent(clk);
-	if (IS_ERR(parent))
-		return PTR_ERR(parent);
+	return 0;
+}
 
-	rate = clk_round_rate(parent, rate);
-	dev_dbg(clk->dev, "rate=%ld\n", rate);
+static int clk_mux_set_parent_v2(struct clk *clk, struct clk *parent)
+{
+	struct udevice *dev = clk->dev;
+	struct clk_mux_priv *priv = dev_get_priv(dev);
+	struct bit_map *map;
+	struct clk pclk;
+	uint32_t reg, index = 0;
+	const char *parent_name;
+	int i, num_parents;
+	int ret;
+
+	for (i = 0; i < priv->clk_nums; i++)
+		num_parents += priv->clk_parent_nums[i];
+
+	parent_name = parent->dev->name;
+	for (i = 0; i < num_parents; i++) {
+		ret = clk_get_by_index(dev, i, &pclk);
+		if (ret) {
+			dev_err(dev, "failed to get '%d' clock [%d]\n", i, ret);
+			return -EINVAL;
+		}
+		if (!strcmp(parent_name, pclk.dev->name)) {
+			index = i;
+			break;
+		}
+	}
+
+	for (i = 0; i < priv->clk_nums; i++) {
+		if (index > priv->clk_parent_nums[i])
+			index -= priv->clk_parent_nums[i];
+		else
+			break;
+	}
+	dev_dbg(dev, "index %u\n", index);
+
+	map = priv->array + i;
+	reg = readl(priv->base + priv->offset);
+	reg &= ~((BIT(map->width) - 1) << map->offset);
+	reg |= (index & (BIT(map->width) - 1)) << map->offset;
+	writel(reg, priv->base + priv->offset);
+
+	return 0;
+}
+
+static ulong clk_mux_set_rate_v2(struct clk *clk, ulong rate)
+{
+	struct udevice *dev = clk->dev;
+	struct clk_mux_priv *priv = dev_get_priv(dev);
+	struct bit_map *map;
+	struct clk parent;
+	uint32_t reg, index = 0;
+	ulong freq;
+	int count;
+	int ret, i;
+
+	if (!dev)
+		return -ENXIO;
+
+	count = dev_read_string_count(dev, "clock-output-names");
+	assert(clk->id < count);
+
+	for (i = 0; i < clk->id; i++)
+		index += priv->clk_parent_nums[i];
+
+	map = priv->array + clk->id;
+	reg = readl(priv->base + priv->offset);
+	index += (reg >> map->offset) & (BIT(map->width) - 1);
+	dev_dbg(dev, "index %u\n", index);
+
+	ret = clk_get_by_index(dev, index, &parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%d' clock [%d]\n", index, ret);
+		return 0;
+	}
+
+	freq = clk_set_rate(&parent, rate);
+	if (rate == (ulong)-ENOSYS ||
+	    rate == (ulong)-ENXIO)
+		return 0;
+
+	dev_dbg(dev, "new freq: %lu\n", freq);
+	return rate;
+}
+
+static ulong clk_mux_get_rate_v2(struct clk *clk)
+{
+	struct udevice *dev = clk->dev;
+	struct clk_mux_priv *priv = dev_get_priv(dev);
+	struct bit_map *map;
+	struct clk parent;
+	uint32_t reg, index = 0;
+	ulong rate;
+	int count;
+	int ret, i;
+
+	if (!dev)
+		return -ENXIO;
+
+	count = dev_read_string_count(dev, "clock-output-names");
+	assert(clk->id < count);
+
+	for (i = 0; i < clk->id; i++)
+		index += priv->clk_parent_nums[i];
+
+	map = priv->array + clk->id;
+	reg = readl(priv->base + priv->offset);
+	index += (reg >> map->offset) & BIT(map->width);
+	dev_dbg(dev, "index %u\n", index);
+
+	ret = clk_get_by_index(dev, index, &parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%d' clock [%d]\n", index, ret);
+		return 0;
+	}
+
+	rate = clk_get_rate(&parent);
+	if (rate == (ulong)-ENOSYS ||
+	    rate == (ulong)-ENXIO)
+		return 0;
+
+	dev_dbg(dev, "rate: %lu\n", rate);
 	return rate;
 }
 #endif
 
 const struct clk_ops axera_clk_mux_ops = {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	.set_parent = clk_mux_set_parent,
 	.get_rate = clk_generic_get_rate,
 	.set_rate = clk_mux_set_rate,
-	.round_rate = clk_mux_round_rate,
 	.of_xlate = clk_mux_of_xlate,
-#else
+#elif defined(CONFIG_CLK_AXERA_V2)
 	.set_parent = clk_mux_set_parent_v2,
 	.get_rate = clk_mux_get_rate_v2,
+	.set_rate = clk_mux_set_rate_v2,
 	.of_xlate = clk_mux_of_xlate_v2,
 #endif
 };
@@ -283,7 +353,7 @@ static int clk_mux_probe(struct udevice *dev)
 	}
 
 	priv->clk_nums = dev_read_string_count(dev, "clock-output-names");
-	dev_dbg(dev, "clk total: %d", priv->clk_nums);
+	dev_dbg(dev, "clk total: %d\n", priv->clk_nums);
 	assert(priv->clk_nums > 0);
 
 	priv->array = kzalloc(priv->clk_nums * sizeof(struct bit_map), GFP_KERNEL);
@@ -323,10 +393,10 @@ U_BOOT_DRIVER(axera_clk_mux) = {
 
 #if defined(CONFIG_CLK_AXERA_V1)
 static struct clk *__clk_hw_register_mux_table(struct device *dev, const char *name,
-		const char * const *parent_names, u8 num_parents,
-		unsigned long flags,
-		void __iomem *reg, u8 shift, u32 mask,
-		u8 clk_mux_flags, u32 *table)
+        const char * const *parent_names, u8 num_parents,
+        unsigned long flags,
+        void __iomem *reg, u8 shift, u32 mask,
+        u8 clk_mux_flags, u32 *table)
 {
 	struct clk_mux *mux;
 	struct clk *clk;
@@ -377,10 +447,10 @@ static struct clk *__clk_hw_register_mux_table(struct device *dev, const char *n
 }
 
 static struct clk *clk_register_mux_table(struct device *dev, const char *name,
-		const char * const *parent_names, u8 num_parents,
-		unsigned long flags,
-		void __iomem *reg, u8 shift, u32 mask,
-		u8 clk_mux_flags, u32 *table)
+        const char * const *parent_names, u8 num_parents,
+        unsigned long flags,
+        void __iomem *reg, u8 shift, u32 mask,
+        u8 clk_mux_flags, u32 *table)
 {
 	struct clk *clk;
 
@@ -393,16 +463,16 @@ static struct clk *clk_register_mux_table(struct device *dev, const char *name,
 }
 
 static struct clk *__clk_register_mux(struct device *dev, const char *name,
-		const char * const *parent_names, u8 num_parents,
-		unsigned long flags,
-		void __iomem *reg, u8 shift, u8 width,
-		u8 clk_mux_flags)
+        const char * const *parent_names, u8 num_parents,
+        unsigned long flags,
+        void __iomem *reg, u8 shift, u8 width,
+        u8 clk_mux_flags)
 {
 	u32 mask = BIT(width) - 1;
 
 	return clk_register_mux_table(dev, name, parent_names, num_parents,
-				      flags, reg, shift, mask, clk_mux_flags,
-				      NULL);
+	                flags, reg, shift, mask, clk_mux_flags,
+	                NULL);
 }
 
 static int mux_clk_bind(struct udevice *dev)
@@ -451,13 +521,13 @@ static int mux_clk_bind(struct udevice *dev)
 		}
 
 		count = ofnode_count_phandle_with_args(subnode, "clocks",
-							"#clock-cells", 0);
+		                "#clock-cells", 0);
 		parents = kzalloc(count * sizeof(parents), GFP_KERNEL);
 
 		for (i = 0; i < count; i++) {
 			ret = ofnode_parse_phandle_with_args(subnode, "clocks",
-						"#clock-cells", 0,
-						i, &args);
+			            "#clock-cells", 0,
+			            i, &args);
 
 			parents[i] = ofnode_get_name(args.node);
 		}
@@ -466,8 +536,8 @@ static int mux_clk_bind(struct udevice *dev)
 			flags |= CLK_SET_RATE_PARENT;
 
 		clk = __clk_register_mux(NULL, name, parents,
-				count, flags, (void *)base + offset,
-				shift, width, 0);
+		            count, flags, (void *)base + offset,
+		            shift, width, 0);
 		if (IS_ERR(clk))
 			dev_warn(dev, "Failed to register '%s' clk\n", name);
 

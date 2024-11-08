@@ -21,6 +21,8 @@
 #include <linux/clk-provider.h>
 #include <linux/err.h>
 
+#define PLL_DRV_NAME "clk_pll"
+
 struct pll_clk {
 	uint32_t stat;
 	uint32_t cfg0;
@@ -144,11 +146,28 @@ static int pll_clk_of_to_plat(struct udevice *dev)
 	return 0;
 }
 
-U_BOOT_DRIVER(ax_clk_pll) = {
-	.name	= "ax_clk_pll",
+U_BOOT_DRIVER(axera_clk_pll) = {
+	.name	= PLL_DRV_NAME,
 	.id	= UCLASS_CLK,
 	.ops	= &pll_clk_ops,
 	.of_to_plat = pll_clk_of_to_plat,
 	.priv_auto = sizeof(struct pll_clk_priv),
 	.flags = DM_FLAG_PRE_RELOC,
+};
+
+static int pll_clk_bind(struct udevice *dev)
+{
+	return 0;
+}
+
+static const struct udevice_id pll_clk_of_match[] = {
+	{ .compatible = "axera,lua-pll-clocks" },
+	{ /* sentinel */ },
+};
+
+U_BOOT_DRIVER(pll_clk) = {
+	.name = "pll_clock",
+	.id = UCLASS_NOP,
+	.of_match = pll_clk_of_match,
+	.bind = pll_clk_bind,
 };

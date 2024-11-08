@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
-#define LOG_DEBUG
+
 #include <common.h>
 #include <clk.h>
 #include <clk-uclass.h>
@@ -16,13 +16,25 @@
 #include <linux/bug.h>
 #include <linux/clk-provider.h>
 #include <linux/kernel.h>
-#include <syscon.h>
-#include <regmap.h>
 
-#define DIV_DRV_NAME "clk_div"
+#define DIV_DRV_NAME              "clk_div"
+#define CLK_DIVIVER_UPDATE_BIT    BIT(31)
 
-#define CLK_DIVIVER_UPDATE_BIT   BIT(31)
+struct bit_map {
+	uint32_t offset;
+	uint32_t width;
+	uint32_t update;
+};
 
+struct clk_div_priv {
+	fdt_addr_t base;
+	uint32_t offset;
+	uint32_t mask;
+	uint32_t clk_nums;
+	struct bit_map *array;
+};
+
+#if defined(CONFIG_CLK_AXERA_V1)
 static unsigned int __clk_divider_get_table_div(const struct clk_div_table *table,
 				       unsigned int val)
 {
@@ -66,7 +78,7 @@ static unsigned long __divider_recalc_rate(struct clk *hw, unsigned long parent_
 	return DIV_ROUND_UP_ULL((u64)parent_rate, div);
 }
 
-static ulong clk_divider_recalc_rate(struct clk *clk)
+static ulong clk_divider_get_rate(struct clk *clk)
 {
 	struct clk_divider *divider = to_clk_divider(clk);
 	unsigned long parent_rate = clk_get_parent_rate(clk);
@@ -173,19 +185,182 @@ static ulong clk_divider_set_rate(struct clk *clk, unsigned long rate)
 
 	return clk_get_rate(clk);
 }
+#elif defined(CONFIG_CLK_AXERA_V2)
+static int clk_divider_of_xlate_v2(struct clk *clk,
+                struct ofnode_phandle_args *args)
+{
+	if (args->args_count != 1)
+		return -EINVAL;
 
-const struct clk_ops ax_clk_divider_ops = {
-	.get_rate = clk_divider_recalc_rate,
+	clk->id = args->args[0];
+	dev_dbg(clk->dev, "clk id: 0x%lx\n", clk->id);
+
+	return 0;
+}
+
+static ulong clk_divider_set_rate_v2(struct clk *clk, unsigned long rate)
+{
+	struct udevice *dev = clk->dev;
+	struct clk_div_priv *priv = dev_get_priv(dev);
+	struct bit_map *map;
+	struct clk parent;
+	uint64_t parent_rate, freq;
+	int ret, count;
+	uint32_t reg;
+	uint16_t divn;
+
+	count = dev_read_string_count(dev, "clock-output-names");
+	assert(clk->id < count);
+
+	ret = clk_get_by_index(dev, clk->id, &parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%ld' clock [%d]\n", clk->id, ret);
+		return 0;
+	}
+
+	dev_dbg(dev, "parent_rate: %llu\n", parent_rate);
+	parent_rate = clk_get_rate(&parent);
+	if (parent_rate == (ulong)-ENOSYS ||
+	      parent_rate == (ulong)-ENXIO)
+		return 0;
+
+	divn = DIV_ROUND_UP_ULL(parent_rate, rate);
+	divn = divn > 1 ? (divn - 1) : 0;
+
+	map = priv->array + clk->id;
+	reg = readl(priv->base + priv->offset);
+	reg &= ~((BIT(map->width) - 1) << map->offset);
+	reg |= (divn & (BIT(map->width) - 1)) << map->offset;
+	reg |= BIT(map->update);
+	writel(reg, priv->base + priv->offset);
+	udelay(10);
+	reg = readl(priv->base + priv->offset);
+	reg &= ~BIT(map->update);
+	writel(reg, priv->base + priv->offset);
+
+	freq = clk_get_rate(clk);
+	if (freq == (ulong)-ENOSYS ||
+	      freq == (ulong)-ENXIO)
+		return 0;
+
+	dev_dbg(dev, "rate: %llu\n", freq);
+	return freq;
+}
+
+static ulong clk_divider_get_rate_v2(struct clk *clk)
+{
+	struct udevice *dev = clk->dev;
+	struct clk_div_priv *priv = dev_get_priv(dev);
+	struct bit_map *map;
+	struct clk parent;
+	uint64_t rate;
+	int ret, count;
+	uint32_t reg;
+	uint16_t divn;
+
+	count = dev_read_string_count(dev, "clock-output-names");
+	assert(clk->id < count);
+
+	ret = clk_get_by_index(dev, clk->id, &parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%ld' clock [%d]\n", clk->id, ret);
+		return 0;
+	}
+
+	rate = clk_get_rate(&parent);
+	if (rate == (ulong)-ENOSYS ||
+	      rate == (ulong)-ENXIO)
+		return 0;
+
+	map = priv->array + clk->id;
+	reg = readl(priv->base + priv->offset);
+	divn = ((reg >> map->offset) & (BIT(map->width) - 1)) + 1;
+	do_div(rate, divn);
+
+	dev_dbg(dev, "rate: %llu\n", rate);
+	return rate;
+}
+#endif
+
+const struct clk_ops axera_clk_div_ops = {
+#if defined(CONFIG_CLK_AXERA_V1)
+	.get_rate = clk_divider_get_rate,
 	.set_rate = clk_divider_set_rate,
+#elif defined(CONFIG_CLK_AXERA_V2)
+	.get_rate = clk_divider_get_rate_v2,
+	.set_rate = clk_divider_set_rate_v2,
+	.of_xlate = clk_divider_of_xlate_v2,
+#endif
 };
+
+static const struct udevice_id clk_div_of_ids[] = {
+	{ .compatible = "axera,lua-clock-div" },
+	{ /* sentinel */ },
+};
+
+static int clk_divider_probe(struct udevice *dev)
+{
+	struct clk_div_priv *priv;
+	ofnode regmap;
+	uint32_t phandle;
+	int ret;
+
+	if (device_is_compatible(dev, DIV_DRV_NAME) ||
+	     !device_is_compatible(dev, clk_div_of_ids[0].compatible))
+		return 0;
+
+	priv = dev_get_priv(dev);
+	ret = ofnode_read_u32(dev_ofnode(dev), "regmap", &phandle);
+	if (ret) {
+		dev_err(dev, "Failed to find 'regmap' property\n");
+		return ret;
+	}
+	regmap = ofnode_get_by_phandle(phandle);
+	if (!ofnode_valid(regmap)) {
+		dev_dbg(dev, "unable to find regmap phandle\n");
+		return -EINVAL;
+	}
+	priv->base = ofnode_get_addr(regmap);
+
+	priv->offset = dev_read_u32_default(dev, "offset", -1);
+	if (priv->offset == ~0U) {
+		dev_err(dev, "Failed to get 'offset' property\n");
+		return -ENODATA;
+	}
+
+	priv->mask = dev_read_u32_default(dev, "mask", 0);
+	if (!priv->mask) {
+		dev_err(dev, "Failed to get 'mask' property\n");
+		return -ENODATA;
+	}
+
+	priv->clk_nums = dev_read_string_count(dev, "clock-output-names");
+	dev_dbg(dev, "clk total: %d\n", priv->clk_nums);
+	assert(priv->clk_nums > 0);
+
+	priv->array = kzalloc(priv->clk_nums * sizeof(struct bit_map), GFP_KERNEL);
+	if (IS_ERR_OR_NULL(priv->array)) {
+		dev_err(dev, "Out of memory\n");
+		return -ENOMEM;
+	}
+	dev_read_u32_array(dev, "bit-map", (uint32_t *)priv->array, priv->clk_nums * 3);
+
+	return 0;
+}
 
 U_BOOT_DRIVER(ax_clk_divider) = {
 	.name = DIV_DRV_NAME,
 	.id = UCLASS_CLK,
-	.ops = &ax_clk_divider_ops,
+	.of_match = clk_div_of_ids,
+	.ops = &axera_clk_div_ops,
+	.probe = clk_divider_probe,
 	.flags = DM_FLAG_PRE_RELOC,
+#ifdef CONFIG_CLK_AXERA_V2
+	.priv_auto = sizeof(struct clk_div_priv),
+#endif
 };
 
+#if defined(CONFIG_CLK_AXERA_V1)
 static struct clk *_register_divider(struct device *dev, const char *name,
 		const char *parent_name, unsigned long flags,
 		void __iomem *reg, u8 shift, u8 width,
@@ -234,8 +409,8 @@ static struct clk *__clk_register_divider(struct device *dev, const char *name,
 {
 	struct clk *clk;
 
-	clk =  _register_divider(dev, name, parent_name, flags, reg, shift,
-				 width, clk_divider_flags, NULL);
+	clk = _register_divider(dev, name, parent_name, flags, reg, shift,
+	                width, clk_divider_flags, NULL);
 	if (IS_ERR(clk))
 		return ERR_CAST(clk);
 	return clk;
@@ -244,22 +419,26 @@ static struct clk *__clk_register_divider(struct device *dev, const char *name,
 static int divider_clk_bind(struct udevice *dev)
 {
 	struct ofnode_phandle_args args;
-	ofnode subnode;
-	struct clk *clk;
-	const char *name;
-	void __iomem *reg;
-	struct regmap *regmap;
-	uint32_t offset;
 	int shift, width, update;
+	ofnode subnode, regmap;
+	const char *name;
+	uint32_t phandle, offset;
+	struct clk *clk;
+	fdt_addr_t base;
 	int ret;
 
-	regmap = syscon_regmap_lookup_by_phandle(dev, "regmap");
-	if (IS_ERR(regmap)) {
-		dev_err(dev, "Failed to get regmap\n");
-		return -ENODEV;
+	ret = ofnode_read_u32(dev_ofnode(dev), "regmap", &phandle);
+	if (ret) {
+		dev_err(dev, "Failed to find 'regmap' property\n");
+		return ret;
 	}
-	offset = dev_read_u32_default(dev, "offset", 0);
-	reg = (void *)regmap->ranges->start;
+
+	regmap = ofnode_get_by_phandle(phandle);
+	if (!ofnode_valid(regmap)) {
+		dev_dbg(dev, "unable to find regmap phandle\n");
+		return -EINVAL;
+	}
+	base = ofnode_get_addr(regmap);
 
 	dev_for_each_subnode(subnode, dev) {
 		name = ofnode_get_name(subnode);
@@ -282,12 +461,12 @@ static int divider_clk_bind(struct udevice *dev)
 		}
 
 		ret = ofnode_parse_phandle_with_args(subnode, "clocks",
-							"#clock-cells", 0,
-							0, &args);
+		                    "#clock-cells", 0,
+		                    0, &args);
 
 		clk = __clk_register_divider(NULL, name, ofnode_get_name(args.node),
-					CLK_DIVIVER_UPDATE_BIT, reg + offset,
-					shift, width, 0);
+		               CLK_DIVIVER_UPDATE_BIT, (void *)base + offset,
+		               shift, width, 0);
 		if (IS_ERR(clk)) {
 			dev_warn(dev, "Failed to register '%s' clk\n", name);
 			continue;
@@ -301,7 +480,7 @@ static int divider_clk_bind(struct udevice *dev)
 }
 
 static const struct udevice_id divider_clk_of_match[] = {
-	{.compatible = "axera,lua-divider-clock"},
+	{ .compatible = "axera,lua-divider-clocks" },
 	{ /* sentinel */ }
 };
 
@@ -311,3 +490,4 @@ U_BOOT_DRIVER(divider_clk) = {
 	.of_match = divider_clk_of_match,
 	.bind = divider_clk_bind,
 };
+#endif
