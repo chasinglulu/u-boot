@@ -9,4 +9,5 @@ ifdef CONFIG_SPL_BUILD
 obj-y += spl.o
 else
 obj-y += cpu.o
+obj-$(CONFIG_CMD_CLK) += clk.o
 endif

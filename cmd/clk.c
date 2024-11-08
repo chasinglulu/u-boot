@@ -88,8 +88,34 @@ int __weak soc_clk_dump(void)
 
 	return 0;
 }
+
+int __weak soc_clk_setfreq(struct udevice *dev, int idx, long rate)
+{
+	struct clk *clk;
+
+	clk = dev_get_clk_ptr(dev);
+	if (!clk) {
+		printf("clock '%s' not found.\n", dev->name);
+		return -EINVAL;
+	}
+
+	rate = clk_set_rate(clk, rate);
+	if (rate < 0) {
+		printf("set_rate failed: %ld\n", rate);
+		return -ENXIO;
+	}
+
+	printf("set_rate returns %lu\n", rate);
+	return 0;
+}
 #else
 int __weak soc_clk_dump(void)
+{
+	puts("Not implemented\n");
+	return 1;
+}
+
+int __weak soc_clk_setfreq(struct udevice *dev, int idx, long rate)
 {
 	puts("Not implemented\n");
 	return 1;
@@ -110,43 +136,47 @@ static int do_clk_dump(struct cmd_tbl *cmdtp, int flag, int argc,
 	return ret;
 }
 
-#if CONFIG_IS_ENABLED(DM) && CONFIG_IS_ENABLED(CLK)
 static int do_clk_setfreq(struct cmd_tbl *cmdtp, int flag, int argc,
 			  char *const argv[])
 {
-	struct clk *clk = NULL;
-	s32 freq;
 	struct udevice *dev;
+	long freq;
+	int ret, idx = 0;
+	const char *p;
+	int len;
+	char *name;
 
 	if (argc != 3)
 		return CMD_RET_USAGE;
 
+	p = strchr(argv[1], ':');
+	if (p) {
+		len = p - argv[1] + 1;
+		idx = dectoul(p + 1, NULL);
+	} else
+		len = strlen(argv[1]) + 1;
+
+	name = strndup(argv[1], len);
+	name[len - 1] = '\0';
+
+	if (uclass_get_device_by_name(UCLASS_CLK, name, &dev)) {
+		printf("Invaild device name '%s'\n", name);
+		return CMD_RET_FAILURE;
+	}
+
 	freq = dectoul(argv[2], NULL);
-
-	if (!uclass_get_device_by_name(UCLASS_CLK, argv[1], &dev))
-		clk = dev_get_clk_ptr(dev);
-
-	if (!clk) {
-		printf("clock '%s' not found.\n", argv[1]);
+	ret = soc_clk_setfreq(dev, idx, freq);
+	if (ret < 0) {
+		printf("Clock setfreq error %d\n", ret);
 		return CMD_RET_FAILURE;
 	}
 
-	freq = clk_set_rate(clk, freq);
-	if (freq < 0) {
-		printf("set_rate failed: %d\n", freq);
-		return CMD_RET_FAILURE;
-	}
-
-	printf("set_rate returns %u\n", freq);
 	return 0;
 }
-#endif
 
 static struct cmd_tbl cmd_clk_sub[] = {
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_clk_dump, "", ""),
-#if CONFIG_IS_ENABLED(DM) && CONFIG_IS_ENABLED(CLK)
 	U_BOOT_CMD_MKENT(setfreq, 3, 1, do_clk_setfreq, "", ""),
-#endif
 };
 
 static int do_clk(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -172,7 +202,7 @@ static int do_clk(struct cmd_tbl *cmdtp, int flag, int argc,
 #ifdef CONFIG_SYS_LONGHELP
 static char clk_help_text[] =
 	"dump - Print clock frequencies\n"
-	"clk setfreq [clk] [freq] - Set clock frequency";
+	"clk setfreq [clk:index] [freq] - Set indexed clock frequency";
 #endif
 
 U_BOOT_CMD(clk, 4, 1, do_clk, "CLK sub-system", clk_help_text);
