@@ -148,7 +148,7 @@
 };
 
 &serial1 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
 #elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART1>,
@@ -159,7 +159,7 @@
 };
 
 &serial2 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart2>, <&pclk_periph_uart2>;
 #elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART2>,
@@ -181,7 +181,7 @@
 };
 
 &serial4 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart4>, <&pclk_periph_uart4>;
 #elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART4>,
@@ -192,7 +192,7 @@
 };
 
 &serial5 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart5>, <&pclk_periph_uart5>;
 #elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART5>,
@@ -205,12 +205,12 @@
 &eth1 {
 	phy-handle = <&phy1>;
 	status = "okay";
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&aclk_main_emac>,
-	         <&clk_periph_emac_ptp>,
-	         <&clk_main_ephy_ref>,
-	         <&clk_main_rmii_phy>,
-	         <&clk_main_rgmii_tx>;
+	         <&clk_periph_emac_ptp_eb>,
+	         <&clk_main_ephy_ref_eb>,
+	         <&clk_main_rmii_phy_eb>,
+	         <&clk_main_rgmii_tx_eb>;
 #elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_1 ACLK_MAIN_EMAC>,
 	         <&periph_clk_mux_gate CLK_PERIPH_EMAC_PTP_EB>,

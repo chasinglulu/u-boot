@@ -14,16 +14,20 @@
 
 #include "laguna-global-ctrl.dtsi"
 #include "laguna-clocks-fpga.dtsi"
-#ifdef CONFIG_CLK_AXERA_V2
+#if defined(CONFIG_CLK_AXERA_V2)
 #include "laguna-cru-v2.dtsi"
-#else
+#elif defined(CONFIG_CLK_AXERA_V1)
 #include "laguna-cru.dtsi"
 #endif
 #include "laguna.dtsi"
 
-#if defined(CONFIG_LUA_SAFETY_INIT) && defined(CONFIG_CLK_AXERA_V2)
+#if defined(CONFIG_LUA_SAFETY_INIT)
 #include "laguna-safety-clocks-fpga.dtsi"
+#if defined(CONFIG_CLK_AXERA_V2)
 #include "laguna-safety-cru-v2.dtsi"
+#elif defined(CONFIG_CLK_AXERA_V1)
+#include "laguna-safety-cru.dtsi"
+#endif
 #include "laguna-safety.dtsi"
 #endif
 
@@ -46,9 +50,9 @@
 };
 
 &serial1 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
-#else
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART1>,
 	         <&periph_clk_gate_0 CLK_PERIPH_UART1>;
 #endif
@@ -57,9 +61,9 @@
 };
 
 &serial2 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart2>, <&pclk_periph_uart2>;
-#else
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART2>,
 	         <&periph_clk_gate_0 CLK_PERIPH_UART2>;
 #endif
@@ -68,9 +72,9 @@
 };
 
 &serial3 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart3>, <&pclk_periph_uart3>;
-#else
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART3>,
 	         <&periph_clk_gate_0 CLK_PERIPH_UART3>;
 #endif
@@ -79,9 +83,9 @@
 };
 
 &serial4 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart4>, <&pclk_periph_uart4>;
-#else
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART4>,
 	         <&periph_clk_gate_0 CLK_PERIPH_UART4>;
 #endif
@@ -90,9 +94,9 @@
 };
 
 &serial5 {
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart5>, <&pclk_periph_uart5>;
-#else
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART5>,
 	         <&periph_clk_gate_0 CLK_PERIPH_UART5>;
 #endif
@@ -103,13 +107,13 @@
 &eth1 {
 	phy-handle = <&phy0>;
 	status = "okay";
-#ifdef CONFIG_CLK_AXERA_V1
+#if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&aclk_main_emac>,
-	         <&clk_periph_emac_ptp>,
-	         <&clk_main_ephy_ref>,
-	         <&clk_main_rmii_phy>,
-	         <&clk_main_rgmii_tx>;
-#else
+	         <&clk_periph_emac_ptp_eb>,
+	         <&clk_main_ephy_ref_eb>,
+	         <&clk_main_rmii_phy_eb>,
+	         <&clk_main_rgmii_tx_eb>;
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&periph_clk_gate_1 ACLK_MAIN_EMAC>,
 	         <&periph_clk_mux_gate CLK_PERIPH_EMAC_PTP_EB>,
 	         <&periph_clk_mux_gate CLK_MAIN_EPHY_REF_EB>,
@@ -131,14 +135,18 @@
 	};
 };
 
-#if defined(CONFIG_LUA_SAFETY_INIT) && defined(CONFIG_CLK_AXERA_V2)
+#if defined(CONFIG_LUA_SAFETY_INIT)
 &safety_glb {
 	status = "okay";
 };
 
 &serial0 {
+#if defined(CONFIG_CLK_AXERA_V1)
+	clocks = <&pclk_safe_uart0>, <&clk_safe_uart0>;
+#elif defined(CONFIG_CLK_AXERA_V2)
 	clocks = <&safety_clk_gate_1 PCLK_SAFE_UART0>,
 	         <&safety_clk_gate_1 CLK_SAFE_UART0>;
+#endif
 	clock-names = "apb_pclk", "baudclk";
 	status = "okay";
 };
