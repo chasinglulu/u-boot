@@ -6,7 +6,7 @@
  */
 
 / {
-	main-clocks {
+	main_clocks {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -46,11 +46,11 @@
 			clock-output-names = "clk_periph_24m";
 		};
 
-		periph_clk_main_rgmii_tx_div2: periph_clk_main_rgmii_tx_div2 {
+		clk_cpu_24m: clk_cpu_24m {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <10000000>;
-			clock-output-names = "periph_clk_main_rgmii_tx_div2";
+			clock-output-names = "clk_cpu_24m";
 		};
 
 		clk_periph_emac_ptp_div2: clk_periph_emac_ptp_div2 {
@@ -200,6 +200,13 @@
 			clock-output-names = "epll_5m";
 		};
 
+		apll_996m: apll_996m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "apll_996m";
+		};
+
 		apll_19p92m: apll_19p92m {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
@@ -226,6 +233,20 @@
 			#clock-cells = <0>;
 			clock-frequency = <10000000>;
 			clock-output-names = "apll_9p96m";
+		};
+
+		cpu_pll_1296m: cpu_pll_1296m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "cpu_pll_1296m";
+		};
+
+		npu_pll_996m: npu_pll_996m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "npu_pll_996m";
 		};
 	};
 };

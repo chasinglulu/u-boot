@@ -203,6 +203,22 @@
 #define PCLK_SAFE_I2C10                 29
 #define CLK_SAFE_I2C10                  30
 
+/* safety subsystem top clk_mux_0 register */
+#define CLK_SAFE_FOSU                   0
+
+#define CLK_SAFE_FOSU_OFFSET            0
+#define CLK_SAFE_FOSU_WIDTH             1
+
+/* safety subsystem top clk_m_eb_0 register */
+#define CLK_SAFE_FOSU_EB                0
+
+/* safety subsystem top clk_g_eb_0 register */
+#define PCLK_SAFE_PINREG                0
+#define CLK_SAFE_LPC                    1
+#define CLK_SAFE_EFS_CTRL0              2
+#define CLK_SAFE_EFS_CTRL1              3
+#define PCLK_SAFETY_PLL_CTRL            4
+
 /* common subsystem clk_mux_0 register */
 #define ACLK_TOP0                       0
 #define ACLK_TOP1                       1
@@ -267,6 +283,44 @@
 #define CLK_DEB_GPIO                    28
 #define CLK_COMM_TLB                    29
 #define PCLK_COMM_CLK_MNR               30
+
+/* cpu subsystem clk_mux_0 register */
+#define CLK_CPU0                        0
+#define CLK_CPU1                        1
+#define CLK_CPU2                        2
+#define CLK_CPU3                        3
+#define CLK_DSU                         4
+#define CLK_DSU_PERIPH                  5
+
+#define CLK_CPU0_PARENT_NUM             3
+#define CLK_CPU1_PARENT_NUM             3
+#define CLK_CPU2_PARENT_NUM             3
+#define CLK_CPU3_PARENT_NUM             3
+#define CLK_DSU_PARENT_NUM              4
+#define CLK_DSU_PERIPH_PARENT_NUM       2
+
+#define CLK_CPU0_OFFSET                 0
+#define CLK_CPU1_OFFSET                 2
+#define CLK_CPU2_OFFSET                 4
+#define CLK_CPU3_OFFSET                 6
+#define CLK_DSU_OFFSET                  8
+#define CLK_DSU_PERIPH_OFFSET           10
+#define CLK_CPU0_WIDTH                  2
+#define CLK_CPU1_WIDTH                  2
+#define CLK_CPU2_WIDTH                  2
+#define CLK_CPU3_WIDTH                  2
+#define CLK_DSU_WIDTH                   2
+#define CLK_DSU_PERIPH_WIDTH            2
+
+/* cpu subsystem clk_g_eb_0 register */
+#define CLK_CPU_CORE0                   0
+#define CLK_CPU_CORE1                   1
+#define CLK_CPU_CORE2                   2
+#define CLK_CPU_CORE3                   3
+#define SCLK_DSU                        4
+#define CLK_CPU_DBG                     5
+#define ATGICCLK_CPU                    6
+#define CLK_CPU_ROSC                    7
 
 /* flash subsystem clk_mux_0 register */
 #define CLK_FLASH_GLB                   0

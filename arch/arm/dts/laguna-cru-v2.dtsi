@@ -6,7 +6,7 @@
  */
 
 / {
-	main-cru-v2 {
+	main_crus_v2 {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -233,7 +233,7 @@
 			#size-cells = <1>;
 
 			periph_clk_div: periph_clk_div {
-				compatible = "axera,lua-clk-div";
+				compatible = "axera,lua-clock-div";
 				regmap = <&periph_cru>;
 				#clock-cells = <1>;
 				offset = <LAGUNA_PERIPH_CLK_M_DIV_0>;
@@ -434,6 +434,22 @@
 				mask = <0x3>;
 				assert-high = <1>;
 			};
+		};
+	};
+
+	fixed_factor_clocks {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		periph_clk_main_rgmii_tx_div2: periph_clk_main_rgmii_tx_div2 {
+			compatible = "axera,lua-clk-fixed-factor";
+			#clock-cells = <0>;
+			clocks = <&periph_clk_mux CLK_MAIN_RGMII_TX>;
+			clock-names = "clk_main_rgmii_tx_mux";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "periph_clk_main_rgmii_tx_div2";
 		};
 	};
 };
