@@ -7,7 +7,7 @@
  */
 
 / {
-	safety-cru-v2 {
+	safety_crus_v2 {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -98,22 +98,22 @@
 				#clock-cells = <1>;
 				offset = <LAGUNA_SAFETY_CLK_G_EB_0>;
 				mask = <0xFFFFFFFF>;
-				clocks = <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				clocks = <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_r5f_div>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
-				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux_gate CLK_SAFE_8M_EB>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>;
+				         <&clk_safe_24m>, <&clk_safe_r5f_div>,
+				         <&safety_clk_mux_gate CLK_SAFE_8M_EB>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>;
 				clock-names = "pclk_safe_spi_s_eb", "clk_safe_spi_s_eb",
 				              "hclk_safe_qspi_eb", "aclk_safe_emac_eb",
 				              "pclk_safe_axera_sw_int1_eb", "pclk_safe_axera_pwm1_eb",
@@ -154,19 +154,19 @@
 				#clock-cells = <1>;
 				offset = <LAGUNA_SAFETY_CLK_G_EB_1>;
 				mask = <0xFFFFFFFF>;
-				clocks = <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				clocks = <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
 				         <&safety_clk_mux_gate CLK_SAFE_SER_EB>, <&safety_clk_mux_gate CLK_SAFE_SER_EB>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
 				         <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
 				         <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>, <&safety_clk_mux_gate CLK_SAFE_CAN_PE_EB>,
 				         <&clk_safe_24m>, <&clk_safe_24m>;
@@ -211,15 +211,15 @@
 				offset = <LAGUNA_SAFETY_CLK_G_EB_2>;
 				mask = <0xFFFFFFFF>;
 				clocks = <&clk_safe_24m>, <&clk_safe_24m>,
-				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&clk_safe_24m>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
 				         <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>, <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>,
-				         <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&safety_clk_mux_gate CLK_SAFE_GPIO_EB>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
-				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_24m>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
@@ -270,17 +270,17 @@
 				         <&safety_clk_mux_gate CLK_SAFE_TMR1_EB>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&safety_clk_mux_gate CLK_SAFE_WDT_EB>,
 				         <&safety_clk_mux_gate CLK_SAFE_WDT_EB>, <&clk_safe_24m>,
-				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&clk_safe_24m>, <&clk_safe_r5f_div>,
 				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_CE_BUS>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&safety_clk_mux CLK_SAFE_R5F>,
-				         <&safety_clk_mux CLK_SAFE_R5F>, <&clk_safe_24m>,
+				         <&clk_safe_r5f_div>, <&clk_safe_24m>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_24m>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_r5f_div>,
+				         <&clk_safe_r5f_div>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
 				         <&clk_safe_24m>, <&clk_safe_24m>,
-				         <&clk_safe_24m>, <&safety_clk_mux CLK_SAFE_R5F>,
+				         <&clk_safe_24m>, <&clk_safe_r5f_div>,
 				         <&safety_clk_mux_gate CLK_SAFE_SER_EB>;
 				clock-names = "tclk_safe_tmr32_9_eb", "tclk_safe_tmr32_10_eb",
 				              "tclk_safe_tmr32_11_eb", "pclk_safe_wwdt4_eb",
@@ -360,6 +360,32 @@
 				mask = <0xFFFFFFFF>;
 				assert-high = <1>;
 			};
+		};
+	};
+
+	safety_fixed_factor_clocks {
+		compatible = "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
+			compatible = "axera,lua-clk-fixed-factor";
+			#clock-cells = <0>;
+			clocks = <&safety_clk_mux CLK_SAFE_RGMII_TX>;
+			clock-names = "clk_safe_rgmii_tx_sel";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "clk_safe_rgmii_tx_div2";
+		};
+
+		clk_safe_r5f_div: clk_safe_r5f_div {
+			compatible = "axera,lua-clk-fixed-factor";
+			#clock-cells = <0>;
+			clocks = <&safety_clk_mux CLK_SAFE_R5F>;
+			clock-names = "clk_safe_r5f_sel";
+			clock-mult = <1>;
+			clock-div = <2>;
+			clock-output-names = "clk_safe_r5f_div";
 		};
 	};
 };

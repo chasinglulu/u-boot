@@ -6,7 +6,7 @@
  */
 
 / {
-	safety-clocks {
+	safety_clocks {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -273,16 +273,6 @@
 			clock-mult = <1>;
 			clock-div = <5>;
 			clock-output-names = "safe_epll_5m";
-		};
-
-		clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
-			compatible = "fixed-factor-clock";
-			#clock-cells = <0>;
-			clocks = <&safety_clk_mux CLK_SAFE_RGMII_TX>;
-			clock-names = "clk_safe_rgmii_tx_div2";
-			clock-mult = <1>;
-			clock-div = <2>;
-			clock-output-names = "clk_safe_rgmii_tx_div2";
 		};
 
 		clk_safe_emac_ptp_div2: clk_safe_emac_ptp_div2 {

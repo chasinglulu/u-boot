@@ -6,10 +6,17 @@
  */
 
 / {
-	safety-clocks {
+	safety_clocks {
 		compatible = "simple-bus";
 		#address-cells = <2>;
 		#size-cells = <2>;
+
+		rosc_clk: rosc_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32000>;
+			clock-output-names = "rosc_clk";
+		};
 
 		safe_fake_32k: safe_fake_32k {
 			compatible = "fixed-clock";
@@ -142,13 +149,6 @@
 			#clock-cells = <0>;
 			clock-frequency = <10000000>;
 			clock-output-names = "safe_epll_5m";
-		};
-
-		clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <10000000>;
-			clock-output-names = "clk_safe_rgmii_tx_div2";
 		};
 
 		clk_safe_emac_ptp_div2: clk_safe_emac_ptp_div2 {
