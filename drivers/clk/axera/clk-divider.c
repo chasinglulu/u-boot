@@ -16,6 +16,7 @@
 #include <linux/bug.h>
 #include <linux/clk-provider.h>
 #include <linux/kernel.h>
+#include <linux/delay.h>
 
 #define DIV_DRV_NAME              "clk_div"
 #define CLK_DIVIVER_UPDATE_BIT    BIT(31)
@@ -280,6 +281,32 @@ static ulong clk_divider_get_rate_v2(struct clk *clk)
 	dev_dbg(dev, "rate: %llu\n", rate);
 	return rate;
 }
+
+static int clk_divider_set_parent_v2(struct clk *clk, struct clk *parent)
+{
+	struct udevice *dev = clk->dev;
+	ulong id = clk->id;
+	struct clk self_parent;
+	const char *parent_name;
+	int ret;
+
+	ret = clk_get_by_index(dev, id, &self_parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%ld' clock [%d]\n", id, ret);
+		return 0;
+	}
+
+	parent_name = parent->data ? (const char *)parent->data : parent->dev->name;
+	dev_dbg(dev, "self: %s, parent: %s\n", self_parent.dev->name, parent_name);
+	if (!strcmp(self_parent.dev->name, parent_name))
+		return 0;
+
+	ret = clk_set_parent(&self_parent, parent);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
 #endif
 
 const struct clk_ops axera_clk_div_ops = {
@@ -289,6 +316,7 @@ const struct clk_ops axera_clk_div_ops = {
 #elif defined(CONFIG_CLK_AXERA_V2)
 	.get_rate = clk_divider_get_rate_v2,
 	.set_rate = clk_divider_set_rate_v2,
+	.set_parent = clk_divider_set_parent_v2,
 	.of_xlate = clk_divider_of_xlate_v2,
 #endif
 };

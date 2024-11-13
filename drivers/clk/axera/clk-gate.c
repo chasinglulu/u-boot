@@ -110,6 +110,32 @@ static ulong clk_gate_set_rate_v2(struct clk *clk, ulong rate)
 	dev_dbg(dev, "new freq = %lu\n", freq);
 	return freq;
 }
+
+static int clk_gate_set_parent_v2(struct clk *clk, struct clk *parent)
+{
+	struct udevice *dev = clk->dev;
+	ulong id = clk->id;
+	struct clk self_parent;
+	const char *parent_name;
+	int ret;
+
+	parent_name = parent->data ? (const char *)parent->data : parent->dev->name;
+	ret = clk_get_by_index(dev, id, &self_parent);
+	if (ret) {
+		dev_err(dev, "failed to get '%ld' clock [%d]\n", id, ret);
+		return 0;
+	}
+
+	dev_dbg(dev, "self: %s, parent: %s\n", self_parent.dev->name, parent_name);
+	if (!strcmp(self_parent.dev->name, parent_name))
+		return 0;
+
+	ret = clk_set_parent(&self_parent, parent);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
 #elif defined(CONFIG_CLK_AXERA_V1)
 static void clk_gate_endisable(struct clk *clk, int enable)
 {
@@ -188,6 +214,7 @@ const struct clk_ops axera_clk_gate_ops = {
 #else
 	.set_rate = clk_gate_set_rate_v2,
 	.get_rate = clk_gate_get_rate_v2,
+	.set_parent = clk_gate_set_parent_v2,
 	.of_xlate = clk_gate_of_xlate_v2,
 #endif
 };

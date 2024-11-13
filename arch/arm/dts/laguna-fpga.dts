@@ -58,6 +58,8 @@
 #endif
 	clock-names = "apb_pclk", "baudclk";
 	status = "okay";
+	assigned-clocks = <&periph_clk_mux CLK_PERIPH_SER>;
+	assigned-clock-parents = <&fab_pll_200m>;
 };
 
 &serial2 {

@@ -178,16 +178,20 @@ static int clk_mux_set_parent_v2(struct clk *clk, struct clk *parent)
 	struct clk_mux_priv *priv = dev_get_priv(dev);
 	struct bit_map *map;
 	struct clk pclk;
-	uint32_t reg, index = 0;
+	uint32_t reg;
 	const char *parent_name;
-	int i, num_parents;
-	int ret;
+	int i, parent_start = 0, parent_end;
+	int ret, index = -1;
 
-	for (i = 0; i < priv->clk_nums; i++)
-		num_parents += priv->clk_parent_nums[i];
+	assert(clk->id < priv->clk_nums);
+	for (i = 0; i < clk->id; i++)
+		parent_start += priv->clk_parent_nums[i];
+	parent_end = parent_start + priv->clk_parent_nums[clk->id];
+	dev_dbg(dev, "start: %d, end: %d\n", parent_start, parent_end);
 
-	parent_name = parent->dev->name;
-	for (i = 0; i < num_parents; i++) {
+	parent_name = parent->data ? (const char *)parent->data : parent->dev->name;
+	dev_dbg(dev, "parent name: %s\n", parent_name);
+	for (i = parent_start; i < parent_end; i++) {
 		ret = clk_get_by_index(dev, i, &pclk);
 		if (ret) {
 			dev_err(dev, "failed to get '%d' clock [%d]\n", i, ret);
@@ -199,13 +203,16 @@ static int clk_mux_set_parent_v2(struct clk *clk, struct clk *parent)
 		}
 	}
 
+	if (index < 0)
+		return -ENXIO;
+
 	for (i = 0; i < priv->clk_nums; i++) {
 		if (index > priv->clk_parent_nums[i])
 			index -= priv->clk_parent_nums[i];
 		else
 			break;
 	}
-	dev_dbg(dev, "index %u\n", index);
+	dev_dbg(dev, "clk id: %lu index %u\n", clk->id, index);
 
 	map = priv->array + i;
 	reg = readl(priv->base + priv->offset);
