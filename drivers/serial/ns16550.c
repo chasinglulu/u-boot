@@ -617,12 +617,13 @@ int ns16550_serial_of_to_plat(struct udevice *dev)
 	if (!err)
 		clk_enable_bulk(&bulk);
 
-	err = clk_get_by_index(dev, 0, &clk);
+	err = clk_get_by_name(dev, "baudclk", &clk);
 	if (!err) {
 		err = clk_get_rate(&clk);
 		if (!IS_ERR_VALUE(err))
 			plat->clock = err;
-	} else if (err != -ENOENT && err != -ENODEV && err != -ENOSYS) {
+	} else if (err != -ENOENT && err != -ENODEV &&
+	           err != -ENOSYS && err != -ENODATA) {
 		debug("ns16550 failed to get clock\n");
 		return err;
 	}
