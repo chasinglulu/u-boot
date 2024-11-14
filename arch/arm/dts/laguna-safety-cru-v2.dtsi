@@ -20,7 +20,7 @@
 
 			safety_clk_mux: safety_clk_mux {
 				compatible = "axera,lua-clock-mux";
-				regmap = <&common_cru>;
+				regmap = <&safety_cru>;
 				#clock-cells = <1>;
 				offset = <LAGUNA_SAFETY_CLK_MUX_0>;
 				mask = <0x3FFFF>;
