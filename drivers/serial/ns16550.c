@@ -18,6 +18,7 @@
 #include <linux/err.h>
 #include <linux/types.h>
 #include <asm/io.h>
+#include <div64.h>
 #include <linux/glbcon.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -227,6 +228,15 @@ int dw8250_calc_frac(struct ns16550 *port, int clock, int baud)
 	return DIV_ROUND_CLOSEST(rem << 4, base_baud);
 }
 
+int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
+{
+	unsigned int base = baudrate * 16;
+	int div = clock;
+
+	do_div(div, base);
+	return div;
+}
+
 void dw8250_writel_ext(unsigned long addr, int offset, int val)
 {
 	writel(val, addr + offset);
@@ -249,9 +259,9 @@ void _debug_dw8250_baud_init(unsigned long base, int clock, int baud)
 	dw8250_writel_ext(base, DW_UART_DLF, frac);
 }
 #else
-void dw8250_set_baud_frac(struct ns16550 *port, int baud) {}
-void _debug_dw8250_baud_init(unsigned long base, int clock, int baud) {}
-#endif
+void dw8250_set_baud_frac(struct ns16550 *port, int baud) { }
+void _debug_dw8250_baud_init(unsigned long base, int clock, int baud) { }
+
 
 int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 {
@@ -259,6 +269,7 @@ int ns16550_calc_divisor(struct ns16550 *port, int clock, int baudrate)
 
 	return DIV_ROUND_CLOSEST(clock, mode_x_div * baudrate);
 }
+#endif
 
 static void ns16550_setbrg(struct ns16550 *com_port, int baud_divisor)
 {
@@ -388,14 +399,13 @@ static inline void _debug_uart_init(void)
 	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_DEBUG_UART_CLOCK,
 					    CONFIG_BAUDRATE);
 
-	_debug_dw8250_baud_init(CONFIG_DEBUG_UART_BASE,
-				        CONFIG_DEBUG_UART_CLOCK, CONFIG_BAUDRATE);
-
 	serial_dout(&com_port->ier, CONFIG_SYS_NS16550_IER);
 	serial_dout(&com_port->mcr, UART_MCRVAL);
 	serial_dout(&com_port->fcr, UART_FCR_DEFVAL);
 
 	serial_dout(&com_port->lcr, UART_LCR_BKSE | UART_LCRVAL);
+	_debug_dw8250_baud_init(CONFIG_DEBUG_UART_BASE,
+				        CONFIG_DEBUG_UART_CLOCK, CONFIG_BAUDRATE);
 	serial_dout(&com_port->dll, baud_divisor & 0xff);
 	serial_dout(&com_port->dlm, (baud_divisor >> 8) & 0xff);
 	serial_dout(&com_port->lcr, UART_LCRVAL);
