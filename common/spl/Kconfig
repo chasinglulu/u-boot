@@ -903,6 +903,24 @@ config SPL_MTD_SUPPORT
 	  devices. See SPL_NAND_SUPPORT and SPL_ONENAND_SUPPORT for how
 	  to enable specific MTD drivers.
 
+config SPL_MULTI_BLK
+	bool "Support loading multiple images from Block device"
+	depends on DM_MTD && MMC
+	depends on !SPL_MULTI_MMC
+	depends on !SPL_MULTI_MTD
+	select SPL_MMC
+	select SPL_MTD_SUPPORT
+	help
+	  This enables loading a combination of ATF, OPTEE OS and
+	  U-Boot images from Block device.
+
+config SPL_MULTI_BLK_DEVNUM
+	int "Device number to use for an interface type"
+	depends on SPL_MULTI_BLK
+	default 0
+	help
+	  This specifies the device number for an interface type.
+
 config SPL_MUSB_NEW
 	bool "Support new Mentor Graphics USB"
 	help
