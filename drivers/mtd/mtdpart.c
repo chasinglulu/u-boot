@@ -1088,10 +1088,11 @@ static int __maybe_unused part_get_info_mtd(struct blk_desc *dev_desc, int part_
 		return -EINVAL;
 	}
 
-	snprintf(info->name, PART_NAME_LEN, part->name);
+	snprintf((char *)info->name, PART_NAME_LEN, "%s", part->name);
 	info->start = part->offset / dev_desc->blksz;
 	info->size = part->size / dev_desc->blksz;
 	info->blksz = dev_desc->blksz;
+	strcpy((char *)info->type, "U-Boot");
 
 	return 0;
 }
