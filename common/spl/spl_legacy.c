@@ -68,7 +68,7 @@ int spl_parse_legacy_header(struct spl_image_info *spl_image,
 	spl_board_perform_legacy_fixups(spl_image);
 
 	debug(SPL_TPL_PROMPT
-	      "payload image: %32s load addr: 0x%lx size: %d\n",
+	      "payload image: %s load addr: 0x%lx size: %d\n",
 	      spl_image->name, spl_image->load_addr, spl_image->size);
 
 	return 0;
