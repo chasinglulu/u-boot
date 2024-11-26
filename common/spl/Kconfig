@@ -921,6 +921,28 @@ config SPL_MULTI_BLK_DEVNUM
 	help
 	  This specifies the device number for an interface type.
 
+config SPL_MULTI_FAT
+	bool "Support loading multiple images from FAT/VFAT filesystem"
+	select SPL_FS_FAT
+	select SPL_FS_LOADER
+	help
+	  This enables loading a combination of ATF, OPTEE OS and
+	  U-Boot images from FAT/VFAT filesystem.
+
+config SPL_MULTI_FAT_MMC_INDEX
+	int "MMC number to use for the IF_TYPE_MMC type block device"
+	depends on SPL_MULTI_FAT
+	default 0
+	help
+	  This specifies the mmc number for the IF_TYPE_MMC type block device.
+
+config SPL_MULTI_FAT_PART
+	int "Partition number to use for FAT/VFAT filesystem"
+	depends on SPL_MULTI_FAT
+	default 1
+	help
+	  This specifies the part number for FAT/VFAT filesystem.
+
 config SPL_MUSB_NEW
 	bool "Support new Mentor Graphics USB"
 	help
