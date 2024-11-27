@@ -38,4 +38,5 @@ obj-$(CONFIG_$(SPL_TPL_)ANY_MTD) += spl_mtd.o
 obj-$(CONFIG_$(SPL_TPL_)MULTI_MTD) += spl_multi_mtd.o
 obj-$(CONFIG_$(SPL_TPL_)MULTI_BLK) += spl_multi_blk.o
 obj-$(CONFIG_$(SPL_TPL_)MULTI_FAT) += spl_multi_fat.o
+obj-$(CONFIG_$(SPL_TPL_)MULTI_UART) += spl_multi_uart.o
 endif

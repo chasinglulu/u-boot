@@ -943,6 +943,14 @@ config SPL_MULTI_FAT_PART
 	help
 	  This specifies the part number for FAT/VFAT filesystem.
 
+config SPL_MULTI_UART
+	bool "Support loading multiple images using UART"
+	depends on !SPL_YMODEM_SUPPORT
+	depends on SPL_SERIAL
+	help
+	  This enables loading a combination of ATF, OPTEE OS and
+	  U-Boot images using UART interface.
+
 config SPL_MUSB_NEW
 	bool "Support new Mentor Graphics USB"
 	help
