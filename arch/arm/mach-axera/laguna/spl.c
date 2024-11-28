@@ -27,17 +27,38 @@ u32 spl_boot_device(void)
 	u32 dev_id = BOOT_DEVICE_RAM;
 
 	switch (bp->bootdevice) {
-	case BOOTDEVICE_GPIO_EMMC:
+	case BOOTDEVICE_ONLY_EMMC:
+	case BOOTDEVICE_BOTH_NOR_EMMC:
+	case BOOTDEVICE_BOTH_NAND_EMMC:
+	case BOOTDEVICE_BOTH_HYPER_EMMC:
 		dev_id = BOOT_DEVICE_MMC1;
 		break;
-	case BOOTDEVICE_GPIO_NOR:
+	case BOOTDEVICE_ONLY_NOR:
+	case BOOTDEIVCE_BOTH_NOR_NOR:
+	case BOOTDEVICE_BOTH_NAND_NOR:
+	case BOOTDEVICE_BOTH_HYPER_NOR:
 		dev_id = BOOT_DEVICE_NOR;
 		break;
-	case BOOTDEVICE_GPIO_NAND:
+	case BOOTDEVICE_ONLY_NAND:
+	case BOOTDEVICE_BOTH_NOR_NAND:
+	case BOOTDEVICE_BOTH_NAND_NAND:
+	case BOOTDEVICE_BOTH_HYPER_NAND:
 		dev_id = BOOT_DEVICE_NAND;
 		break;
-	case BOOTDEVICE_GPIO_UART:
+	case BOOTDEVICE_ONLY_HYPER:
+	case BOOTDEVICE_BOTH_NOR_HYPER:
+	case BOOTDEVICE_BOTH_NAND_HYPER:
+	case BOOTDEVICE_BOTH_HYPER_HYPER:
+		dev_id = BOOT_DEVICE_SPI;
+		break;
+	case BOOTDEVICE_UART:
 		dev_id = BOOT_DEVICE_UART;
+		break;
+	case BOOTDEVICE_USB:
+		dev_id = BOOT_DEVICE_USB;
+		break;
+	case BOOTDEVICE_SD:
+		dev_id = BOOT_DEVICE_MMC2;
 		break;
 	default:
 		pr_err("Unknown boot device\n");
@@ -160,8 +181,8 @@ void spl_display_print(void)
 	memset(bp, 0, sizeof(boot_params_t));
 
 	printf("EL level:      EL%x\n", current_el());
-	printf("Boot SPL on physical CPU 0x%010lx [0x%08lx]\n",
-				mpidr, read_midr());
+	printf("Boot SPL on physical CPU%lx [0x%08lx]\n",
+	                   mpidr, read_midr());
 
 #ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
 	printf("GICv2:         enabled\n");
@@ -177,7 +198,7 @@ void spl_display_print(void)
 		dev_id = dm_boot_device_get(dev, &name);
 
 	if (dev_id > 0) {
-		printf("Boot Device:   %s [0x%x]\n", name, dev_id);
+		printf("Boot Device:   %s [ID = %d]\n", name, dev_id);
 		bp->bootdevice = dev_id;
 	}
 #endif
@@ -202,7 +223,9 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 #endif
 }
 
-#if defined(CONFIG_SPL_MULTI_MMC) || defined(CONFIG_SPL_MULTI_MTD)
+#if defined(CONFIG_SPL_MULTI_MMC) || defined(CONFIG_SPL_MULTI_MTD)      \
+     || defined(CONFIG_SPL_MULTI_BLK) || defined(CONFIG_SPL_MULTI_FAT)  \
+     || defined(CONFIG_SPL_MULTI_UART)
 void spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
 	switch (spl_image->os) {
