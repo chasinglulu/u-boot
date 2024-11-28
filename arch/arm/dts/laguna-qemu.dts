@@ -43,12 +43,18 @@
 		compatible = "boot-device-gpio";
 		gpios = <&gpio0_a 0 GPIO_ACTIVE_HIGH>,
 				<&gpio0_a 1 GPIO_ACTIVE_HIGH>,
-				<&gpio0_a 2 GPIO_ACTIVE_HIGH>;
+				<&gpio0_a 2 GPIO_ACTIVE_HIGH>,
+				<&gpio0_a 3 GPIO_ACTIVE_HIGH>,
+				<&gpio0_a 4 GPIO_ACTIVE_HIGH>;
 		u-boot,env-variable = "bootdevice";
-		dev-eMMC = <0x01>;
-		dev-NOR = <0x02>;
-		dev-NAND = <0x03>;
-		dev-UART = <0x04>;
+		dev-Only-eMMC        = <0x01>;
+		dev-Only-Nor         = <0x02>;
+		dev-Only-Nand        = <0x03>;
+		dev-Only-Hyper       = <0x04>;
+		dev-Both-Nor-Nand    = <0x05>;
+		dev-UART             = <0x11>;
+		dev-USB              = <0x12>;
+		dev-SD               = <0x13>;
 		u-boot,dm-spl;
 	};
 
@@ -56,7 +62,7 @@
 		mmc0: mmc@0C010000 {
 			compatible = "axera,lua-dwcmshc";
 			reg = <0x0 0x0C010000 0x0 0x2000>;
-			interrupts = <0x0 0x0 0x4>;
+			interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>;
 			max-frequency = <200000000>;
 			sdhci-caps-mask = <0xffffffff 0xffffffff>;
 			sdhci-caps = <0x00000070 0x156ecc02>;
@@ -75,12 +81,16 @@
 		mmc1: mmc@0C012000 {
 			compatible = "axera,lua-dwcmshc";
 			reg = <0x0 0x0C012000 0x0 0x2000>;
-			interrupts = <0x0 0xa 0x4>;
+			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 			max-frequency = <200000000>;
 			bus-width = <8>;
 			mmc-ddr-1_8v;
 			mmc-hs200-1_8v;
-			status = "disabled";
+			cap-sd-highspeed;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			broken-cd;
+			status = "okay";
 		};
 
 		usb0: usb0@0E100000 {
@@ -106,12 +116,12 @@
 			};
 		};
 
-		spi: spi@0C040000 {
+		ospi: ospi@0C040000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible ="snps,dwc-ssi-1.01a";
 			reg = <0x0 0x0C040000 0x0 0x1000>;
-			interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
 			/* Could possibly go up to 200 MHz */
 			spi-max-frequency = <100000000>;
 			num-cs = <4>;
@@ -120,7 +130,7 @@
 			u-boot,dm-spl;
 			status = "okay";
 
-			spi-flash@0 {
+			nor0: spi-flash@0 {
 				compatible = "jedec,spi-nor";
 				reg = <0>;
 				spi-max-frequency = <50000000>;
@@ -130,14 +140,44 @@
 				broken-flash-reset;
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
+				status = "okay";
 			};
 
-			spi-nand@1 {
+			nand0: spi-nand@1 {
 				compatible = "spi-nand";
 				spi-max-frequency = <40000000>;
 				reg = <1>;
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
+				status = "disabled";
+			};
+		};
+
+		qspi: qspi@0051F000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible ="snps,dwc-ssi-1.01a";
+			reg = <0x0 0x0051F000 0x0 0x1000>;
+			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_HIGH>;
+			/* Could possibly go up to 200 MHz */
+			spi-max-frequency = <100000000>;
+			num-cs = <4>;
+			reg-io-width = <4>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "okay";
+
+			nor1: spi-flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <50000000>;
+				spi-tx-bus-width = <4>;
+				spi-rx-bus-width = <4>;
+				m25p,fast-read;
+				broken-flash-reset;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+				status = "disabled";
 			};
 		};
 	};
