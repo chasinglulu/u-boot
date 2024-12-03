@@ -290,7 +290,7 @@ int blk_print_device_num(enum if_type if_type, int devnum)
 	ret = get_desc(if_type, devnum, &desc);
 	if (ret)
 		return ret;
-	printf("\nIDE device %d: ", devnum);
+	printf("\n%s device %d: ", blk_get_if_type_name(if_type), devnum);
 	dev_print(desc);
 
 	return 0;
