@@ -15,6 +15,7 @@
 #include <init.h>
 #include <div64.h>
 #include <linux/delay.h>
+#include <rand.h>
 
 #define SAFETY_OCM_BASE     0x00200000
 #define LOOPS_EXP           0
@@ -350,3 +351,67 @@ static int test_nocache_safety_ocm_rw_perf(struct unit_test_state *uts)
 	return 0;
 }
 LAGUNA_PERF_TEST(test_nocache_safety_ocm_rw_perf, UT_TESTF_CONSOLE_REC);
+
+#ifndef CONFIG_SPL_BUILD
+static int test_ddr_memcpy(struct unit_test_state *uts)
+{
+	struct item {
+		const char *name;
+		size_t size;
+	} test[] = {
+		{ "SZ_4K", SZ_4K },
+		{ "SZ_8K", SZ_8K },
+		{ "SZ_16K", SZ_16K },
+		{"SZ_256K", SZ_256K},
+		{ "SZ_512K", SZ_512K },
+		{ "SZ_1M", SZ_1M },
+		{ "SZ_2M", SZ_2M },
+	};
+	char *buf, *buf1, *tmp;
+	int i, j;
+	uint32_t buf_size = CONFIG_VAL(SYS_MALLOC_LEN) >> 1;
+	ulong start;
+	ulong elapsed = 0;
+	pr_err("buf len: 0x%x\n", buf_size);
+
+	buf = malloc(buf_size);
+	if (!buf) {
+		pr_err("Out of memory\n");
+		return -ENOMEM;
+	}
+	tmp = buf;
+	srand((u32)get_timer(0));
+	for (i = 0; i < buf_size; i += sizeof(ulong), tmp += sizeof(ulong))
+		*(ulong *)tmp = rand();
+
+	for (i = 0; i < ARRAY_SIZE(test); i++) {
+		if (test[i].size >= (CONFIG_VAL(SYS_MALLOC_LEN) - buf_size))
+			continue;
+
+		buf1 = malloc(test[i].size);
+		start = elapsed = 0;
+
+		for (j = 0; j < 64; j++) {
+			start = get_timer_us(0);
+			memcpy(buf1, buf, test[i].size);
+			elapsed += get_timer_us(start);
+		}
+		invalidate_dcache_range((ulong)buf1, (ulong)buf1 + test[i].size);
+		flush_dcache_range((ulong)buf1, (ulong)buf1 + test[i].size);
+
+		elapsed >>= 6;
+
+		printf("memcpy %s: %lu us\n", test[i].name, elapsed);
+		ulong total = test[i].size * 1000000 * 2;
+		elapsed <<= 20;
+		printf("       RW: [%lu.%-3lu] MB/s\n", total / elapsed, (total % elapsed) / 10000);
+
+		free(buf1);
+	}
+	free(buf);
+	printf("%s: pass\n", __func__);
+
+	return 0;
+}
+LAGUNA_PERF_TEST(test_ddr_memcpy, UT_TESTF_CONSOLE_REC);
+#endif
