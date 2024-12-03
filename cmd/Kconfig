@@ -1540,6 +1540,12 @@ config CMD_VIRTIO
 	help
 	  VirtIO block device support
 
+config CMD_BLOCK
+	bool "block"
+	depends on HAVE_BLOCK_DEVICE
+	help
+	  block device support
+
 config CMD_WDT
 	bool "wdt"
 	depends on WDT
