@@ -56,6 +56,13 @@ SECTIONS
 		*(.__image_copy_end)
 	} >.sram
 
+	.rela.dyn : {
+		. = ALIGN(8);
+		__rel_dyn_start = .;
+		*(.rela.dyn)
+		__rel_dyn_end = .;
+	} >.sram
+
 	.end : {
 		. = ALIGN(8);
 		*(.__end)
