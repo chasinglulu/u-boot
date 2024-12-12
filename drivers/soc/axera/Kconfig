@@ -13,4 +13,17 @@ config DM_GLBCON
 	  This option support sysctl driver for Global Register Controller.
 
 source "drivers/soc/axera/fdl/Kconfig"
+
+config FDL_USB_DRV
+	bool "Enable USB Driver support only for FDL"
+	depends on DM
+	help
+	  Enable USB raw read/write function.
+
+config SPL_FDL_USB_DRV
+	bool "Enable USB Driver support only for FDL in SPL"
+	depends on SPL_DM
+	help
+	  Enable USB raw read/write function in SPL.
+
 endif

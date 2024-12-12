@@ -124,6 +124,12 @@
 		};
 	};
 
+	fdl_usb_drv: fdl_usb_drv@0E200000 {
+		compatible = "fdl-usb-drv";
+		reg = <0x0 0x0E200000 0x0 0x100000>;
+		status = "disabled";
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <2>;
