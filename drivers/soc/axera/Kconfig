@@ -12,4 +12,5 @@ config DM_GLBCON
 	help
 	  This option support sysctl driver for Global Register Controller.
 
+source "drivers/soc/axera/fdl/Kconfig"
 endif

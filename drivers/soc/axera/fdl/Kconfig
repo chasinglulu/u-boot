@@ -1,0 +1,77 @@
+
+menu "FDL Support"
+
+config FDL_UART
+	bool "Enable FDL download over UART"
+	depends on DM_SERIAL
+	select FDL
+
+config FDL
+	bool
+
+if FDL
+
+config FDL_BUF_ADDR
+	hex "Define FDL buffer address"
+	default 0x108800000 if AXERA_LUA
+	help
+	  The FDL protocol requires a large memory buffer for
+	  downloads. Define this to the starting RAM address to use for
+	  downloaded images.
+
+config FDL_BUF_SIZE
+	hex "Define FDL buffer size"
+	default 0x6000000 if AXERA_LUA
+	help
+	  The FDL protocol requires a large memory buffer for
+	  downloads. This buffer should be as large as possible for a
+	  platform. Define this to the size available RAM for FDL.
+
+config FDL_DEBUG
+	bool "FDL debug"
+	help
+	  This enables the FDL debug mode. If unsure, say N.
+
+config FDL_VERBOSE
+	bool "Output more information about the FDL"
+	help
+	  Enable the output of more information about the FDL
+	  such as the command operation state.
+
+choice
+	prompt "FDL Protocol Select"
+	default FDL_FDL2_PROTO
+	depends on !FDL_DEBUG
+
+config FDL_ROMCODE_PROTO
+	bool "ROMCode protocol"
+	help
+	  This enables the FDL ROMCode protocol.
+
+config FDL_FDL1_PROTO
+	bool "FDL1 protocol"
+	help
+	  This enables the FDL FDL1 protocol.
+
+config FDL_FDL2_PROTO
+	bool "FDL2 protocol"
+	help
+	  This enables the FDL FDL2 protocol.
+
+endchoice
+
+choice
+	prompt "FDL Data Packet Type"
+	default FDL_RAW_DATA_DL
+
+config FDL_PACKAGE_DATA_DL
+	bool "Package Data download"
+
+config FDL_RAW_DATA_DL
+	bool "Raw Data download"
+
+endchoice
+
+endif
+
+endmenu
