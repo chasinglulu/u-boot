@@ -378,8 +378,8 @@ static int initr_flash(void)
 /* go init the NAND */
 static int initr_nand(void)
 {
-	puts("NAND:  ");
 	nand_init();
+	puts("NAND:  ");
 	printf("%lu MiB\n", nand_size() / 1024);
 	return 0;
 }
