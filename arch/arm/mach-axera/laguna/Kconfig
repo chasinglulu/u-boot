@@ -198,6 +198,37 @@ menu "MTD Settings"
 source "board/axera/common/laguna/Kconfig"
 endmenu
 
+menu "FDL-specific Settings"
+
+config FDL_FLASH_MMC_DEV
+	int "Define FDL MMC FLASH default device"
+	depends on DM_MMC
+	default 0
+	help
+	  The FDL flash command requires additional information
+	  regarding the non-volatile storage device. Define this to
+	  the eMMC device that FDL should use to store the image.
+
+config FDL_FLASH_NOR_MTD_DEV
+	int "Define FDL NOR MTD FLASH default device"
+	depends on DM_MTD
+	default 0
+	help
+	  The FDL flash command requires additional information
+	  regarding the non-volatile storage device. Define this to
+	  the NOR MTD device that FDL should use to store the image.
+
+config FDL_FLASH_NAND_MTD_DEV
+	int "Define FDL NAND MTD FLASH default device"
+	depends on DM_MTD
+	default 1
+	help
+	  The FDL flash command requires additional information
+	  regarding the non-volatile storage device. Define this to
+	  the NAND MTD device that FDL should use to store the image.
+
+endmenu
+
 menu "Misc Settings"
 
 config LUA_AB
