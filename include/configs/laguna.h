@@ -163,7 +163,10 @@
 		"ramdisk_name=" __stringify(CONFIG_LUA_RAMDISK_LOAD_NAME)"\0"         \
 		"fdtfile=" __stringify(CONFIG_LUA_FDT_LOAD_NAME)"\0"                  \
 		"boot_name=boot.img\0"                                                \
-		"boot_addr_r=" __stringify(CONFIG_LUA_KERNEL_LOAD_ADDR)"\0"
+		"boot_addr_r=" __stringify(CONFIG_LUA_KERNEL_LOAD_ADDR)"\0"           \
+		"main_mtd=0\0"                                                        \
+		"safe_mtd=0\0"                                                        \
+		"mmc_dev=0\0"
 
 #include <config_distro_bootcmd.h>
 
