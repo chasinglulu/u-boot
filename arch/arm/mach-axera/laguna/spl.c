@@ -158,6 +158,13 @@ static inline void spl_lua_test(void) { }
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
+#if CONFIG_IS_ENABLED(ENV_SUPPORT)
+	boot_params_t *bp = boot_params_get_base();
+
+	env_relocate();
+	set_bootdevice_env(bp->bootdevice);
+#endif
+
 	spl_lua_test();
 }
 #endif
@@ -177,6 +184,8 @@ void spl_display_print(void)
 {
 	boot_params_t *bp = boot_params_get_base();
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
+	const char *name = NULL;
+	int bootdev;
 
 	memset(bp, 0, sizeof(boot_params_t));
 
@@ -188,20 +197,13 @@ void spl_display_print(void)
 	printf("GICv2:         enabled\n");
 #endif
 
-#if CONFIG_IS_ENABLED(DM_BOOT_DEVICE)
-	struct udevice *dev;
-	const char *name;
-	int dev_id = -ENODEV;
-
-	uclass_first_device(UCLASS_BOOT_DEVICE, &dev);
-	if (dev)
-		dev_id = dm_boot_device_get(dev, &name);
-
-	if (dev_id > 0) {
-		printf("Boot Device:   %s [ID = %d]\n", name, dev_id);
-		bp->bootdevice = dev_id;
+	bootdev = get_bootdevice(&name);
+	if (bootdev > 0) {
+		printf("Boot Device:   %s [ID = %d]\n", name, bootdev);
+		bp->bootdevice = bootdev;
+	} else {
+		printf("Boot Device:   Unknown\n");
 	}
-#endif
 }
 #endif
 
