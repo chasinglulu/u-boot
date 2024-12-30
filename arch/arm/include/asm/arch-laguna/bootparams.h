@@ -54,4 +54,20 @@ enum {
 	DOWNLOAD_IF_SD,
 };
 
+extern const char *safe_part_id[];
+extern const char *main_part_id[];
+int get_safe_part_id_count(void);
+int get_main_part_id_count(void);
+int get_bootdevice(const char **name);
+int set_bootdevice_env(int bootdev);
+
+#include <blk.h>
+#include <part.h>
+#include <fdl.h>
+
+struct blk_desc *get_blk_by_devnum(enum if_type if_type, int devnum);
+int get_part_by_name(struct blk_desc *dev_desc, const char *name,
+                      struct disk_partition *part);
+int partitions_id_check(struct fdl_part_table *tab);
+
 #endif /* ASM_LAGUNA_BOOTPARAM_H_ */
