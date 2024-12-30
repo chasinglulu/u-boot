@@ -26,7 +26,7 @@ int spi_flash_mtd_register(struct spi_flash *flash)
 		return ret;
 
 	/* prevent mtd uclass from allocating mtd_info object on device_probe */
-	dev_set_uclass_plat(dev, &flash->mtd);
+	dev_set_uclass_priv(dev, &flash->mtd);
 #endif
 
 	return add_mtd_device(&flash->mtd);
@@ -56,7 +56,7 @@ static int spi_nor_mtd_bind(struct udevice *dev)
 static int spi_nor_mtd_probe(struct udevice *dev)
 {
 	struct spinor_plat *plat = dev_get_plat(dev);
-	struct mtd_info *mtd = dev_get_uclass_plat(dev);
+	struct mtd_info *mtd = dev_get_uclass_priv(dev);
 
 	plat->mtd = mtd;
 
