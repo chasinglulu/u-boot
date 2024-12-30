@@ -154,7 +154,7 @@ static ulong mtd_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 		loff_t sect_start = cur * sect_size;
 		loff_t erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
 		u32 offset = sect_start - erase_start;
-		size_t cur_size = min_t(size_t,  mtd->erasesize - offset,
+		size_t cur_size = min_t(size_t, mtd->erasesize - offset,
 					blocks_todo * sect_size);
 		size_t retlen;
 		lbaint_t written;

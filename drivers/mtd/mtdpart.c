@@ -26,12 +26,14 @@
 #include <linux/bug.h>
 #include <linux/errno.h>
 #include <linux/compat.h>
-#include <ubi_uboot.h>
+#include <u-boot/crc.h>
 
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/mtdparts.h>
 #include <linux/mtd/partitions.h>
 #include <linux/err.h>
 #include <linux/sizes.h>
+#include <hexdump.h>
 
 #include "mtdcore.h"
 
@@ -160,7 +162,7 @@ static int mtd_parse_partition(const char **_mtdparts,
 	} else if ((*mtdparts == ';') || (*mtdparts == '\0')) {
 		/* NOP */
 	} else {
-		printf("Unexpected character '%c' in mtdparts\n", *mtdparts);
+		printf("Unexpected character '%c [0x%x]' in mtdparts\n", *mtdparts, *mtdparts);
 		return -EINVAL;
 	}
 
@@ -1132,3 +1134,306 @@ U_BOOT_PART_TYPE(mtd) = {
 	.print		= part_print_ptr(part_print_mtd),
 	.test		= part_test_mtd,
 };
+
+static void prepare_backup_mtdparts(mtdparts_t *mpr)
+{
+	uint32_t calc_crc32;
+	uint64_t val;
+
+	/* recalculate the values for the backup mtdparts */
+	val = le64_to_cpu(mpr->my_lba);
+	mpr->my_lba = mpr->alternate_lba;
+	mpr->alternate_lba = cpu_to_le64(val);
+	mpr->header_crc32 = 0;
+
+	calc_crc32 = crc32(0, (void *)mpr,
+	           le32_to_cpu(mpr->header_size));
+	mpr->header_crc32 = cpu_to_le32(calc_crc32);
+}
+
+static int
+mtdparts_copy(struct blk_desc *dev_desc, mtdparts_t *mpr,
+                         const char *str_mtdparts)
+{
+	int len = strlen(str_mtdparts) + 1;
+
+	strncpy(mpr->mtdparts_str, str_mtdparts, len);
+	mpr->sizeof_mtdparts = len;
+
+	return 0;
+}
+
+static int
+mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
+                    char *str_guid)
+{
+	struct mtd_info *master = blk_desc_to_mtd(dev_desc);
+	loff_t offset = MTDPARTS_BASE;
+
+	if (!master)
+		return -EINVAL;
+	debug("MTD type: %d\n", master->type);
+
+	mpr->signature = cpu_to_le64(MTDPARTS_SIGNATURE_UBOOT);
+	mpr->revision = cpu_to_le32(MTDPARTS_REVISION_V1);
+	mpr->header_size = cpu_to_le32(sizeof(*mpr));
+	mpr->my_lba = cpu_to_le64(offset / dev_desc->blksz);
+	switch (master->type) {
+	case MTD_NORFLASH:
+		offset = MTDPARTS_BAKEUP_NORFLASH_BASE;
+		mpr->alternate_lba = cpu_to_le64(offset / dev_desc->blksz);
+		break;
+	case MTD_NANDFLASH:
+	case MTD_MLCNANDFLASH:
+		offset = MTDPARTS_BAKEUP_NANDFLASH_BASE;
+		mpr->alternate_lba = cpu_to_le64(offset / dev_desc->blksz);
+		break;
+	default:
+		pr_err("Not supported MTD type\n");
+		return -EAGAIN;
+	}
+	mpr->header_crc32 = 0;
+	mpr->mtdparts_crc32 = 0;
+
+	if (uuid_str_to_bin(str_guid, mpr->disk_guid.b,
+	            UUID_STR_FORMAT_GUID))
+		return -EINVAL;
+
+	return 0;
+}
+
+static int do_mtdparts(struct blk_desc *dev_desc, char *str_mtdparts,
+                      struct disk_partition *partitions, int part_count)
+{
+	struct disk_partition *part;
+	char name[MTDPART_NAME_LEN];
+	char *p;
+	int i;
+
+	if (!str_mtdparts)
+		return -EINVAL;
+
+	p = str_mtdparts;
+	part = partitions;
+	for (i = 0; i < part_count; i++, part++) {
+		snprintf(name, MTDPART_NAME_LEN, "0x%lX(%s),",
+		             part->size * dev_desc->blksz, part->name);
+		if (unlikely(i == part_count - 1))
+			name[strlen(name) - 1] = '\0';
+		memcpy(p, name, strlen(name));
+		p += strlen(name);
+	}
+
+	return 0;
+}
+
+int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
+{
+	u32 calc_crc32;
+
+	/* Generate CRC for the mtdparts_str */
+	calc_crc32 = crc32(0, (void *)mpr->mtdparts_str,
+			      le32_to_cpu(mpr->sizeof_mtdparts));
+	mpr->mtdparts_crc32 = cpu_to_le32(calc_crc32);
+
+	calc_crc32 = crc32(0, (void *)mpr,
+	                le32_to_cpu(mpr->header_size));
+	mpr->header_crc32 = cpu_to_le32(calc_crc32);
+
+	debug("my lba: %llx\n", mpr->my_lba);
+	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
+	         2, mpr) != 2)
+		goto err;
+
+	prepare_backup_mtdparts(mpr);
+
+	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
+	        2, mpr) != 2)
+		goto err;
+
+	debug("MTDPARTS successfully written to block device!\n");
+	return 0;
+
+ err:
+	printf("** Can't write to device %d **\n", dev_desc->devnum);
+	return -EIO;
+}
+
+int mtdparts_restore(struct blk_desc *dev_desc, char *str_disk_guid,
+                        struct disk_partition *parts, int part_count)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(char, buffer, MTDPARTS_SIZE);
+	mtdparts_t *mpr = NULL;
+	int ret;
+
+	mpr = malloc_cache_aligned(MTDPARTS_SIZE);
+	if (!mpr)
+		return -ENOMEM;
+
+	ret = mtdparts_fill_header(dev_desc, mpr, str_disk_guid);
+	if (unlikely(ret < 0)) {
+		debug("Uable to fill up mtdparts header\n");
+		return ret;
+	}
+
+	memset(buffer, 0, MTDPARTS_SIZE);
+	ret = do_mtdparts(dev_desc, buffer,
+	                         parts, part_count);
+	if (unlikely(ret < 0)) {
+		debug("Failed to build a string of mtdparts\n");
+		return ret;
+	}
+
+	ret = mtdparts_copy(dev_desc, mpr, buffer);
+	if (unlikely(ret < 0))
+		return ret;
+
+	ret = write_mtdparts(dev_desc, mpr);
+	if (unlikely(ret < 0)) {
+		debug("Unable to write mtdparts\n");
+		return ret;
+	}
+
+	if (mpr)
+		free(mpr);
+
+	return 0;
+}
+
+static int validate_mtdparts(mtdparts_t *mpr, lbaint_t lba)
+{
+	uint32_t crc32_backup = 0;
+	uint32_t calc_crc32;
+
+	/* Check the mtdparts signature */
+	if (le64_to_cpu(mpr->signature) != MTDPARTS_SIGNATURE_UBOOT) {
+		printf("%s signature is wrong: 0x%llX != 0x%llX\n",
+		       "MTDPARTS",
+		       le64_to_cpu(mpr->signature),
+		       MTDPARTS_SIGNATURE_UBOOT);
+		return -EINVAL;
+	}
+
+	/* Check the mtdparts CRC */
+	memcpy(&crc32_backup, &mpr->header_crc32, sizeof(crc32_backup));
+	memset(&mpr->header_crc32, 0, sizeof(mpr->header_crc32));
+
+	calc_crc32 = crc32(0, (const unsigned char *)mpr,
+	                         le32_to_cpu(mpr->header_size));
+
+	memcpy(&mpr->header_crc32, &crc32_backup, sizeof(crc32_backup));
+
+	if (calc_crc32 != le32_to_cpu(crc32_backup)) {
+		printf("%s CRC is wrong: 0x%x != 0x%x\n",
+		       "MTDPARTS Header",
+		       le32_to_cpu(crc32_backup), calc_crc32);
+		return -EINVAL;
+	}
+
+	/* Check the mtdparts string CRC */
+	calc_crc32 = crc32(0, (void *)mpr->mtdparts_str,
+	                    le32_to_cpu(mpr->sizeof_mtdparts));
+	if (calc_crc32 != le32_to_cpu(mpr->mtdparts_crc32)) {
+		printf("%s CRC is wrong: 0x%x != 0x%x\n",
+		       "MTDPARTS String",
+		       le32_to_cpu(mpr->mtdparts_crc32), calc_crc32);
+		return -EINVAL;
+	}
+
+	/*
+	 * Check that the my_lba entry points to the LBA
+	 * that contains the mtdparts
+	 */
+	if (le64_to_cpu(mpr->my_lba) != lba) {
+		printf("MTDPARTS: my_lba incorrect: %llX != " LBAF "\n",
+		       le64_to_cpu(mpr->my_lba),
+		       lba);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int
+is_mtdparts_valid(struct blk_desc *dev_desc, lbaint_t lba, mtdparts_t *mpr)
+{
+	/* Confirm valid arguments prior to allocation. */
+	if (!dev_desc || !mpr) {
+		printf("%s: Invalid Argument(s)\n", __func__);
+		return -EINVAL;
+	}
+
+	/* Read mtdparts from device */
+	if (blk_dread(dev_desc, lba,
+	           2, mpr) != 2) {
+		printf("*** ERROR: Can't read mtdparts ***\n");
+		return -EIO;
+	}
+
+	if (validate_mtdparts(mpr, lba))
+		return -EINVAL;
+
+	/* We're done, all's well */
+	return 0;
+}
+
+static int find_valid_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
+{
+	struct mtd_info *master;
+	lbaint_t lba, alternate_lba;
+	int r;
+
+	if (!dev_desc || !mpr)
+		return -EINVAL;
+
+	lba = MTDPARTS_BASE / dev_desc->blksz;
+	master = blk_desc_to_mtd(dev_desc);
+
+	switch (master->type) {
+	case MTD_NORFLASH:
+		alternate_lba = MTDPARTS_BAKEUP_NORFLASH_BASE / dev_desc->blksz;
+		break;
+	case MTD_NANDFLASH:
+	case MTD_MLCNANDFLASH:
+		alternate_lba = MTDPARTS_BAKEUP_NANDFLASH_BASE / dev_desc->blksz;
+		break;
+	default:
+		pr_err("Not supported MTD type\n");
+		return -EAGAIN;
+	}
+
+	r = is_mtdparts_valid(dev_desc, lba, mpr);
+
+	if (r < 0) {
+		pr_err("%s: *** ERROR: Invalid mtdparts ***\n", __func__);
+
+		if (is_mtdparts_valid(dev_desc, alternate_lba, mpr) < 0) {
+			pr_err("%s: *** ERROR: Invalid Backup mtdparts ***\n",
+			            __func__);
+			return -EINVAL;
+		}
+		debug("%s: ***        Using Backup mtdparts ***\n", __func__);
+	}
+	return 0;
+}
+
+int read_full_mtdparts(struct blk_desc *dev_desc, char **mtdparts)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(char, buffer, MTDPARTS_SIZE);
+	mtdparts_t *mpr = NULL;
+	int ret;
+
+	if (!dev_desc || !mtdparts)
+		return -EINVAL;
+
+	ret = find_valid_mtdparts(dev_desc, (void *)buffer);
+	if (unlikely(ret < 0)) {
+		pr_err("Not found vaild mtdparts\n");
+		return ret;
+	}
+
+	mpr = (void *)buffer;
+	*mtdparts = strdup(mpr->mtdparts_str);
+
+	return le32_to_cpu(mpr->sizeof_mtdparts);
+}
