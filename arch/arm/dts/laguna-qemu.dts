@@ -51,7 +51,8 @@
 		dev-Only-Nor         = <0x02>;
 		dev-Only-Nand        = <0x03>;
 		dev-Only-Hyper       = <0x04>;
-		dev-Both-Nor-Nand    = <0x05>;
+		dev-Both-Nor-Nand    = <0x06>;
+		dev-Both-Nor-eMMC    = <0x0E>;
 		dev-UART             = <0x11>;
 		dev-USB              = <0x12>;
 		dev-SD               = <0x13>;
@@ -90,7 +91,7 @@
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			broken-cd;
-			status = "okay";
+			status = "disabled";
 		};
 
 		usb0: usb0@0E100000 {
@@ -140,7 +141,7 @@
 				broken-flash-reset;
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
-				status = "okay";
+				status = "disabled";
 			};
 
 			nand0: spi-nand@1 {
@@ -149,7 +150,7 @@
 				reg = <1>;
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
-				status = "disabled";
+				status = "okay";
 			};
 		};
 
@@ -177,7 +178,7 @@
 				broken-flash-reset;
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
-				status = "disabled";
+				status = "okay";
 			};
 		};
 	};
