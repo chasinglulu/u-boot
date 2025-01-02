@@ -1,0 +1,72 @@
+#
+# SPDX-License-Identifier: GPL-2.0+
+#
+# Copyright (C) 2024 Charleye <wangkart@aliyun.com>
+#
+
+menu "Boot Device Support"
+
+config BOOT_DEVICE
+	bool "Enable boot device using Driver Model"
+	depends on DM
+	help
+	  Enable support for boot device control. This will allow users to
+	  adjust the boot process based on boot device parameter passed
+	  to U-Boot.
+
+choice
+	prompt "Select boot device backend"
+	depends on BOOT_DEVICE
+	default BOOT_DEVICE_SYSCON
+
+config BOOT_DEVICE_GPIO
+	bool "Use GPIOs as boot device backend"
+	depends on DM_GPIO
+	help
+	  Use GPIOs to control the boot device. This will allow users to boot
+	  a chip from a specific device by using a GPIO that can be controlled
+	  outside U-Boot.
+
+config BOOT_DEVICE_SYSCON
+	bool "Use syscon as boot device backend"
+	depends on SYSCON
+	help
+	  Use syscon to control the boot device. This will allow users to boot
+	  a chip from a specific device by using syscon that can be controlled
+	  outside U-Boot.
+
+endchoice
+
+
+config SPL_BOOT_DEVICE
+	bool "Enable boot device in SPL"
+	depends on SPL_DM
+	help
+	  Enable support for boot device control. This will allow users to
+	  adjust the boot process based on boot device parameter passed
+	  to SPL.
+
+choice
+	prompt "Select boot device backend in SPL"
+	depends on SPL_BOOT_DEVICE
+	default SPL_BOOT_DEVICE_SYSCON
+
+config SPL_BOOT_DEVICE_GPIO
+	bool "Use GPIOs as boot device backend in SPL"
+	depends on SPL_GPIO
+	help
+	  Use GPIOs to control the boot device. This will allow users to boot
+	  a chip from a specific device by using a GPIO that can be controlled
+	  outside SPL.
+
+config SPL_BOOT_DEVICE_SYSCON
+	bool "Use syscon as boot device backend in SPL"
+	depends on SPL_SYSCON && SPL_REGMAP
+	help
+	  Use syscon to control the boot device. This will allow users to boot
+	  a chip from a specific device by using syscon that can be controlled
+	  outside SPL.
+
+endchoice
+
+endmenu

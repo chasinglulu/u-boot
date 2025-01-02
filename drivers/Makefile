@@ -36,7 +36,7 @@ obj-$(CONFIG_$(SPL_)SYSINFO) += sysinfo/
 obj-$(CONFIG_$(SPL_TPL_)TPM) += tpm/
 obj-$(CONFIG_XEN) += xen/
 obj-$(CONFIG_$(SPL_)FPGA) += fpga/
-obj-$(CONFIG_$(SPL_)DM_BOOT_DEVICE) += boot-device/
+obj-$(CONFIG_$(SPL_)BOOT_DEVICE) += bootdev/
 
 ifndef CONFIG_TPL_BUILD
 ifndef CONFIG_VPL_BUILD
