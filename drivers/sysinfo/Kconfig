@@ -45,4 +45,9 @@ config SYSINFO_GPIO
 	  This ternary number is then mapped to a board revision name using
 	  device tree properties.
 
+config SYSINFO_SYSCON
+	bool "Enable syscon sysinfo driver"
+	help
+	  Support querying device information using syscon.
+
 endif
