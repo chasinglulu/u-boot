@@ -1165,7 +1165,7 @@ mtdparts_copy(struct blk_desc *dev_desc, mtdparts_t *mpr,
 
 static int
 mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
-                    char *str_guid)
+                    const char *str_guid)
 {
 	struct mtd_info *master = blk_desc_to_mtd(dev_desc);
 	loff_t offset = MTDPARTS_BASE;
@@ -1203,17 +1203,24 @@ mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
 }
 
 static int do_mtdparts(struct blk_desc *dev_desc, char *str_mtdparts,
+                      const char *prefix,
                       struct disk_partition *partitions, int part_count)
 {
 	struct disk_partition *part;
 	char name[MTDPART_NAME_LEN];
+	int prefix_len = 0;
 	char *p;
 	int i;
 
 	if (!str_mtdparts)
 		return -EINVAL;
 
-	p = str_mtdparts;
+	if (prefix) {
+		prefix_len = strlen(prefix);
+		strncpy(str_mtdparts, prefix, prefix_len);
+	}
+
+	p = str_mtdparts + prefix_len;
 	part = partitions;
 	for (i = 0; i < part_count; i++, part++) {
 		snprintf(name, MTDPART_NAME_LEN, "0x%lX(%s),",
@@ -1259,7 +1266,8 @@ int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 	return -EIO;
 }
 
-int mtdparts_restore(struct blk_desc *dev_desc, char *str_disk_guid,
+int mtdparts_restore(struct blk_desc *dev_desc, const char *str_disk_guid,
+                        const char *prefix,
                         struct disk_partition *parts, int part_count)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(char, buffer, MTDPARTS_SIZE);
@@ -1277,7 +1285,7 @@ int mtdparts_restore(struct blk_desc *dev_desc, char *str_disk_guid,
 	}
 
 	memset(buffer, 0, MTDPARTS_SIZE);
-	ret = do_mtdparts(dev_desc, buffer,
+	ret = do_mtdparts(dev_desc, buffer, prefix,
 	                         parts, part_count);
 	if (unlikely(ret < 0)) {
 		debug("Failed to build a string of mtdparts\n");
