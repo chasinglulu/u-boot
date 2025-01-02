@@ -330,6 +330,8 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 	struct fdl_part_table *mtd_tab = NULL;
 	int mmc_part_count, mtd_part_count;
 	char *str_disk_guid = NULL;
+	char bootmode[32];
+	char *prefix = NULL;
 	lbaint_t mtdparts_size;
 	bool gpt = false;
 	bool mtdparts = false;
@@ -406,6 +408,8 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 		mtdparts = true;
 		mtd_partitions = ptab->part;
 		mtd_part_count = ptab->number;
+		snprintf(bootmode, sizeof(bootmode), "nand*%d#", BOOTMODE_MAIN_NAND);
+		prefix = bootmode;
 		break;
 	case BOOTDEVICE_BOTH_NOR_EMMC:
 		mmc_dev = env_get_ulong("mmc_dev", 10, ~0UL);
@@ -437,6 +441,8 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 		fixup_mmc_partitions_start(mmc_partitions,
 		         mmc_part_count, mtdparts_size);
 		gpt = mtdparts = true;
+		snprintf(bootmode, sizeof(bootmode), "emmc*%d#", BOOTMODE_MAIN_EMMC);
+		prefix = bootmode;
 		break;
 	default:
 		debug("Not supported boot device\n");
@@ -462,6 +468,7 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 
 	if (mtdparts){
 		ret = mtdparts_restore(mtd_desc, str_disk_guid,
+		               prefix,
 		               mtd_partitions,
 		               mtd_part_count);
 		if (ret < 0) {

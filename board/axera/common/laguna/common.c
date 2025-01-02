@@ -14,10 +14,11 @@
 #include <env.h>
 #include <mmc.h>
 
-#include <dm/device-internal.h>
 #include <linux/err.h>
+#include <dm/device-internal.h>
 #include <bootdev/bootdevice.h>
 #include <asm/arch/bootparams.h>
+#include <linux/mtd/mtdparts.h>
 
 /* Supported partition identifier for safety R5F */
 const char *safe_part_id[] = {
@@ -66,6 +67,109 @@ inline int get_safe_part_id_count(void)
 inline int get_main_part_id_count(void)
 {
 	return ARRAY_SIZE(main_part_id);
+}
+
+#if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
+const char *main_bootmodes[] = {
+	[BOOTMODE_MAIN_NOR]     = "NOR",
+	[BOOTMODE_MAIN_NAND]    = "NAND",
+	[BOOTMODE_MAIN_HYPER]   = "HYPER",
+	[BOOTMODE_MAIN_EMMC]    = "EMMC",
+};
+
+static int get_main_bootmode_by_name(const char *name)
+{
+	int i;
+
+	for (i = 0; i < BOOTMODE_MAIN_COUNT; i++) {
+		if (!strcasecmp(main_bootmodes[i], name))
+			return i;
+	}
+
+	return -EINVAL;
+}
+
+static void set_main_bootmode_env(struct disk_partition *p)
+{
+	int idx = -1;
+
+	if (!p->size && !p->name[0]) {
+		pr_err("Invaild part information\n");
+		return;
+	}
+
+	if (!p->name[0])
+		idx = p->size;
+
+	if (!p->size)
+		idx = get_main_bootmode_by_name((void *)p->name);
+
+	if (idx >= BOOTMODE_MAIN_NOR &&
+	        idx < BOOTMODE_MAIN_COUNT)
+		env_set_ulong("main_bootmode", idx);
+}
+#else
+static inline void set_main_bootmode_env(struct disk_partition *p) {}
+#endif
+
+int partitions_id_check(struct fdl_part_table *tab)
+{
+	struct disk_partition *start, *end;
+	struct fdl_part_table *p = NULL;
+	int len, len1;
+	int i, j;
+
+	if (!tab)
+		return -EINVAL;
+
+	p = calloc(tab->number, sizeof(*start));
+	if (!p)
+		return -ENOMEM;
+
+	end = tab->part + tab->number;
+	for (start = tab->part; start < end; start++) {
+		if (!start->size || !start->name[0]) {
+			set_main_bootmode_env(start);
+			continue;
+		}
+		p->part[p->number++] = *start;
+	}
+
+	end = p->part + p->number;
+	for (start = p->part; start < end; start++) {
+		for (i = 0; i < ARRAY_SIZE(safe_part_id); i++) {
+			len = strlen((void *)start->name);
+			len1 = strlen(safe_part_id[i]);
+			if (len != len1 ||
+			    strcmp((void *)start->name, safe_part_id[i]))
+				continue;
+			else
+				break;
+		}
+
+		if (i != ARRAY_SIZE(safe_part_id))
+			continue;
+
+		for (j = 0; j < ARRAY_SIZE(main_part_id); j++) {
+			len = strlen((void *)start->name);
+			len1 = strlen(main_part_id[j]);
+			if (len != len1 ||
+			    strcmp((void *)start->name, main_part_id[j]))
+				continue;
+			else
+				break;
+		}
+
+		if (j == ARRAY_SIZE(main_part_id))
+			return -EINVAL;
+	}
+
+	tab->number = p->number;
+	memcpy(tab->part, p->part, p->number * sizeof(*start));
+
+	free(p);
+
+	return 0;
 }
 
 struct blk_desc *get_blk_by_devnum(enum if_type if_type, int devnum)
@@ -118,12 +222,12 @@ int get_part_by_name(struct blk_desc *dev_desc,
 
 int set_bootdevice_env(int bootdev)
 {
-	static bool initialised = false;
+	static bool bootdev_inited= false;
 	struct uclass *uc;
 	struct udevice *dev;
 	int ret;
 
-	if (likely(initialised))
+	if (likely(bootdev_inited))
 		return 0;
 
 	switch (bootdev) {
@@ -241,65 +345,236 @@ int set_bootdevice_env(int bootdev)
 		return -EBUSY;
 	}
 
-	initialised = true;
+	bootdev_inited = true;
 	return 0;
 }
 
+#if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
+const char *bootdevice_name[] = {
+	[BOOTDEVICE_ONLY_EMMC]       = "Only-eMMC",
+	[BOOTDEVICE_ONLY_NOR]        = "Only-Nor",
+	[BOOTDEVICE_ONLY_NAND]       = "Only-Nand",
+	[BOOTDEVICE_ONLY_HYPER]      = "Only-Hyper",
+	[BOOTDEIVCE_BOTH_NOR_NOR]    = "Both-Nor-Nor",
+	[BOOTDEVICE_BOTH_NOR_NAND]   = "Both-Nor-Nand",
+	[BOOTDEVICE_BOTH_NOR_HYPER]  = "Both-Nor-Hyper",
+	[BOOTDEVICE_BOTH_NAND_NOR]   = "Both-Nand-Nor",
+	[BOOTDEVICE_BOTH_NAND_NAND]  = "Both-Nand-Nand",
+	[BOOTDEVICE_BOTH_NAND_HYPER] = "Both-Nand-Hyper",
+	[BOOTDEVICE_BOTH_NOR_EMMC]   = "Both-Nor-eMMC",
+	[BOOTDEVICE_BOTH_NAND_EMMC]  = "Both-Nand-eMMC",
+};
+
+static struct blk_desc *find_safety_nor(void)
+{
+	struct uclass *uc = NULL;
+	struct mtd_info *mtd = NULL;
+	struct blk_desc *dev_desc = NULL;
+	struct udevice *dev, *parent, *child;
+	fdt_addr_t addr;
+	int ret;
+
+	ret = uclass_get(UCLASS_SPI_FLASH, &uc);
+	if (ret < 0)
+		return NULL;
+
+	uclass_foreach_dev(dev, uc) {
+		parent = dev_get_parent(dev);
+		addr = dev_read_addr(parent);
+		if (addr > 0x800000)
+			continue;
+
+		ret = device_probe(dev);
+		if (ret < 0)
+			continue;
+
+		device_find_first_child(dev, &child);
+		if (!child)
+			continue;
+		mtd = dev_get_uclass_priv(child);
+		if (mtd && mtd->type == MTD_NORFLASH) {
+			dev_desc = get_blk_by_devnum(IF_TYPE_MTD, dev_seq(child));
+			break;
+		}
+	}
+
+	return IS_ERR_OR_NULL(dev_desc) ? NULL : dev_desc;
+}
+
+static struct blk_desc *find_safety_nand(void)
+{
+	return NULL;
+}
+
+static int get_bootstrap(const char **name)
+{
+	const char *dev_name = "syscon-bootdev";
+	struct udevice *dev;
+	int bootstrap;
+
+	uclass_get_device_by_name(UCLASS_BOOT_DEVICE,
+	                        dev_name, &dev);
+	if (dev)
+		bootstrap = boot_device_get(dev, name ?: NULL);
+	else
+		return -ENODEV;
+
+	return bootstrap >= 0 ? bootstrap : -ENXIO;
+}
+
+static int get_bootstate(void)
+{
+	int bootstrap;
+
+	bootstrap = get_bootstrap(NULL);
+	if (bootstrap < 0)
+		return bootstrap;
+
+	if (bootstrap & BIT(4))
+		return BOOTSTATE_DOWNLOAD;
+
+	return BOOTSTATE_POWERUP;
+}
+
+static __maybe_unused
+void set_bootstate_env(uint32_t bootstate)
+{
+	static bool bootstate_inited= false;
+
+#ifndef CONFIG_SPL_BUILD
+	if (!(gd->flags & GD_FLG_RELOC))
+		return;
+#endif
+
+	if (likely(bootstate_inited))
+		return;
+
+	env_set_ulong("bootstate", bootstate);
+	bootstate_inited = true;
+}
+#endif /* BOOT_DEVICE_SYSCON */
+
 int get_bootdevice(const char **name)
 {
-#if CONFIG_IS_ENABLED(DM_BOOT_DEVICE)
+#if CONFIG_IS_ENABLED(BOOT_DEVICE_GPIO)
+	const char *dev_name = "gpio-bootdev";
 	struct udevice *dev;
 	int bootdev;
 
 	uclass_get_device_by_name(UCLASS_BOOT_DEVICE,
-	                        "boot-device", &dev);
+	                        dev_name, &dev);
 	if (dev)
-		bootdev = dm_boot_device_get(dev, name ?: NULL);
+		bootdev = boot_device_get(dev, name ?: NULL);
 	else
 		return -ENODEV;
 
 	return bootdev > 0 ? bootdev : -ENXIO;
 #endif
 
-	return -ENODEV;
-}
+#if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
+	struct blk_desc *dev_desc;
+	char *full_mtdparts = NULL;
+	char *asterisk = NULL;
+	int bootstate, bootstrap;
+	ulong main_bootmode;
+	bool is_nor = false;
+	uint32_t bootdev;
+	int ret;
 
-int partitions_id_check(struct fdl_part_table *tab)
-{
-	int i, j;
-	struct disk_partition *part;
-	int len, len1;
+	bootstate = get_bootstate();
+	if (bootstate < 0)
+		return -ENXIO;
+	set_bootstate_env(bootstate);
 
-	if (!tab)
-		return -EINVAL;
+	bootstrap = get_bootstrap(NULL);
+	if (bootstrap < 0)
+		return -ENXIO;
 
-	for (part = tab->part; part < tab->part + tab->number; part++) {
-		for (i = 0; i < ARRAY_SIZE(safe_part_id); i++) {
-			len = strlen((void *)part->name);
-			len1 = strlen(safe_part_id[i]);
-			if (len != len1 ||
-			    strcmp((void *)part->name, safe_part_id[i]))
-				continue;
-			else
-				break;
-		}
-
-		if (i != ARRAY_SIZE(safe_part_id))
-			continue;
-
-		for (j = 0; j < ARRAY_SIZE(main_part_id); j++) {
-			len = strlen((void *)part->name);
-			len1 = strlen(main_part_id[j]);
-			if (len != len1 ||
-			    strcmp((void *)part->name, main_part_id[j]))
-				continue;
-			else
-				break;
-		}
-
-		if (j == ARRAY_SIZE(main_part_id))
-			return -EINVAL;
+	debug("%s: bootstrap: %d\n", __func__, bootstrap);
+	switch (bootstrap & 0xF) {
+	case BOOTSTRAP_SAFETY_NOR:
+		is_nor = true;
+		goto main_select;
+	case BOOTSTRAP_SAFETY_NAND_2KMP:
+	case BOOTSTRAP_SAFETY_NAND_4KMP:
+	case BOOTSTRAP_SAFETY_NAND_2K:
+	case BOOTSTRAP_SAFETY_NAND_4K:
+		is_nor = false;
+		goto main_select;
+	case BOOTSTRAP_MAIN_EMMC_DUAL_BOOT:
+	case BOOTSTRAP_MAIN_EMMC_BOOT:
+	case BOOTSTRAP_MAIN_EMMC:
+		bootdev = BOOTDEVICE_ONLY_EMMC;
+		break;
+	case BOOTSTRAP_MAIN_NOR:
+		bootdev = BOOTDEVICE_ONLY_NOR;
+		break;
+	case BOOTSTRAP_MAIN_NAND_2KMP:
+	case BOOTSTRAP_MAIN_NAND_4KMP:
+	case BOOTSTRAP_MAIN_NAND_2K:
+	case BOOTSTRAP_MAIN_NAND_4K:
+		bootdev = BOOTDEVICE_ONLY_NAND;
+		break;
+	case BOOTSTRAP_MAIN_HYPER:
+		bootdev = BOOTDEVICE_ONLY_HYPER;
+		break;
+	default:
+		debug("Not supported bootstrap value\n");
+		return -ENODEV;
 	}
 
-	return 0;
+	goto result;
+
+main_select:
+	if (bootstate == BOOTSTATE_DOWNLOAD) {
+		/* FDL download */
+		main_bootmode = env_get_ulong("main_bootmode", 10, ~0ULL);
+		if (unlikely(main_bootmode == ~0ULL))
+			return -EINVAL;
+	} else {
+		/* Normal boot */
+		if (is_nor)
+			dev_desc = find_safety_nor();
+		else
+			dev_desc = find_safety_nand();
+		ret = read_full_mtdparts(dev_desc, &full_mtdparts);
+		if (ret < 0)
+			return ret;
+		asterisk = strchr(full_mtdparts, '*');
+		main_bootmode = simple_strtoul(asterisk + 1, NULL, 10);
+		free(full_mtdparts);
+	}
+
+	debug("main bootmode: %lu\n", main_bootmode);
+	switch (main_bootmode) {
+	case BOOTMODE_MAIN_EMMC:
+		if (is_nor)
+			bootdev = BOOTDEVICE_BOTH_NOR_EMMC;
+		else
+			bootdev = BOOTDEVICE_BOTH_NAND_EMMC;
+		break;
+	case BOOTMODE_MAIN_NAND:
+		if (is_nor)
+			bootdev = BOOTDEVICE_BOTH_NOR_NAND;
+		else
+			bootdev = BOOTDEVICE_BOTH_NAND_NAND;
+		break;
+	case BOOTMODE_MAIN_HYPER:
+		if (is_nor)
+			bootdev = BOOTDEVICE_BOTH_NOR_HYPER;
+		else
+			bootdev = BOOTDEVICE_BOTH_NAND_HYPER;
+		break;
+	default:
+		debug("Not supported main bootmode\n");
+		return -ENODEV;
+	}
+
+result:
+	if (name)
+		*name = bootdevice_name[bootdev];
+	return bootdev;
+#endif
+
+	return -ENODEV;
 }

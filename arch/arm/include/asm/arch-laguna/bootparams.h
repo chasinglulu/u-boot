@@ -6,7 +6,6 @@ typedef struct boot_params {
 	unsigned short bootdevice;
 } boot_params_t;
 
-
 static inline boot_params_t *boot_params_get_base(void)
 {
 	/* TODO: detect base during runtime */
@@ -14,7 +13,8 @@ static inline boot_params_t *boot_params_get_base(void)
 }
 
 enum {
-	BOOTDEVICE_ONLY_EMMC = 0x1,
+	/* Main SDHCI interface */
+	BOOTDEVICE_ONLY_EMMC = 1,
 	/* Main OSPI interface */
 	BOOTDEVICE_ONLY_NOR,
 	BOOTDEVICE_ONLY_NAND,
@@ -43,15 +43,48 @@ enum {
 };
 
 enum {
-	BOOTMODE_DOWNLOAD,
-	BOOTMODE_BOOTUP,
+	DOWNLOAD_IF_UNKNOWN,
+	DOWNLOAD_IF_CAN,
+	DOWNLOAD_IF_UART,
+	DOWNLOAD_IF_SD,
+	DOWNLOAD_IF_USB,
 };
 
+/* boot state after poweron */
 enum {
-	DOWNLOAD_IF_UART,
-	DOWNLOAD_IF_USB,
-	DOWNLOAD_IF_CAN,
-	DOWNLOAD_IF_SD,
+	BOOTSTATE_POWERUP = 1,
+	BOOTSTATE_DOWNLOAD,
+};
+
+/* ASIC bootstrap PINs */
+enum {
+	BOOTSTRAP_SAFETY_NOR = 0,
+	BOOTSTRAP_SAFETY_NAND_2K,
+	BOOTSTRAP_SAFETY_NAND_4K,
+	BOOTSTRAP_SAFETY_NAND_2KMP,
+	BOOTSTRAP_SAFETY_NAND_4KMP,
+	BOOTSTRAP_SAFETY_COUNT,
+
+	BOOTSTRAP_MAIN_EMMC_DUAL_BOOT = 7,
+	BOOTSTRAP_MAIN_NOR,
+	BOOTSTRAP_MAIN_NAND_2K,
+	BOOTSTRAP_MAIN_NAND_4K,
+	BOOTSTRAP_MAIN_NAND_2KMP,
+	BOOTSTRAP_MAIN_NAND_4KMP,
+	BOOTSTRAP_MAIN_EMMC_BOOT,
+	BOOTSTRAP_MAIN_EMMC,
+	BOOTSTRAP_MAIN_HYPER,
+	BOOTSTRAP_DOWNLOAD,
+	BOOTSTRAP_COUNT,
+};
+
+/* Main domain bootmode selector */
+enum {
+	BOOTMODE_MAIN_NOR = 0,
+	BOOTMODE_MAIN_NAND,
+	BOOTMODE_MAIN_HYPER,
+	BOOTMODE_MAIN_EMMC,
+	BOOTMODE_MAIN_COUNT,
 };
 
 extern const char *safe_part_id[];
