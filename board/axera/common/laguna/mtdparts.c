@@ -9,7 +9,6 @@
 #include <env.h>
 #include <hexdump.h>
 
-#include <boot-device/bootdevice.h>
 #include <asm/arch/bootparams.h>
 #include <linux/string.h>
 #include <linux/mtd/mtdparts.h>

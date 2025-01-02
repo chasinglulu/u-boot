@@ -19,7 +19,6 @@
 #include <memalign.h>
 #include <hexdump.h>
 
-#include <boot-device/bootdevice.h>
 #include <asm/arch/bootparams.h>
 #include <linux/mtd/mtdparts.h>
 #include <linux/compiler.h>

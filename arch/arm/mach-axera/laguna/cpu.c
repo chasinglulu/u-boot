@@ -8,7 +8,6 @@
 #include <env.h>
 #include <asm/system.h>
 
-#include <boot-device/bootdevice.h>
 #include <asm/arch/bootparams.h>
 
 static u32 reset_cause = -1;

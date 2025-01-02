@@ -3,8 +3,6 @@
  * Copyright (c) 2024 Charleye <wangkart@aliyun.com>
  */
 
-#include <boot-device/bootdevice.h>
-#include <asm/arch/bootparams.h>
 #include <common.h>
 #include <debug_uart.h>
 #include <asm/system.h>
@@ -20,6 +18,7 @@
 #include <malloc.h>
 #include <test/test.h>
 #include <test/ut.h>
+#include <asm/arch/bootparams.h>
 
 u32 spl_boot_device(void)
 {

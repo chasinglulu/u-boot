@@ -11,13 +11,14 @@
 
 struct boot_device {
 	const char *dev_name;
-	u32 dev_id;
+	uint32_t *dev_ids;
+	uint8_t count;
 };
 
-struct boot_device_uclass_platdata {
-	struct boot_device *devs;
-	u8 count;
+struct boot_device_uc_plat {
 	const char *env_variable;
+	struct boot_device *devs;
+	uint8_t count;
 };
 
 struct boot_device_ops {
@@ -46,12 +47,12 @@ struct boot_device_ops {
 #define boot_device_get_ops(dev) ((struct boot_device_ops *)(dev)->driver->ops)
 
 /**
- * dm_boot_device_update() - Update the boot device env variable.
+ * boot_device_update() - Update the boot device env variable.
  *
  * @dev:	Device to read from
  * Return: 0 if OK, -ve on error
  */
-int dm_boot_device_update(struct udevice *dev);
+int boot_device_update(struct udevice *dev);
 
 /**
  * dm_boot_device_get() - Get the boot device ID.
@@ -60,6 +61,6 @@ int dm_boot_device_update(struct udevice *dev);
  * @name:	boot device name to ouptut
  * Return: dev_id if OK, -ve on error
  */
-int dm_boot_device_get(struct udevice *dev, const char **name);
+int boot_device_get(struct udevice *dev, const char **name);
 
 #endif /* BOOT_DEVICE_H_ */

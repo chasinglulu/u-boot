@@ -310,14 +310,6 @@ config SPL_BOOTCOUNT_LIMIT
 	  use proper U-Boot for normal boot flow and hence needs those
 	  adjustments to be done in the SPL.
 
-config SPL_DM_BOOT_DEVICE
-	bool "Support bootdevice in SPL"
-	depends on SPL_DM
-	help
-	  Enable support for boot device control. This will allow users to
-	  adjust the boot process based on boot device parameter
-	  passed to SPL.
-
 config SPL_RAW_IMAGE_SUPPORT
 	bool "Support SPL loading and booting of RAW images"
 	default n if ARCH_MVEBU

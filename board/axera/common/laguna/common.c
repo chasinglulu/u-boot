@@ -16,7 +16,7 @@
 
 #include <dm/device-internal.h>
 #include <linux/err.h>
-#include <boot-device/bootdevice.h>
+#include <bootdev/bootdevice.h>
 #include <asm/arch/bootparams.h>
 
 /* Supported partition identifier for safety R5F */
