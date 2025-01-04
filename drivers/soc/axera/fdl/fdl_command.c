@@ -207,7 +207,18 @@ static int handshake(struct fdl_struct *fdl, char *response)
 	if (unlikely(!response))
 		return -EIO;
 
-#if defined(CONFIG_FDL_DEBUG) || defined(CONFIG_FDL_ROMCODE_PROTO)
+#if defined(CONFIG_FDL_DEBUG)
+	switch (exec_cmd_cnt) {
+	case 0:
+		type = FDL_HANDSHAKE_ROMCODE;
+		break;
+	case 1:
+		type = FDL_HANDSHAKE_FDL1;
+		break;
+	}
+#endif
+
+#if defined(CONFIG_FDL_ROMCODE_PROTO)
 	type = FDL_HANDSHAKE_ROMCODE;
 #elif defined(CONFIG_FDL_FDL1_PROTO)
 	type = FDL_HANDSHAKE_FDL1;

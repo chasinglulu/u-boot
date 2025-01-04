@@ -199,6 +199,11 @@ extern void *fdl_buf_addr;
  */
 extern uint32_t fdl_buf_size;
 
+/*
+ * exec_cmd_cnt - number of execute command received
+ */
+extern uint32_t exec_cmd_cnt;
+
 uint16_t fdl_checksum(const char *buffer, int len);
 uint32_t fdl_checksum32(uint32_t chksum, const char *buffer, uint32_t len);
 uint32_t fdl_rawdata_checksum(const char *buffer, uint32_t len);

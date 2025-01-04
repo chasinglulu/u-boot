@@ -280,4 +280,8 @@ void fdl_init(void *buf_addr, u32 buf_size)
 {
 	fdl_buf_addr = buf_addr ? buf_addr : (void *)CONFIG_FDL_BUF_ADDR;
 	fdl_buf_size = buf_size ? buf_size : CONFIG_FDL_BUF_SIZE;
+
+#ifdef CONFIG_FDL_DEBUG
+	exec_cmd_cnt = 0;
+#endif
 }
