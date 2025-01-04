@@ -79,6 +79,7 @@ int fdl_uart_data_download(struct udevice *dev, char *data, size_t size)
 	while (size--)
 		*data++ = _serial_getc(dev);
 
+	debug("uart download done\n");
 	return 0;
 }
 
@@ -141,6 +142,7 @@ restart:
 			}
 		}
 
+		memset(start, 0, FDL_COMMAND_LEN);
 		fdl_command(FDL_COMMAND_HANDSHAKE, start);
 		*packet = start;
 
@@ -163,7 +165,7 @@ restart:
 		}
 
 		if (ch < 0 || (first && ch != 0x9F)) {
-			pr_err("command failed\n");
+			pr_err("command failed (ch = %d)\n", ch);
 			goto next_packet;
 		}
 		rx_count++;
@@ -175,7 +177,7 @@ restart:
 		case FDL_STRUCT_1STF_LEN:
 			magic = head->magic;
 			if (magic != FDL_MAGIC) {
-				pr_err("magic wrong\n");
+				pr_err("magic wrong (magic = 0x%x)\n", magic);
 				goto next_packet;
 			}
 			break;
@@ -232,6 +234,7 @@ static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
 	struct fdl_raw_tx __maybe_unused *tx;
 	uint32_t __maybe_unused fdl_data_len;
 	uint32_t __maybe_unused calc_chksum;
+	char __maybe_unused *fdl_data = NULL;
 	int ret;
 
 	fdl_init(NULL, 0);
@@ -257,52 +260,53 @@ static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
 			pr_err("Unable to handle 0x%X command\n", head->bytecode);
 			goto failed;
 		}
-		mdelay(200);
+		// mdelay(1);
+		if (fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_END_DATA)) {
+			ret = fdl_data_complete(response);
+			if (ret < 0)
+				goto failed;
+		}
 		fdl_response_tx(dev, response);
 
 #ifdef CONFIG_FDL_RAW_DATA_DL
-		if (!fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_MIDST_DATA) &&
-		       !fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_END_DATA))
+		if (!fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_MIDST_DATA))
 			continue;
 
 		packet = (void *)response;
 		tx = (void *)packet->payload;
+
 		fdl_data_len = tx->len;
-		if (!fdl_data_len && !fdl_data_remaining()) {
-			ret = fdl_data_complete(response);
-			if (ret < 0)
-				goto failed;
-		} else {
-			char *fdl_data = malloc(fdl_data_len);
-			if (unlikely(!fdl_data)) {
-				debug("Out of memory\n");
-				fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
-				goto failed;
-			}
-
-			fdl_uart_data_download(dev, fdl_data, fdl_data_len);
-			if (tx->chksum_en) {
-				calc_chksum = fdl_rawdata_checksum((void *)fdl_data, fdl_data_len);
-				debug("calc: 0x%x checksum: 0x%x\n", calc_chksum, tx->chksum);
-				if (calc_chksum != tx->chksum) {
-					ret = -EINVAL;
-					fdl_fail_null(FDL_RESPONSE_VERIFY_CHECKSUM_FAIL, response);
-					goto failed;
-				}
-			}
-
-			ret = fdl_data_download(fdl_data, fdl_data_len, response);
-			if (ret < 0)
-				goto failed;
-
-			if (fdl_data)
-				free(fdl_data);
+		fdl_data = malloc(fdl_data_len);
+		if (unlikely(!fdl_data)) {
+			debug("Out of memory\n");
+			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+			goto failed;
 		}
+
+		fdl_uart_data_download(dev, fdl_data, fdl_data_len);
+		if (tx->chksum_en) {
+			calc_chksum = fdl_rawdata_checksum((void *)fdl_data, fdl_data_len);
+			debug("calc: 0x%x checksum: 0x%x\n", calc_chksum, tx->chksum);
+			if (calc_chksum != tx->chksum) {
+				ret = -EINVAL;
+				fdl_fail_null(FDL_RESPONSE_VERIFY_CHECKSUM_FAIL, response);
+				goto failed;
+			}
+		}
+
+		ret = fdl_data_download(fdl_data, fdl_data_len, response);
+		if (ret < 0)
+			goto failed;
+
 		fdl_okay_null(FDL_RESPONSE_ACK, response);
 		fdl_response_tx(dev, response);
 #endif
 
 failed:
+		if (fdl_data) {
+			free(fdl_data);
+			fdl_data = NULL;
+		}
 		if (cmd_packet)
 			free(cmd_packet);
 		if (ret < 0)
