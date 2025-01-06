@@ -195,6 +195,8 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	struct blk_desc __maybe_unused *dev_desc;
 	char __maybe_unused *full_mtdparts;
 	char __maybe_unused sub_mtdparts[MTDPARTS_LEN];
+	char __maybe_unused *hashtag = NULL;
+	int __maybe_unused prefix_len = 0;
 	int __maybe_unused ret;
 
 	if (mtd_initialized) {
@@ -224,6 +226,9 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 		return;
 	}
 	debug("full mtdparts: %s\n", full_mtdparts);
+	hashtag = strchr(full_mtdparts, '#');
+	if (hashtag)
+		prefix_len = hashtag - full_mtdparts + 1;
 
 	memset(sub_mtdparts, 0, sizeof(sub_mtdparts));
 	ret = splitup_mtdparts(full_mtdparts, sub_mtdparts);
@@ -235,7 +240,7 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	}
 
 	if (!IS_ERR_OR_NULL(mtd) && strlen(full_mtdparts)) {
-		board_get_mtdparts(mtd->name, full_mtdparts, ids, parts);
+		board_get_mtdparts(mtd->name, full_mtdparts + prefix_len, ids, parts);
 		mtd_initialized = true;
 	}
 
