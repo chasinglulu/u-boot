@@ -208,7 +208,7 @@ align_nand_partitions(struct blk_desc *dev_desc, struct disk_partition *partitio
 	switch (mtd->type) {
 	case MTD_NANDFLASH:
 	case MTD_MLCNANDFLASH:
-		printf("erasesize: 0x%x\n", mtd->erasesize);
+		debug("erasesize: 0x%x\n", mtd->erasesize);
 		break;
 	default:
 		return;
@@ -216,7 +216,8 @@ align_nand_partitions(struct blk_desc *dev_desc, struct disk_partition *partitio
 
 	part = partitions;
 	while (part_count--) {
-		size = ALIGN(part->size * dev_desc->blksz , mtd->erasesize);
+		size = part->size * SZ_512;
+		size = ALIGN(size , mtd->erasesize);
 		part->size = DIV_ROUND_UP(size, dev_desc->blksz);
 		part++;
 	}
@@ -396,6 +397,22 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 		    mtd_partitions, mtd_part_count);
 		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
+		/* Align & Fixup Main Nand partitions */
+		main_mtd = env_get_ulong("main_mtd", 10, ~0UL);
+		if (unlikely(main_mtd == ~0UL))
+			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
+
+		mtd_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
+		if (IS_ERR_OR_NULL(mtd_desc))
+			return -ENXIO;
+
+		mtd_tab = get_partitions_by_id(ptab, (void *)main_part_id,
+		                        get_main_part_id_count());
+		if (IS_ERR_OR_NULL(mtd_tab))
+			return -EINVAL;
+		align_nand_partitions(mtd_desc,
+		       mtd_tab->part, mtd_tab->number);
+
 		/* mtdparts string would written into safety SPI nor flash */
 		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);
 		if (unlikely(safe_mtd == ~0UL))
