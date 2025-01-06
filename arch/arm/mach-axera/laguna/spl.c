@@ -157,9 +157,21 @@ static inline void spl_lua_test(void) { }
 #ifdef CONFIG_SPL_BOARD_INIT
 void spl_board_init(void)
 {
-#if CONFIG_IS_ENABLED(ENV_SUPPORT)
 	boot_params_t *bp = boot_params_get_base();
+	const char *name = NULL;
+	int bootdev;
 
+	memset(bp, 0, sizeof(boot_params_t));
+
+	bootdev = get_bootdevice(&name);
+	if (bootdev > 0) {
+		printf("Boot Device:   %s [ID = %d]\n", name, bootdev);
+		bp->bootdevice = bootdev;
+	} else {
+		printf("Boot Device:   Unknown\n");
+	}
+
+#if CONFIG_IS_ENABLED(ENV_SUPPORT)
 	env_relocate();
 	set_bootdevice_env(bp->bootdevice);
 #endif
@@ -181,12 +193,7 @@ static inline unsigned long read_midr(void)
 #define MPIDR_HWID_BITMASK	UL(0xff00ffffff)
 void spl_display_print(void)
 {
-	boot_params_t *bp = boot_params_get_base();
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
-	const char *name = NULL;
-	int bootdev;
-
-	memset(bp, 0, sizeof(boot_params_t));
 
 	printf("EL level:      EL%x\n", current_el());
 	printf("Boot SPL on physical CPU%lx [0x%08lx]\n",
@@ -195,14 +202,6 @@ void spl_display_print(void)
 #ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
 	printf("GICv2:         enabled\n");
 #endif
-
-	bootdev = get_bootdevice(&name);
-	if (bootdev > 0) {
-		printf("Boot Device:   %s [ID = %d]\n", name, bootdev);
-		bp->bootdevice = bootdev;
-	} else {
-		printf("Boot Device:   Unknown\n");
-	}
 }
 #endif
 
