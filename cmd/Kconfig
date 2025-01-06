@@ -2055,6 +2055,11 @@ config CMD_SYSBOOT
 	help
 	  Boot image via local extlinux.conf file
 
+config CMD_BOOTFIT
+	bool "bootfit"
+	help
+	  Load and parse FIT/legacy image
+
 config CMD_QFW
 	bool "qfw"
 	select QFW
