@@ -29,8 +29,11 @@ typedef struct mtd_parts {
 	__le32 header_size;
 	__le32 header_crc32;
 	__le64 my_lba;
+	__le32 my_offset;
 	__le64 alternate_lba;
+	__le32 alternate_offset;
 	mtdparts_guid_t disk_guid;
+	__le32 total_size;
 	__le32 sizeof_mtdparts;
 	__le32 mtdparts_crc32;
 	char mtdparts_str[];
