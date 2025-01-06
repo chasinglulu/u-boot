@@ -245,6 +245,10 @@ void inline load_r5f_demo_into_ocm(void) {}
 #endif
 int board_late_init(void)
 {
+	int bootdev = get_bootdevice(NULL);
+
+	set_bootdevice_env(bootdev);
+
 	load_r5f_demo_into_ocm();
 	return 0;
 }
