@@ -480,6 +480,8 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 				debug("Unable to write GPT\n");
 				return ret;
 			}
+			/* Invalid part_type filled in the previous part_init */
+			mmc_desc->part_type = PART_TYPE_UNKNOWN;
 		}
 	}
 
