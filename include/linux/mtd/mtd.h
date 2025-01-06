@@ -425,7 +425,7 @@ static inline struct mtd_info *blk_desc_to_mtd(struct blk_desc *bdesc)
 	return *((struct mtd_info **)priv);
 }
 
-int mtd_bind(struct udevice *dev, struct mtd_info **mtd);
+int mtd_bind(struct udevice *dev, struct mtd_info **mtdp);
 #else
 static inline struct mtd_info *blk_desc_to_mtd(struct blk_desc *bdesc)
 {

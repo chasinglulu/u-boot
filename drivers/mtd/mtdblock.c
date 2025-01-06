@@ -56,22 +56,35 @@
 #include <dm/device.h>
 #include <dm/device-internal.h>
 #include <linux/mtd/mtd.h>
+#include <linux/sizes.h>
 
-int mtd_bind(struct udevice *dev, struct mtd_info **mtd)
+int mtd_bind(struct udevice *dev, struct mtd_info **mtdp)
 {
 	struct blk_desc *bdesc;
 	struct udevice *bdev;
+	struct mtd_info *mtd;
+	int blksz;
 	int ret;
 
+	if (unlikely(!mtdp))
+		return -EINVAL;
+	mtd = *mtdp;
+
+	if (mtd && (mtd->type == MTD_NANDFLASH ||
+	       mtd->type == MTD_MLCNANDFLASH))
+		blksz = mtd->writesize;
+	else
+		blksz = SZ_512;
+
 	ret = blk_create_devicef(dev, "mtd_blk", "blk", IF_TYPE_MTD,
-				 dev_seq(dev), 512, 0, &bdev);
+				 dev_seq(dev), blksz, 0, &bdev);
 	if (ret) {
 		pr_err("Cannot create block device\n");
 		return ret;
 	}
 
 	bdesc = dev_get_uclass_plat(bdev);
-	dev_set_priv(bdev, mtd);
+	dev_set_priv(bdev, mtdp);
 	bdesc->bdev = bdev;
 	bdesc->part_type = PART_TYPE_MTD;
 

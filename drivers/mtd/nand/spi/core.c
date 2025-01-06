@@ -1144,12 +1144,6 @@ static void spinand_cleanup(struct spinand_device *spinand)
 
 static int spinand_bind(struct udevice *dev)
 {
-	if (blk_enabled()) {
-		struct spinand_plat *plat = dev_get_plat(dev);
-
-		return mtd_bind(dev, &plat->mtd);
-	}
-
 	return 0;
 }
 
@@ -1200,6 +1194,12 @@ static int spinand_probe(struct udevice *dev)
 		goto err_spinand_cleanup;
 
 	plat->mtd = mtd;
+
+	if (blk_enabled()) {
+		ret = mtd_bind(dev, &plat->mtd);
+		if (ret)
+			goto err_spinand_cleanup;
+	}
 
 	return 0;
 
