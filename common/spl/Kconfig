@@ -1295,6 +1295,28 @@ config SPL_RAM_DEVICE
 	  be already in memory when SPL takes over, e.g. loaded by the boot
 	  ROM.
 
+config SPL_OCM_SUPPORT
+	bool "Support booting from OCM (on-chip RAM)"
+	help
+	  Enable booting of an image in OCM. The image can be preloaded or
+	  it can be loaded by SPL directly into OCM (e.g. using USB). The image
+	  consists of both firmwares (e.g. combination of u-boot-spl.bin and
+	  u-boot.img). Do not deal with the former, only execute the latter.
+
+config SPL_OCM_LATTER_OFFSET
+	hex "Offset Relative to SPL Start Address"
+	depends on SPL_OCM_SUPPORT
+	default 0x40000
+	help
+	  Define other image load address offset from SPL_TEXT_BASE.
+
+config SPL_OCM_LATTER_SIZE
+	hex "Max Size of Latter Firmware"
+	depends on SPL_OCM_SUPPORT
+	default 0x180000
+	help
+	  Define other image size.
+
 config SPL_REMOTEPROC
 	bool "Support REMOTEPROCS"
 	help
