@@ -271,6 +271,8 @@ int set_bootdevice_env(int bootdev)
 				break;
 			}
 		}
+		env_set("devtype", "mmc");
+		env_set_ulong("devnum", dev_seq(dev));
 		break;
 	case BOOTDEVICE_ONLY_NAND:
 		/* iterate through available devices of MTD uclass */
@@ -291,6 +293,8 @@ int set_bootdevice_env(int bootdev)
 				break;
 			}
 		}
+		env_set("devtype", "mtd");
+		env_set_ulong("devnum", dev_seq(dev));
 		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
 		/* probe all SPI NOR Flash devices */
@@ -310,12 +314,15 @@ int set_bootdevice_env(int bootdev)
 			mtd = dev_get_uclass_priv(dev);
 
 			if (mtd && (mtd->type == MTD_NANDFLASH ||
-			       mtd->type == MTD_MLCNANDFLASH))
+			       mtd->type == MTD_MLCNANDFLASH)) {
 				env_set_ulong("main_mtd", dev_seq(dev));
+				env_set_ulong("devnum", dev_seq(dev));
+			}
 
 			if (mtd && mtd->type == MTD_NORFLASH)
 				env_set_ulong("safe_mtd", dev_seq(dev));
 		}
+		env_set("devtype", "mtd");
 		debug("main_mtd: 0x%lx safe_mtd: 0x%lx\n",
 		           env_get_ulong("main_mtd", 10, ~0ULL),
 		           env_get_ulong("safe_mtd", 10, ~0ULL));
@@ -337,6 +344,8 @@ int set_bootdevice_env(int bootdev)
 				break;
 			}
 		}
+		env_set("devtype", "mmc");
+		env_set_ulong("devnum", dev_seq(dev));
 
 		/* probe all SPI NOR Flash devices */
 		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
@@ -425,6 +434,8 @@ static struct blk_desc *find_safety_nor(void)
 
 static struct blk_desc *find_safety_nand(void)
 {
+	/* FIXME: TODO */
+
 	return NULL;
 }
 
@@ -444,7 +455,7 @@ static int get_bootstrap(const char **name)
 	return bootstrap >= 0 ? bootstrap : -ENXIO;
 }
 
-static int get_bootstate(void)
+int get_bootstate(void)
 {
 	int bootstrap;
 

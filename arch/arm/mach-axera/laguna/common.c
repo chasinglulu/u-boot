@@ -5,15 +5,13 @@
  * Copyright (c) 2024 Charleye <wangkart@aliyun.com>
  */
 
-#include <asm/arch/bootparams.h>
-#include <asm/arch/cpu.h>
-#include <cpu_func.h>
-#include <dm/uclass.h>
 #include <common.h>
 #include <asm/io.h>
 #include <fdt_support.h>
 #include <asm/sections.h>
 #include <linux/sizes.h>
+#include <cpu_func.h>
+#include <dm/uclass.h>
 #include <exports.h>
 #include <env.h>
 #include <init.h>
@@ -25,6 +23,12 @@
 #if IS_ENABLED(CONFIG_CMD_NAND) && IS_ENABLED(CONFIG_MTD_RAW_NAND)
 #include <nand.h>
 #endif
+#include <fs.h>
+#include <android_ab.h>
+#include <linux/ctype.h>
+
+#include <asm/arch/bootparams.h>
+#include <asm/arch/cpu.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -228,6 +232,104 @@ ulong board_get_usable_ram_top(ulong total_size)
 	return CONFIG_LUA_DRAM_BASE + SZ_4G - 1;
 }
 
+static int scan_dev_for_extlinux_ab(void)
+{
+	struct blk_desc *dev_desc;
+	struct disk_partition part_info;
+	char *devtype = NULL;
+	char *devnum = NULL;
+	char dev_part_str[32];
+	bool fallback = false;
+	int slot, ret;
+
+	devtype = env_get("devtype");
+	if (unlikely(!devtype)) {
+		debug("Not Found 'devtype' environment variable\n");
+		return -ENODATA;
+	}
+
+	devnum = env_get("devnum");
+	if (unlikely(!devnum)) {
+		debug("Not Found 'devnum' environment variable\n");
+		return -ENODATA;
+	}
+
+retry:
+	if (fallback) {
+		/* Lookup the "misc_bak" partition */
+		snprintf(dev_part_str, 32, "%s#misc_bak", devnum);
+		debug("Using backup 'misc' partition\n");
+	} else {
+		/* Lookup the "misc" partition */
+		snprintf(dev_part_str, 32, "%s#misc", devnum);
+	}
+	ret = part_get_info_by_dev_and_name_or_num(devtype, dev_part_str,
+	                    &dev_desc, &part_info,
+	                    false);
+	if (ret < 0) {
+		if (fallback) {
+			debug("Not Found 'misc' partition on '%s' device\n", devtype);
+			return -ENODEV;
+		} else {
+			fallback = true;
+			goto retry;
+		}
+	}
+
+	ret = ab_select_slot(dev_desc, &part_info);
+	if (ret < 0) {
+		if (fallback) {
+			debug("Invaild AB control in 'misc' partition on '%s' device\n", devtype);
+			return -EINVAL;
+		} else {
+			fallback = true;
+			goto retry;
+		}
+	}
+	slot = ret;
+	printf("Using booting slot: %c\n", toupper(BOOT_SLOT_NAME(slot)));
+
+	/* Lookup the "bootable falg" partition */
+	int part_count = 0;
+	int part_map[MAX_SEARCH_PARTITIONS] = { 0 };
+	for (int p = 1; p <= MAX_SEARCH_PARTITIONS; p++) {
+		int r = part_get_info(dev_desc, p, &part_info);
+
+		if (r != 0)
+			continue;
+
+		if (!part_info.bootable)
+			continue;
+
+		part_map[part_count++] = p;
+	}
+	if (part_count != 2) {
+		if (fallback) {
+			debug("Too many or few bootable partitions on '%s' device\n", devtype);
+			return -EINVAL;
+		} else {
+			fallback = true;
+			goto retry;
+		}
+	}
+
+	ret = fs_set_blk_dev_with_part(dev_desc, part_map[slot]);
+	if (ret < 0) {
+		if (fallback) {
+			debug("No filesystem exist in %d partition on '%s' device\n", part_map[slot], devtype);
+			return -EBADSLT;
+		} else {
+			fallback = true;
+			goto retry;
+		}
+	}
+	fs_close();
+
+	env_set_hex("distro_bootpart", part_map[slot]);
+	env_set("prefix", "/");
+	return 0;
+}
+
 #ifdef CONFIG_BOARD_LATE_INIT
 #ifdef CONFIG_LUA_R5F_DEMO_CV
 #include "demo_cv.h"
@@ -245,9 +347,20 @@ void inline load_r5f_demo_into_ocm(void) {}
 #endif
 int board_late_init(void)
 {
+	int bootstate = get_bootstate();
 	int bootdev = get_bootdevice(NULL);
 
 	set_bootdevice_env(bootdev);
+	switch (bootdev) {
+	case BOOTDEVICE_ONLY_NAND:
+	case BOOTDEVICE_BOTH_NOR_NAND:
+		if (bootstate != BOOTSTATE_DOWNLOAD)
+			mtd_probe_devices();
+		break;
+	}
+
+	if (bootstate != BOOTSTATE_DOWNLOAD)
+		scan_dev_for_extlinux_ab();
 
 	load_r5f_demo_into_ocm();
 	return 0;

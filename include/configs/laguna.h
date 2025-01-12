@@ -139,12 +139,84 @@
 #define BOOT_TARGET_TFTP(func)
 #endif
 
+/* booting from any bootable partition */
+#define BOOTENV_DEV_BLK_BOOTPART(devtypeu, devtypel, instance)    \
+		"bootcmd_block= run scan_dev_for_boot_part\0"
+#define BOOTENV_DEV_NAME_BLK_BOOTPART(devtypeu, devtypel, instance) "blk_bootpart "
+
+#if CONFIG_IS_ENABLED(CMD_BLOCK)
+#define BOOT_TARGET_BLK_BOOTPART(func) func(BLK_BOOTPART, block, na)
+#else
+#define BOOT_TARGET_BLK_BOOTPART(func)
+#endif
+
+/* Based on shell script booting from two bootable partition (Slot A or B) */
+#define BOOTENV_DEV_BLOCK_AB(devtypeu, devtypel, instance)                        \
+		"bootcmd_block_ab= "                                                      \
+		"  ab_select slot ${devtype} ${devnum}#misc; "                            \
+		"  if test $? -ne 0; then "                                               \
+		"    ab_select slot ${devtype} ${devnum}#misc_bak; "                      \
+		"    if test $? -ne 0; then "                                             \
+		"      echo Inavild AB control; "                                         \
+		"      exit -2; "                                                         \
+		"    else "                                                               \
+		"      echo Using backup AB control; "                                    \
+		"    fi; "                                                                \
+		"  fi; "                                                                  \
+		"  part list ${devtype} ${devnum} -bootable devplist; "                   \
+		"  env exists devplist || exit -2; "                                      \
+		"  setenv count 0; "                                                      \
+		"  for part in ${devplist}; do "                                          \
+		"    setexpr count ${count} + 1; "                                        \
+		"    if test ${count} -eq 1 && test ${slot} = \"a\"; then "               \
+		"      echo Using slot A; "                                               \
+		"      setenv distro_bootpart ${part}; "                                  \
+		"    elif test ${count} -eq 2 && test ${slot} = \"b\"; then "             \
+		"      echo Using slot B; "                                               \
+		"      setenv distro_bootpart ${part}; "                                  \
+		"    fi; "                                                                \
+		"  done; "                                                                \
+		"  setenv count; "                                                        \
+		"  echo Current part 0x${distro_bootpart}; "                              \
+		"  if fstype ${devtype} ${devnum}:${distro_bootpart} bootfstype; then "   \
+		"    run scan_dev_for_boot; "                                             \
+		"  else "                                                                 \
+		"    echo Boot failed; "                                                  \
+		"    reset; "                                                             \
+		"  fi\0"
+#define BOOTENV_DEV_NAME_BLOCK_AB(devtypeu, devtypel, instance) "block_ab "
+#if CONFIG_IS_ENABLED(CMD_AB_SELECT)
+#define BOOT_TARGET_BLOCK_AB(func) func(BLOCK_AB, block_ab, na)
+#else
+#define BOOT_TARGET_BLOCK_AB(func)
+#endif
+
+/* booting from two bootable partition (Slot A or B)
+ * top-half: setup devtype, devnum, distro_bootpart and prefix environment variables
+ * bottom-half: using shell script to load image and boot
+ */
+#define BOOTENV_DEV_BLK_EXTLINUX(devtypeu, devtypel, instance)    \
+		"bootcmd_blk_extlinux= "                                  \
+		"  if test -e ${devtype} ${devnum}:${distro_bootpart}"    \
+		"       ${prefix}${boot_syslinux_conf}; then "            \
+		"    echo Found ${prefix}${boot_syslinux_conf}; "         \
+		"    run boot_extlinux; "                                 \
+		"    echo BOOT EXTLINUX FAILED; "                         \
+		"  else "                                                 \
+		"    echo Not Found ${prefix}${boot_syslinux_conf} on "   \
+		"           ${devtype} ${devnum}; "                       \
+		"    exit -2; "                                           \
+		"fi\0"
+#define BOOTENV_DEV_NAME_BLK_EXTLINUX(devtypeu, devtypel, instance) "blk_extlinux "
+#if CONFIG_IS_ENABLED(CMD_BLOCK)
+#define BOOT_TARGET_BLK_EXTLINUX(func) func(BLK_EXTLINUX, block, na)
+#else
+#define BOOT_TARGET_BLK_EXTLINUX(func)
+#endif
+
 #ifdef CONFIG_TARGET_LUA_VIRT
 #define BOOT_TARGET_DEVICES(func)   \
-		BOOT_TARGET_SMH(func)       \
-		BOOT_TARGET_MMC(func)       \
-		BOOT_TARGET_TFTP(func)      \
-		BOOT_TARGET_VIRTIO(func)
+		BOOT_TARGET_BLK_EXTLINUX(func)
 #elif defined(CONFIG_TARGET_LUA_FPGA)
 #define BOOT_TARGET_DEVICES(func)   \
 		BOOT_TARGET_FPGA(func)      \
