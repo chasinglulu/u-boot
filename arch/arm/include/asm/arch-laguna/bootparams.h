@@ -40,6 +40,9 @@ enum {
 	BOOTDEVICE_UART,
 	BOOTDEVICE_USB,
 	BOOTDEVICE_SD,
+
+	/* for FDL2 */
+	BOOTDEVICE_OCM,
 };
 
 enum {

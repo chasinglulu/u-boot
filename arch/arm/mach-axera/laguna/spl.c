@@ -59,6 +59,9 @@ u32 spl_boot_device(void)
 	case BOOTDEVICE_SD:
 		dev_id = BOOT_DEVICE_MMC2;
 		break;
+	case BOOTDEVICE_OCM:
+		dev_id = BOOT_DEVICE_BOARD;
+		break;
 	default:
 		pr_err("Unknown boot device\n");
 	}
@@ -159,9 +162,12 @@ void spl_board_init(void)
 {
 	boot_params_t *bp = boot_params_get_base();
 	const char *name = NULL;
-	int bootdev;
+	int bootdev, bootstate;
 
 	memset(bp, 0, sizeof(boot_params_t));
+
+	bootstate = get_bootstate();
+	printf("Boot State:    %d\n", bootstate);
 
 	bootdev = get_bootdevice(&name);
 	if (bootdev > 0) {
@@ -170,6 +176,9 @@ void spl_board_init(void)
 	} else {
 		printf("Boot Device:   Unknown\n");
 	}
+
+	if (bootstate == BOOTSTATE_DOWNLOAD)
+		bp->bootdevice = BOOTDEVICE_OCM;
 
 #if CONFIG_IS_ENABLED(ENV_SUPPORT)
 	env_relocate();
