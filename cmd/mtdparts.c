@@ -657,6 +657,16 @@ static int part_parse(const char *const partdef, const char **ret, struct part_i
 
 	/* test for options */
 	mask_flags = 0;
+	if (strncmp(p, "bootable", 8) == 0)
+		p += 8;
+	else
+		mask_flags |= MTD_BOOTABLE;
+
+	if (strncmp(p, "ro&bootable", 11) == 0) {
+		mask_flags |= MTD_WRITEABLE_CMD;
+		mask_flags &= ~MTD_BOOTABLE;
+		p += 11;
+	}
 	if (strncmp(p, "ro", 2) == 0) {
 		mask_flags |= MTD_WRITEABLE_CMD;
 		p += 2;

@@ -146,6 +146,18 @@ static int mtd_parse_partition(const char **_mtdparts,
 		name_len = 22;
 	}
 
+	/* Check if the partition is bootable */
+	if (strncmp(mtdparts, "bootable", 8) == 0)
+		mtdparts += 8;
+	else
+		partition->mask_flags |= MTD_BOOTABLE;
+
+	if (strncmp(mtdparts, "ro&bootable", 11) == 0) {
+		partition->mask_flags |= MTD_WRITEABLE;
+		partition->mask_flags &= ~MTD_BOOTABLE;
+		mtdparts += 11;
+	}
+
 	/* Check if the partition is read-only */
 	if (strncmp(mtdparts, "ro", 2) == 0) {
 		partition->mask_flags |= MTD_WRITEABLE;
@@ -1095,6 +1107,7 @@ static int __maybe_unused part_get_info_mtd(struct blk_desc *dev_desc, int part_
 	info->size = part->size / dev_desc->blksz;
 	info->blksz = dev_desc->blksz;
 	strcpy((char *)info->type, "U-Boot");
+	info->bootable = part->flags & MTD_BOOTABLE ? 1 : 0;
 
 	return 0;
 }
@@ -1108,8 +1121,9 @@ static void __maybe_unused part_print_mtd(struct blk_desc *dev_desc)
 		return;
 
 	list_for_each_entry(part, &master->partitions, node)
-		printf("- 0x%012llx-0x%012llx : \"%s\"\n",
-		       part->offset, part->offset + part->size, part->name);
+		printf("- 0x%012llx-0x%012llx : \"%s (0x%04X)\"\n",
+		       part->offset, part->offset + part->size,
+		       part->name, part->flags);
 }
 
 static int part_test_mtd(struct blk_desc *dev_desc)
@@ -1231,8 +1245,13 @@ static int do_mtdparts(struct blk_desc *dev_desc, char *str_mtdparts,
 	for (i = 0; i < part_count; i++, part++) {
 		snprintf(name, MTDPART_NAME_LEN, "0x%lX(%s),",
 		             part->size * dev_desc->blksz, part->name);
+		if (part->bootable) {
+			name[strlen(name) - 1] = '\0';
+			strcat(name, "bootable,");
+		}
 		if (unlikely(i == part_count - 1))
 			name[strlen(name) - 1] = '\0';
+
 		memcpy(p, name, strlen(name));
 		p += strlen(name);
 	}
