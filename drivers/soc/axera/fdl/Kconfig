@@ -6,6 +6,11 @@ config FDL_UART
 	depends on DM_SERIAL
 	select FDL
 
+config FDL_USB
+	bool "Enable FDL download over USB"
+	depends on FDL_USB_DRV
+	select FDL
+
 config FDL
 	bool
 
