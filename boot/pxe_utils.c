@@ -1358,7 +1358,7 @@ static int parse_pxefile_top(struct pxe_context *ctx, char *p, unsigned long bas
 			break;
 
 		case T_PROMPT:
-			eol_or_eof(&p);
+			err = parse_integer(&p, &cfg->prompt);
 			break;
 
 		case T_EOL:

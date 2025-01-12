@@ -388,6 +388,12 @@ struct menu *menu_create(char *title, int timeout, int prompt,
 	m->item_choice_data = item_choice_data;
 	m->item_cnt = 0;
 
+	/* timeout = 0 means waiting indefinitely for user choice
+	 * so bypass such.
+	 */
+	if (m->prompt && !m->timeout)
+		m->timeout = 1;
+
 	if (title) {
 		m->title = strdup(title);
 		if (!m->title) {
