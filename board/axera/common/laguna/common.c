@@ -118,6 +118,7 @@ int partitions_id_check(struct fdl_part_table *tab)
 	struct fdl_part_table *p = NULL;
 	int len, len1;
 	int i, j;
+	int ret = 0;
 
 	if (!tab)
 		return -EINVAL;
@@ -131,6 +132,20 @@ int partitions_id_check(struct fdl_part_table *tab)
 		if (!start->size || !start->name[0]) {
 			set_main_bootmode_env(start);
 			continue;
+		}
+
+		j = 0;
+		len1 = strlen((void *)start->name);
+		while (j < p->number) {
+			len = strlen((void *)p->part[j].name);
+			if (len == len1 &&
+			    !strncmp((void *)p->part[j].name,
+			                     (void *)start->name, len)) {
+				debug("Found the same partition name (%s)\n", start->name);
+				ret = -EINVAL;
+				goto failed;
+			}
+			j++;
 		}
 		p->part[p->number++] = *start;
 	}
@@ -160,14 +175,21 @@ int partitions_id_check(struct fdl_part_table *tab)
 				break;
 		}
 
-		if (j == ARRAY_SIZE(main_part_id))
-			return -EINVAL;
+		if (j == ARRAY_SIZE(main_part_id)) {
+			debug("Not allowed partition name (%s)\n", start->name);
+			ret = -EINVAL;
+			goto failed;
+		}
 	}
 
 	tab->number = p->number;
 	memcpy(tab->part, p->part, p->number * sizeof(*start));
 
-	free(p);
+failed:
+	if (p)
+		free(p);
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
