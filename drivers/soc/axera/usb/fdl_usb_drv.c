@@ -222,33 +222,48 @@ static int fdl_usb_drv_recv(uint8_t* buf, uint32_t len, uint32_t timeout_ms)
 {
 	dwc3_device_t *dev = &g_dwc3_dev;
 	unsigned int transfer_size = 0;
+	unsigned long ticks;
+	unsigned long elapsed = 0;
+	int ret;
 
 	if(len % dev->out_ep->ep.maxpacket == 0 && len != 0) {
 		transfer_size = len;
 	} else {
-		transfer_size = (len / dev->out_ep->ep.maxpacket + 1) * dev->out_ep->ep.maxpacket;
+		transfer_size = ROUND(len, dev->out_ep->ep.maxpacket);
 	}
 
-	info("usb recv: addr:%p, ep_maxpacket:%d, len:%d, transfer_size:%d\r\n",
-		buf, dev->out_ep->ep.maxpacket, len, transfer_size);
+	info("usb recv: addr:%p, ep_maxpacket:%d, len:%d, transfer_size:%d\n",
+	               buf, dev->out_ep->ep.maxpacket, len, transfer_size);
 
 	usb_out_len = 0;
 	usb_receive(dev, (dma_addr_t)buf, transfer_size);
 
 	while(1) {
+		ticks = get_timer(0);
 		dwc3_handle_interrupt(dev);
+		elapsed += get_timer(ticks);
 		if (usb_out_len > 0) {
 			info("receive %d bytes data from host\r\n", usb_out_len);
 			return usb_out_len;
 		}
 
+		if (elapsed > timeout_ms) {
+			debug("%s: timeout\n", __func__);
+			ret = -ETIMEDOUT;
+			goto failed;
+		}
+
 		if(ctrlc()){
-			printf("abort\r\n");
-			free(dev->out_ep->ep.dma_desc);
-			free(dev->in_ep->ep.dma_desc);
-			return -1;
+			debug("abort\r\n");
+			ret = -EAGAIN;
+			goto failed;
 		}
 	}
+
+failed:
+	free(dev->out_ep->ep.dma_desc);
+	free(dev->in_ep->ep.dma_desc);
+	return ret;
 }
 
 static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
@@ -256,6 +271,9 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 	dwc3_device_t *dev = &g_dwc3_dev;
 	usb3_dev_ep_t *ep = dev->in_ep;
 	struct dwc3_gadget_ep_cmd_params params;
+	unsigned long ticks;
+	unsigned long elapsed = 0;
+	int ret;
 	u8 zlp = 0;
 
 	info("usb send: addr:%p, len:%d\r\n", buf, len);
@@ -287,19 +305,30 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 	dev->send_len = len;
 
 	while(1) {
+		ticks = get_timer(0);
 		dwc3_handle_interrupt(dev);
+		elapsed += get_timer(ticks);
 		if (usb_in_len > 0) {
 			info("send %d bytes data to host\r\n", usb_in_len);
 			return usb_in_len;
 		}
 
+		if (elapsed > timeout_ms) {
+			ret = -ETIMEDOUT;
+			goto failed;
+		}
+
 		if(ctrlc()){
-			printf("abort\r\n");
-			free(dev->out_ep->ep.dma_desc);
-			free(dev->in_ep->ep.dma_desc);
-			return -1;
+			debug("abort\r\n");
+			ret = -EAGAIN;
+			goto failed;
 		}
 	}
+
+failed:
+	free(dev->out_ep->ep.dma_desc);
+	free(dev->in_ep->ep.dma_desc);
+	return ret;
 }
 
 static void dwc3_event_buffers_setup(dwc3_device_t *dwc3_dev)
@@ -418,6 +447,11 @@ int fdl_usb_drv_get(struct udevice **devp)
 	return uclass_get_device_by_driver(UCLASS_NOP,
 	                    DM_DRIVER_GET(fdl_usb_drv),
 	                    devp);
+}
+
+int fdl_usb_drv_get_maxpacket(const struct udevice *dev)
+{
+	return g_dwc3_dev.out_ep->ep.maxpacket;
 }
 
 int fdl_usb_drv_open(const struct udevice *dev)

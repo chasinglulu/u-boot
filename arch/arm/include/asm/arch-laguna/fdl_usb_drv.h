@@ -19,6 +19,7 @@ struct fdl_usb_drv_ops {
 #define fdl_usb_drv_get_ops(dev)    ((struct fdl_usb_drv_ops *)(dev)->driver->ops)
 
 int fdl_usb_drv_get(struct udevice **devp);
+int fdl_usb_drv_get_maxpacket(const struct udevice *dev);
 int fdl_usb_drv_open(const struct udevice *dev);
 int fdl_usb_drv_read(const struct udevice *dev, char *buffer, uint32_t len);
 int fdl_usb_drv_write(const struct udevice *dev, const char *buffer, uint32_t len);
