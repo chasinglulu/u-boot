@@ -12,7 +12,7 @@
 #include <memalign.h>
 #include <linux/err.h>
 #include <u-boot/crc.h>
-#include <u-boot/crc.h>
+#include <linux/sizes.h>
 
 /**
  * Compute the CRC-32 of the bootloader control struct.
@@ -90,7 +90,7 @@ static int ab_control_create_from_disk(struct blk_desc *dev_desc,
 	ulong abc_offset, abc_blocks, ret;
 
 	abc_offset = offsetof(struct bootloader_message_ab, slot_suffix);
-	if (abc_offset % part_info->blksz) {
+	if (abc_offset % SZ_512) {
 		log_err("ANDROID: Boot control block not block aligned.\n");
 		return -EINVAL;
 	}
