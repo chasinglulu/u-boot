@@ -32,7 +32,9 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 {
 #if defined(CONFIG_FDT_FIXUP_PARTITIONS)
 	static struct node_info nodes[] = {
-		{ "cfi-flash", MTD_DEV_TYPE_NOR, },
+		{ "jedec,spi-nor", MTD_DEV_TYPE_NOR, },
+		{ "spi-nand", MTD_DEV_TYPE_NAND, },
+		{ "spi-nand", MTD_DEV_TYPE_SPINAND, },
 	};
 
 	/* Update partition nodes using info from mtdparts env var */
