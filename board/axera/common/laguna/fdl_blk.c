@@ -27,11 +27,19 @@
 
 
 /* PARTITION_SYSTEM_GUID */
-const unsigned char default_type_guid_bin[UUID_BIN_LEN] = {
+const unsigned char default_system_guid_bin[UUID_BIN_LEN] = {
 	0x28, 0x73, 0x2A, 0xC1,
 	0x1F, 0xF8, 0xD2, 0x11,
 	0xBA, 0x4B, 0x00, 0xA0,
 	0xC9, 0x3E, 0xC9, 0x3B
+};
+
+/* PARTITION_BASIC_DATA_GUID */
+const unsigned char default_data_guid_bin[UUID_BIN_LEN] = {
+	0xA2, 0xA0, 0xD0, 0xEB,
+	0xE5, 0xB9, 0x33, 0x44,
+	0x87, 0xC0, 0x68, 0xB6,
+	0xB7, 0x26, 0x99, 0xC7
 };
 
 /* uuid -F BIN | xxd -i */
@@ -70,8 +78,13 @@ gpt_partitions_fill(struct blk_desc *dev_desc,
 #endif
 #endif
 
+	if (!strncasecmp((void *)part->name, "kernel", 6))
+		part->bootable = PART_BOOTABLE;
+	else
+		part->bootable = 0;
+
 #ifdef CONFIG_PARTITION_TYPE_GUID
-		uuid_bin_to_str(default_type_guid_bin,
+		uuid_bin_to_str(default_data_guid_bin,
 		      part->type_guid, UUID_STR_FORMAT_GUID);
 #endif
 	}
@@ -93,6 +106,22 @@ gpt_partitions_verify(struct blk_desc *dev_desc,
 	if (!ret)
 		free(gpt_pte);
 	return ret;
+}
+
+static int
+mtdparts_partitions_fixup(struct blk_desc *dev_desc,
+         struct disk_partition *partitions, int part_count)
+{
+	struct disk_partition *part;
+	int i;
+
+	for (i = 0, part = partitions; i < part_count; i++, part++) {
+		if (!strncasecmp((void *)part->name, "kernel", 6))
+			part->bootable = PART_BOOTABLE;
+		else
+			part->bootable = 0;
+	}
+	return 0;
 }
 
 static int
@@ -344,7 +373,7 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 
 	ret = partitions_id_check(ptab);
 	if (ret < 0) {
-		pr_err("invaild partitons id\n");
+		pr_err("Invaild partitons ID\n");
 		return ret;
 	}
 
@@ -486,6 +515,8 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 	}
 
 	if (mtdparts){
+		mtdparts_partitions_fixup(mtd_desc,
+		    mtd_partitions, mtd_part_count);
 		ret = mtdparts_restore(mtd_desc, str_disk_guid,
 		               prefix,
 		               mtd_partitions,
@@ -599,6 +630,7 @@ int fdl_blk_erase(const char *part_name, size_t size)
 		}
 		printf("%s\n", __func__);
 	} else {
+		/* FIXME: TODO */
 		printf("TODO\n");
 	}
 
