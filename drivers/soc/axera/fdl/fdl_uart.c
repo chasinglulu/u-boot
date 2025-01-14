@@ -95,7 +95,7 @@ static int fdl_uart_rx_timeout(struct udevice *dev, uint32_t timeout)
 static __maybe_unused
 int fdl_uart_data_download(struct udevice *dev, char *data, size_t size)
 {
-	uint32_t timeout = 10000;	// 10s
+	uint32_t timeout = CONFIG_VAL(FDL_TIMEOUT);
 	int ret;
 
 	while (size--) {
@@ -111,7 +111,7 @@ int fdl_uart_data_download(struct udevice *dev, char *data, size_t size)
 
 static int fdl_packet_rx(struct udevice *dev, char **packet)
 {
-	uint32_t timeout = 10000;	// 10s
+	uint32_t timeout = CONFIG_VAL(FDL_TIMEOUT);
 	int handshake = 3, rx_count = 0;
 	uint32_t magic, size, bytecode;
 	char *buffer, *pos;

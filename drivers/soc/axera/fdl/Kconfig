@@ -16,6 +16,13 @@ config FDL
 
 if FDL
 
+config FDL_TIMEOUT
+	int "FDL timeout (ms)"
+	default 10000
+	help
+	  This specifies the timeout for receiving FDL command packets
+	  and image data.
+
 config FDL_BUF_ADDR
 	hex "Define FDL buffer address"
 	default 0x108800000 if AXERA_LUA
