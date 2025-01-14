@@ -12,6 +12,7 @@
 #include <serial.h>
 #include <command.h>
 #include <linux/delay.h>
+#include <linux/err.h>
 #include <fdl.h>
 #include <hexdump.h>
 #include <malloc.h>
@@ -42,7 +43,7 @@ int fdl_usb_rx_timeout(struct udevice *dev, char *buf, size_t len, uint32_t time
 			break;
 		}
 
-		if (!ret)
+		if (likely(!ret))
 			break;
 	}
 
@@ -51,14 +52,14 @@ int fdl_usb_rx_timeout(struct udevice *dev, char *buf, size_t len, uint32_t time
 
 int fdl_usb_data_download(struct udevice *dev, char *data, size_t size)
 {
-	uint32_t timeout = 10000;	// 10s
+	uint32_t timeout = CONFIG_VAL(FDL_TIMEOUT);
 
 	return fdl_usb_rx_timeout(dev, data, size, timeout);
 }
 
 static int fdl_packet_rx(struct udevice *dev, char **packet)
 {
-	uint32_t timeout = 10000;	// 10s
+	uint32_t timeout = CONFIG_VAL(FDL_TIMEOUT);
 	struct fdl_header *head = NULL;
 	struct fdl_packet *pp = NULL;
 	uint32_t magic, size;
@@ -157,10 +158,8 @@ failed:
 	return ret;
 }
 
-static int do_fdl_usb(struct cmd_tbl *cmdtp, int flag, int argc,
-                        char *const argv[])
+static int fdl_usb_process(struct udevice *dev, bool timeout, bool need_ack)
 {
-	struct udevice *dev;
 	char *cmd_packet = NULL;
 	char response[FDL_RESPONSE_LEN];
 	struct fdl_struct fdl;
@@ -175,14 +174,21 @@ static int do_fdl_usb(struct cmd_tbl *cmdtp, int flag, int argc,
 	fdl_init(NULL, 0);
 	memset(response, 0, sizeof(response));
 
-	fdl_usb_drv_get(&dev);
-	printf("device name: %s\n", dev->name);
 	fdl_usb_drv_open(dev);
 	maxpacket = fdl_usb_drv_get_maxpacket(dev);
+
+	if (unlikely(need_ack)) {
+		/* ACK the previous execute command */
+		fdl_okay_null(FDL_RESPONSE_ACK, response);
+		fdl_response_tx(dev, response);
+	}
 
 	while (true) {
 		ret = fdl_packet_rx(dev, &cmd_packet);
 		if (ret < 0) {
+			if (!timeout && ret == -ETIMEDOUT)
+				continue;
+
 			pr_err("Failed to receive command packet [ret %d]\n", ret);
 			return CMD_RET_FAILURE;
 		}
@@ -250,12 +256,50 @@ failed:
 		if (ret < 0)
 			fdl_response_tx(dev, response);
 	}
+}
+
+static int do_fdl_usb(struct cmd_tbl *cmdtp, int flag, int argc,
+                        char *const argv[])
+{
+	struct udevice *dev;
+	int ret;
+
+	fdl_usb_drv_get(&dev);
+	if (IS_ERR_OR_NULL(dev)) {
+		pr_err("Not found FDL USB device\n");
+		return CMD_RET_FAILURE;
+	}
+	printf("device name: %s\n", dev->name);
+
+	ret = fdl_usb_process(dev, true, false);
+	if (ret < 0)
+		return CMD_RET_FAILURE;
 
 	return CMD_RET_SUCCESS;
 }
 
 U_BOOT_CMD(
 	fdl_usb, 1, 1, do_fdl_usb,
-	"fdl usb test",
-	""
+	"FDL over USB",
+	"\n"
+	"    - Using FDL USB device to download\n"
 );
+
+int fdl_usb_download(int dev_idx, bool timeout)
+{
+	struct udevice *dev;
+	int ret;
+
+	fdl_usb_drv_get(&dev);
+	if (IS_ERR_OR_NULL(dev)) {
+		pr_err("Not found FDL USB device\n");
+		return -ENODEV;
+	}
+	debug("device name: %s\n", dev->name);
+
+	ret = fdl_usb_process(dev, timeout, true);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
