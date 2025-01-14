@@ -26,6 +26,7 @@
 #include <fs.h>
 #include <android_ab.h>
 #include <linux/ctype.h>
+#include <hang.h>
 
 #include <asm/arch/bootparams.h>
 #include <asm/arch/cpu.h>
@@ -354,22 +355,57 @@ int board_late_init(void)
 	switch (bootdev) {
 	case BOOTDEVICE_ONLY_NAND:
 	case BOOTDEVICE_BOTH_NOR_NAND:
-		if (bootstate != BOOTSTATE_DOWNLOAD)
+		if (bootstate == BOOTSTATE_POWERUP)
 			mtd_probe_devices();
 		break;
 	}
 
-	if (bootstate != BOOTSTATE_DOWNLOAD)
+	if (bootstate == BOOTSTATE_POWERUP)
 		scan_dev_for_extlinux_ab();
+
+	if (bootstate == BOOTSTATE_DOWNLOAD)
+		env_set("download", "yes");
 
 	load_r5f_demo_into_ocm();
 	return 0;
 }
 #endif
 
+#if defined(CONFIG_FDL)
+static void enter_download_mode(void)
+{
+	int downif = get_downif();
+	int ret;
+
+	switch (downif) {
+	case DOWNLOAD_IF_UART:
+		printf("Enter UART Download Mode...\n");
+		ret = fdl_uart_download(2, false);
+		break;
+	case DOWNLOAD_IF_USB:
+		printf("Enter USB Download Mode...\n");
+		ret = fdl_usb_download(0, false);
+		break;
+	default:
+		debug("Not supported download interface '%d'\n", downif);
+		ret = -EINVAL;
+	}
+
+	if (ret < 0) {
+		pr_err("Unable to enter download mode, hang up...\n");
+		hang();
+	}
+}
+#else
+static inline void enter_download_mode(void) { }
+#endif
+
 #ifdef CONFIG_LAST_STAGE_INIT
 int last_stage_init(void)
 {
+	if (env_get_yesno("download") == 1)
+		enter_download_mode();
+
 	return 0;
 }
 #endif

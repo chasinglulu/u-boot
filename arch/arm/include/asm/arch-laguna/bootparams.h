@@ -97,6 +97,7 @@ int get_main_part_id_count(void);
 int get_bootdevice(const char **name);
 int set_bootdevice_env(int bootdev);
 int get_bootstate(void);
+int get_downif(void);
 
 #include <blk.h>
 #include <part.h>

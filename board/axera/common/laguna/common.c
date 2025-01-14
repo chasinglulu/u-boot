@@ -13,6 +13,7 @@
 #include <mtd.h>
 #include <env.h>
 #include <mmc.h>
+#include <sysinfo.h>
 
 #include <linux/err.h>
 #include <dm/device-internal.h>
@@ -454,9 +455,11 @@ static int get_bootstrap(const char **name)
 
 	return bootstrap >= 0 ? bootstrap : -ENXIO;
 }
+#endif /* BOOT_DEVICE_SYSCON */
 
 int get_bootstate(void)
 {
+#if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
 	int bootstrap;
 
 	bootstrap = get_bootstrap(NULL);
@@ -467,6 +470,9 @@ int get_bootstate(void)
 		return BOOTSTATE_DOWNLOAD;
 
 	return BOOTSTATE_POWERUP;
+#endif
+
+	return -EINVAL;
 }
 
 static __maybe_unused
@@ -485,7 +491,6 @@ void set_bootstate_env(uint32_t bootstate)
 	env_set_ulong("bootstate", bootstate);
 	bootstate_inited = true;
 }
-#endif /* BOOT_DEVICE_SYSCON */
 
 int get_bootdevice(const char **name)
 {
@@ -610,4 +615,32 @@ result:
 #endif
 
 	return -ENODEV;
+}
+
+int get_downif(void)
+{
+	const char *dev_name = "download_if";
+	struct udevice *dev;
+	int downif, ret;
+
+	uclass_get_device_by_name(UCLASS_SYSINFO,
+	                        dev_name, &dev);
+	if (IS_ERR_OR_NULL(dev)) {
+		pr_err("Not found '%s' node\n", dev_name);
+		return -ENODEV;
+	}
+
+	ret = sysinfo_detect(dev);
+	if (ret < 0) {
+		pr_err("Unable to detect download interface information.\n");
+		return ret;
+	}
+
+	ret = sysinfo_get_int(dev, 0, &downif);
+	if (ret < 0) {
+		pr_err("Failed to read 'downif'\n");
+		return ret;
+	}
+
+	return downif;
 }
