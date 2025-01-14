@@ -35,6 +35,11 @@ config BOOT_DEVICE_SYSCON
 	  a chip from a specific device by using syscon that can be controlled
 	  outside U-Boot.
 
+config BOOT_DEVICE_NONE
+	bool "none boot device backend"
+	help
+	  Use none to make compilation pass
+
 endchoice
 
 
@@ -66,6 +71,11 @@ config SPL_BOOT_DEVICE_SYSCON
 	  Use syscon to control the boot device. This will allow users to boot
 	  a chip from a specific device by using syscon that can be controlled
 	  outside SPL.
+
+config SPL_BOOT_DEVICE_NONE
+	bool "none boot device backend in SPL"
+	help
+	  Use none to make compilation pass in SPL
 
 endchoice
 
