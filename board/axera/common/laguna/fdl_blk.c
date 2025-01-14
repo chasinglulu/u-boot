@@ -345,7 +345,8 @@ writing:
 		                written * dev->blksz, image_size);
 		return -EIO;
 	}
-	printf("\nwritting of %lu bytes finished\n", image_size);
+	printf("\nwritting of %lu bytes into '%s' partition finished\n",
+	                  image_size, part_name);
 
 	return 0;
 }
