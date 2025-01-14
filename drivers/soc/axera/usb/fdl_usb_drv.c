@@ -252,12 +252,6 @@ static int fdl_usb_drv_recv(uint8_t* buf, uint32_t len, uint32_t timeout_ms)
 			ret = -ETIMEDOUT;
 			goto failed;
 		}
-
-		if(ctrlc()){
-			debug("abort\r\n");
-			ret = -EAGAIN;
-			goto failed;
-		}
 	}
 
 failed:
@@ -315,12 +309,6 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 
 		if (elapsed > timeout_ms) {
 			ret = -ETIMEDOUT;
-			goto failed;
-		}
-
-		if(ctrlc()){
-			debug("abort\r\n");
-			ret = -EAGAIN;
 			goto failed;
 		}
 	}
