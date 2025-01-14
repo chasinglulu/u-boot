@@ -10,10 +10,10 @@
 #include <serial.h>
 #include <command.h>
 #include <linux/delay.h>
+#include <linux/err.h>
 #include <fdl.h>
-#include <hexdump.h>
 #include <malloc.h>
-#include <u-boot/crc.h>
+#include <hexdump.h>
 
 static void _serial_putc(struct udevice *dev, char ch)
 {
@@ -214,10 +214,8 @@ failed:
 	return ret;
 }
 
-static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
-                        char *const argv[])
+static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 {
-	struct udevice *dev;
 	char *cmd_packet = NULL;
 	char response[FDL_RESPONSE_LEN];
 	struct fdl_struct fdl;
@@ -232,14 +230,20 @@ static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
 	fdl_init(NULL, 0);
 	memset(response, 0, sizeof(response));
 
-	uclass_get_device_by_seq(UCLASS_SERIAL, 2, &dev);
-	printf("device name: %s\n", dev->name);
+	if (unlikely(need_ack)) {
+		/* ACK the previous execute command */
+		fdl_okay_null(FDL_RESPONSE_ACK, response);
+		fdl_response_tx(dev, response);
+	}
 
 	while (true) {
 		ret = fdl_packet_rx(dev, &cmd_packet);
-		if (ret < 0) {
+		if (unlikely(ret < 0)) {
+			if (!timeout && ret == -ETIMEDOUT)
+				continue;
+
 			pr_err("Failed to receive command packet [ret %d]\n", ret);
-			return CMD_RET_FAILURE;
+			return ret;
 		}
 
 		ret = fdl_packet_check(&fdl, cmd_packet, response);
@@ -277,7 +281,7 @@ static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
 
 		ret = fdl_uart_data_download(dev, fdl_data, fdl_data_len);
 		if (unlikely(ret < 0)) {
-			printf("fdl_uart_data_download failed (ret = %d)\n", ret);
+			debug("fdl_uart_data_download failed (ret = %d)\n", ret);
 			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
 			goto failed;
 		}
@@ -308,12 +312,60 @@ failed:
 		if (ret < 0)
 			fdl_response_tx(dev, response);
 	}
+}
+
+static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
+                        char *const argv[])
+{
+	struct udevice *dev;
+	int seq = 0;
+	int ret;
+
+	if (argc > 2)
+		return CMD_RET_USAGE;
+
+	if (argc == 2) {
+		seq = simple_strtol(argv[1], NULL, 10);
+		if (seq < 0)
+			return CMD_RET_USAGE;
+	}
+
+	uclass_get_device_by_seq(UCLASS_SERIAL, seq, &dev);
+	if (IS_ERR_OR_NULL(dev)) {
+		pr_err("Not found seq '%d' UART device\n", seq);
+		return CMD_RET_FAILURE;
+	}
+	printf("device name: %s\n", dev->name);
+
+	ret = fdl_uart_process(dev, true, false);
+	if (ret < 0)
+		return CMD_RET_FAILURE;
 
 	return CMD_RET_SUCCESS;
 }
 
 U_BOOT_CMD(
-	fdl_uart, 1, 1, do_fdl_uart,
-	"fdl uart test",
-	""
+	fdl_uart, 2, 1, do_fdl_uart,
+	"FDL over UART",
+	"<dev_idx>\n"
+	"    - Using sequence number 'dev_idx' UART device to download (default: 0)\n"
 );
+
+int fdl_uart_download(int dev_idx, bool timeout)
+{
+	struct udevice *dev;
+	int ret;
+
+	uclass_get_device_by_seq(UCLASS_SERIAL, dev_idx, &dev);
+	if (IS_ERR_OR_NULL(dev)) {
+		pr_err("Not found seq '%d' UART device\n", dev_idx);
+		return -ENODEV;
+	}
+	debug("device name: %s\n", dev->name);
+
+	ret = fdl_uart_process(dev, timeout, true);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}

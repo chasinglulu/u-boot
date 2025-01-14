@@ -236,4 +236,6 @@ int fdl_blk_write_data(const char *part_name, size_t image_size);
 int fdl_blk_write_partition(struct fdl_part_table *part_tab);
 int fdl_blk_erase(const char *part_name, size_t size);
 
+int fdl_uart_download(int dev_idx, bool timeout);
+
 #endif
