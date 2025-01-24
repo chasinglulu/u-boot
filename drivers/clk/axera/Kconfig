@@ -24,6 +24,18 @@ config CLK_AXERA_V2
 
 endchoice
 
+config LUA_PLL_FIXED_FREQ
+	bool "Fixed PLL Clock Frequency"
+	depends on CLK_AXERA
+	help
+	  This option enables support for fixed PLL frequency.
+
+config LUA_PLL_SET_RATE
+	bool "Allow PLL Frequency Setting"
+	depends on CLK_AXERA
+	help
+	  This option allows seting PLL frequency.
+
 config SPL_CLK_AXERA
 	bool "Clock support for Axera SoC family of devices in SPL"
 	depends on CLK && SPL
