@@ -41,6 +41,11 @@ int __weak spl_multi_blk_ab_select(void)
 	return 0;
 }
 
+int __weak spl_board_get_devnum(uint bootdev_type)
+{
+	return CONFIG_VAL(MULTI_BLK_DEVNUM);
+}
+
 static struct blk_desc *get_blk_by_devnum(struct spl_boot_device *bootdev, int devnum)
 {
 	enum if_type if_type;
@@ -222,10 +227,14 @@ static int spl_blk_load_multi_images(struct spl_image_info *spl_image,
 	bool has_optee = false;
 	bool has_atf = false;
 	char name[MAX_NAME_LEN];
-	int devnum = CONFIG_VAL(MULTI_BLK_DEVNUM);
+	int devnum;
 	int ab_slot;
 	int err = 0;
 	int i;
+
+	devnum = spl_board_get_devnum(bootdev->boot_device);
+	if (devnum < 0)
+		devnum = CONFIG_VAL(MULTI_BLK_DEVNUM);
 
 	ab_slot = spl_multi_blk_ab_select();
 	if (ab_slot < 0) {

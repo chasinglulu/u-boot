@@ -262,6 +262,30 @@ int spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 	return 0;
 }
 
+int spl_board_get_devnum(uint bootdev_type)
+{
+	ulong devnum;
+
+	switch (bootdev_type) {
+	case BOOT_DEVICE_MMC1:
+		devnum = env_get_ulong("mmc_dev", 10, ~0ULL);
+		break;
+	case BOOT_DEVICE_NOR:
+		devnum = env_get_ulong("safe_mtd", 10, ~0ULL);
+		break;
+	case BOOT_DEVICE_NAND:
+		devnum = env_get_ulong("main_mtd", 10, ~0ULL);
+		break;
+	default:
+		return -1;
+	}
+
+	if (unlikely(devnum == ~0ULL))
+		return -1;
+
+	return devnum;
+}
+
 #if defined(CONFIG_LUA_AB)
 int spl_multi_mmc_ab_select(struct blk_desc *dev_desc)
 {
