@@ -20,9 +20,10 @@
 #define MAX_NAME_LEN  32
 
 /* Weak default function for arch/board-specific fixups to the spl_image_info */
-void __weak
+int __weak
 spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
+	return 0;
 }
 
 static int mmc_load_legacy(struct spl_image_info *spl_image,

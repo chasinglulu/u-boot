@@ -16,15 +16,17 @@
 #define LZMA_LEN	(1 << 20)
 
 /* Weak default function for arch/board-specific fixups to the spl_image_info */
-void __weak
+int __weak
 spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
+	return 0;
 }
 
 int spl_parse_legacy_header(struct spl_image_info *spl_image,
 			    const struct image_header *header)
 {
 	u32 header_size = sizeof(struct image_header);
+	int ret;
 
 	/* check uImage header CRC */
 	if (IS_ENABLED(CONFIG_SPL_LEGACY_IMAGE_CRC_CHECK) &&
@@ -65,7 +67,9 @@ int spl_parse_legacy_header(struct spl_image_info *spl_image,
 	 * specified in legacy image header. We can't use it.
 	 * So fixup it in the case.
 	 */
-	spl_board_perform_legacy_fixups(spl_image);
+	ret = spl_board_perform_legacy_fixups(spl_image);
+	if (ret)
+		return ret;
 
 	debug(SPL_TPL_PROMPT
 	      "payload image: %s load addr: 0x%lx size: %d\n",

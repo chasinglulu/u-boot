@@ -235,7 +235,7 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 #if defined(CONFIG_SPL_MULTI_MMC) || defined(CONFIG_SPL_MULTI_MTD)      \
      || defined(CONFIG_SPL_MULTI_BLK) || defined(CONFIG_SPL_MULTI_FAT)  \
      || defined(CONFIG_SPL_MULTI_UART)
-void spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
+int spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
 	switch (spl_image->os) {
 	case IH_OS_ARM_TRUSTED_FIRMWARE:
@@ -252,6 +252,8 @@ void spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 
 	/* offset load addr in order to reduce one memmove */
 	spl_image->load_addr -= sizeof(image_header_t);
+
+	return 0;
 }
 
 #if defined(CONFIG_LUA_AB)
