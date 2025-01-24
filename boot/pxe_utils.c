@@ -21,6 +21,7 @@
 #include <linux/ctype.h>
 #include <errno.h>
 #include <linux/list.h>
+#include <bootstage.h>
 
 #ifdef CONFIG_DM_RNG
 #include <rng.h>
@@ -737,7 +738,7 @@ static int label_boot(struct pxe_context *ctx, struct pxe_label *label)
 	buf = map_sysmem(kernel_addr_r, 0);
 	/* Try bootm for legacy and FIT format image */
 	if (genimg_get_format(buf) != IMAGE_FORMAT_INVALID &&
-            IS_ENABLED(CONFIG_CMD_BOOTM))
+	        IS_ENABLED(CONFIG_CMD_BOOTM))
 		do_bootm(ctx->cmdtp, 0, bootm_argc, bootm_argv);
 	/* Try booting an AArch64 Linux kernel image */
 	else if (IS_ENABLED(CONFIG_CMD_BOOTI))
@@ -1397,11 +1398,62 @@ void destroy_pxe_menu(struct pxe_menu *cfg)
 	free(cfg);
 }
 
+int verfiy_pxefile(ulong pxefile_addr, ulong *conf)
+{
+	bootm_headers_t images;
+	ulong load, len;
+	int fdt_noffset;
+	const char *fit_uname = NULL;
+	int ret;
+	bool is_secure = env_get_yesno("secureboot") == 1;
+
+	if (unlikely(!conf) || unlikely(pxefile_addr <= 0))
+		return -EINVAL;
+
+	if (!is_secure) {
+		*conf = pxefile_addr;
+		return 0;
+	}
+
+#if defined(CONFIG_FIT)
+	ret = fit_check_format((void *)pxefile_addr, IMAGE_SIZE_INVAL);
+	if (ret < 0) {
+		debug("Bad FIT format (ret = %d)\n", ret);
+		return ret;
+	}
+
+	images.verify = 1;
+	fdt_noffset = fit_image_load(&images,
+	          pxefile_addr, &fit_uname, NULL,
+	          IH_ARCH_DEFAULT, IH_TYPE_FIRMWARE,
+	          BOOTSTAGE_ID_ALLOC,
+	          FIT_LOAD_OPTIONAL, &load, &len);
+	if (fdt_noffset < 0) {
+		pr_err("Not Found 'Firmware' node int FIT image\n");
+		return -ENOENT;
+	}
+
+	debug("   extlinux.conf at 0x%08lx, len = 0x%08lx (%ld)\n", load, len, len);
+	*conf = load;
+#else
+	*conf = pxefile_addr;
+#endif
+
+	return 0;
+}
+
 struct pxe_menu *parse_pxefile(struct pxe_context *ctx, unsigned long menucfg)
 {
 	struct pxe_menu *cfg;
+	ulong pxefile_addr;
 	char *buf;
 	int r;
+
+	r = verfiy_pxefile(menucfg, &pxefile_addr);
+	if (r < 0)
+		return NULL;
+	else
+		menucfg = pxefile_addr;
 
 	cfg = malloc(sizeof(struct pxe_menu));
 	if (!cfg)
