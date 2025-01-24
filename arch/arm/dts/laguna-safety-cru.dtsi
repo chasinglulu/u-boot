@@ -11,6 +11,17 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 
+		safety_pllc: safety_pllc@006C2000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x006C2000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			pll-ready = <0x9C>;
+			pll-frc-en = <0xC4>;
+			pll-frc-en-sw = <0xD0>;
+			pll-reopen = <0xDC>;
+		};
+
 		safety_cru: safety_cru@00600000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x00600000 0x00 0x1000>;
@@ -145,6 +156,30 @@
 					clock-output-names = "clk_safe_ephy_ref_sel";
 					bit-shift = <CLK_SAFE_EPHY_REF_OFFSET>;
 					bit-width = <CLK_SAFE_EPHY_REF_WIDTH>;
+				};
+			};
+
+			safety_fixed_factor_clocks {
+				compatible = "axera,lua-fixed-factor-clocks";
+
+				clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
+					compatible = "clk_fixed_factor";
+					#clock-cells = <0>;
+					clocks = <&clk_safe_rgmii_tx_sel>;
+					clock-names = "clk_safe_rgmii_tx_sel";
+					clock-mult = <1>;
+					clock-div = <2>;
+					clock-output-names = "clk_safe_rgmii_tx_div2";
+				};
+
+				clk_safe_r5f_div: clk_safe_r5f_div {
+					compatible = "clk_fixed_factor";
+					#clock-cells = <0>;
+					clocks = <&clk_safe_r5f_sel>;
+					clock-names = "clk_safe_r5f_sel";
+					clock-mult = <1>;
+					clock-div = <2>;
+					clock-output-names = "clk_safe_r5f_div";
 				};
 			};
 
@@ -1580,29 +1615,5 @@
 				assert-high = <1>;
 			};
 		};
-	};
-
-	safety_fixed_factor_clocks {
-		compatible = "axera,lua-fixed-factor-clocks";
-
-		clk_safe_rgmii_tx_div2: clk_safe_rgmii_tx_div2 {
-			compatible = "clk_fixed_factor";
-			#clock-cells = <0>;
-			clocks = <&clk_safe_rgmii_tx_sel>;
-			clock-names = "clk_safe_rgmii_tx_sel";
-			clock-mult = <1>;
-			clock-div = <2>;
-			clock-output-names = "clk_safe_rgmii_tx_div2";
-		};
-
-		clk_safe_r5f_div: clk_safe_r5f_div {
-			compatible = "clk_fixed_factor";
-			#clock-cells = <0>;
-			clocks = <&clk_safe_r5f_sel>;
-			clock-names = "clk_safe_r5f_sel";
-			clock-mult = <1>;
-			clock-div = <2>;
-			clock-output-names = "clk_safe_r5f_div";
-		}
 	};
 };
