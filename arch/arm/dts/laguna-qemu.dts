@@ -14,17 +14,29 @@
 #include <dt-bindings/clock/laguna-clock.h>
 
 #include "laguna-global-ctrl.dtsi"
-#include "laguna-clocks-fpga.dtsi"
 #include "laguna-gpios.dtsi"
-#ifdef CONFIG_CLK_AXERA_V2
+#if defined(CONFIG_CLK_AXERA_V2)
+#include "laguna-clocks-v2.dtsi"
 #include "laguna-cru-v2.dtsi"
 #elif defined(CONFIG_CLK_AXERA_V1)
+#include "laguna-clocks-v1.dtsi"
 #include "laguna-cru.dtsi"
 #endif
 #if defined(CONFIG_LUA_SECURE_BOOT) && defined(CONFIG_LUA_PKEY_FDT)
 #include "laguna-keys.dtsi"
 #endif
 #include "laguna.dtsi"
+
+#if defined(CONFIG_LUA_SAFETY_INIT)
+#if defined(CONFIG_CLK_AXERA_V2)
+#include "laguna-safety-clocks-v2.dtsi"
+#include "laguna-safety-cru-v2.dtsi"
+#elif defined(CONFIG_CLK_AXERA_V1)
+#include "laguna-safety-clocks-v1.dtsi"
+#include "laguna-safety-cru.dtsi"
+#endif
+#include "laguna-safety.dtsi"
+#endif
 
 / {
 	model = "Laguna Qemu Virtual Platform";
