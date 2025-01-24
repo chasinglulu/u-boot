@@ -106,3 +106,4 @@ __pycache__
 /pylint.out/
 
 compile_commands.json
+*.its

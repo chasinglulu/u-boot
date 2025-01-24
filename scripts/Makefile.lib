@@ -337,6 +337,20 @@ $(obj)/%.dtb: $(src)/%.dts FORCE
 pre-tmp = $(subst $(comma),_,$(dot-target).pre.tmp)
 dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
 
+# ITS
+#----------------------------------------------------------------------------
+quiet_cmd_its = ITS     $@
+cmd_its = mkdir -p $(dir ${its-tmp}) ; \
+	cat $< > $(pre-tmp) ; \
+	$(HOSTCC) -E $(dtc_cpp_flags) -x assembler-with-cpp -o ${its-tmp} ${pre-tmp}; \
+	sed -i '/^\#/d' ${its-tmp} ; \
+	sed -i '/^[ ]*$$/d' ${its-tmp}
+
+$(obj)/%.its: $(src)/%.itc FORCE
+	$(call if_changed,its)
+
+its-tmp = $(subst $(comma),_,$(dot-target).tmp)
+
 # DTCO
 # ---------------------------------------------------------------------------
 

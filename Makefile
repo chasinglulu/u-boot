@@ -1010,7 +1010,7 @@ INPUTS-y += u-boot.img
 endif
 endif
 
-INPUTS-$(CONFIG_ARCH_AXERA) += u-boot-legacy.img
+INPUTS-$(CONFIG_ARCH_AXERA) += u-boot-legacy.img multi-its
 
 INPUTS-$(CONFIG_X86) += u-boot-x86-start16.bin u-boot-x86-reset16.bin \
 	$(if $(CONFIG_SPL_X86_16BIT_INIT),spl/u-boot-spl.bin) \
@@ -2018,6 +2018,34 @@ $(defaultenv_h): $(CONFIG_DEFAULT_ENV_FILE:"%"=%) FORCE
 	$(call filechk,defaultenv.h)
 
 # ---------------------------------------------------------------------------
+# Imagetree files
+ifneq ($(wildcard $(srctree)/board/$(VENDOR)/common/$(SOC)/configs/),)
+itstree := board/$(VENDOR)/common/$(SOC)/configs
+endif
+
+ifneq ($(itstree),)
+
+quiet_cmd_its_cp = COPY    $@
+cmd_its_cp = files=$$(find $(itstree)/.*.its.tmp -type f \
+	-printf '%f\n' 2>/dev/null | awk -F '.' '{print $$2 "." $$3}'); \
+	for f in $$files; do \
+		cp $(itstree)/.$$f.tmp $$f ;\
+	done
+
+PHONY += multi-its
+multi-its: u-boot
+	$(Q)$(MAKE) $(build)=$(itstree) multi-its
+	$(call cmd,its_cp)
+
+else
+
+PHONY += multi-its
+multi-its:
+	@:
+
+endif
+
+# ---------------------------------------------------------------------------
 # Devicetree files
 
 ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/boot/dts/),)
@@ -2199,7 +2227,7 @@ CLEAN_FILES += include/bmp_logo.h include/bmp_logo_data.h \
 	       mkimage-out.spl.mkimage mkimage.spl.mkimage imx-boot.map \
 	       itb.fit.fit itb.fit.itb itb.map spl.map mkimage-out.rom.mkimage \
 	       mkimage.rom.mkimage rom.map simple-bin.map simple-bin-spi.map \
-	       idbloader-spi.img
+	       idbloader-spi.img *.its *.dts
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated spl tpl \
