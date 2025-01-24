@@ -21,6 +21,9 @@
 #elif defined(CONFIG_CLK_AXERA_V1)
 #include "laguna-cru.dtsi"
 #endif
+#if defined(CONFIG_LUA_SECURE_BOOT) && defined(CONFIG_LUA_PKEY_FDT)
+#include "laguna-keys.dtsi"
+#endif
 #include "laguna.dtsi"
 
 / {
