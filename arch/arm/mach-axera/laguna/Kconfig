@@ -194,6 +194,117 @@ config LUA_RAS_INIT
 
 endmenu
 
+menu "Secure Boot Settings"
+
+config LUA_SECURE_BOOT
+	bool "Enable secure boot support"
+	help
+	  This option enables secure boot support.
+
+config LUA_FIT
+	bool "Enable FIT configuration"
+	help
+	  This option enables FIT related configuration.
+
+config SPL_LOAD_MULTI_FIT
+	bool "Support for multi-FIT images loaded by SPL"
+	depends on LUA_FIT
+	default y
+	help
+	  This option enable support for multi-FIT images
+	  loaded by SPL.
+
+choice
+	prompt "Hashing Algorithm Select"
+	depends on LUA_SECURE_BOOT
+	default LUA_SHA256
+
+config LUA_SHA256
+	bool "SHA256"
+	select SHA256
+	select SPL_SHA256 if SPL
+	help
+	  This option uses SHA512 algorithm for hasing.
+
+config LUA_SHA384
+	bool "SHA384"
+	select SHA384
+	select SPL_SHA384 if SPL
+	help
+	  This option uses SHA384 algorithm for hasing.
+
+config LUA_SHA512
+	bool "SHA512"
+	select SHA512
+	select SPL_SHA512 if SPL
+	help
+	  This option uses SHA512 algorithm for hasing.
+
+endchoice
+
+config LUA_RAS
+	bool "Enable RSA Verifacation"
+	depends on LUA_SECURE_BOOT
+	select RSA
+	select RSA_VERIFY
+	select SPL_RSA if SPL
+	select SPL_RSA_VERIFY if SPL
+
+choice
+	prompt "RSA Algorithm Select"
+	depends on LUA_RAS
+	default LUA_RSA2048
+
+config LUA_RSA2048
+	bool "RSA-2048"
+	help
+	  This option uses RSA-2048 algorithm for Signature & Verification.
+
+config LUA_RSA3072
+	bool "RSA-3072"
+	help
+	  This option uses RSA-3072 algorithm for Signature & Verification.
+
+config LUA_RSA4096
+	bool "RSA-4096"
+	help
+	  This option uses RSA-4096 algorithm for Signature & Verification.
+
+endchoice
+
+config LUA_PKEY_CHOICE
+	bool "Choose the location for the public key"
+	depends on LUA_SECURE_BOOT
+	default y
+	help
+	  RSA verification can use pre-calculated public key parameter
+	  which are stored in fdt blob, or use public key which are stored
+	  in code, in decrypting a signature.
+
+	  The standard RSA-signature verification code (FIT_SIGNATURE) uses
+	  key parameter.
+
+	  If unsure, say no.
+
+choice
+	prompt "Public Key Location"
+	depends on LUA_PKEY_CHOICE
+	default LUA_PKEY_FDT
+
+config LUA_PKEY_FDT
+	bool "Public Key stored in FDT blob"
+	help
+	  Public Key Parameter (N & E) is stored in FDT blob.
+
+config LUA_PKEY_CODE
+	bool "Public Key stored in code"
+	help
+	  Public Key (DER) is stored in Code.
+
+endchoice
+
+endmenu
+
 menu "MTD Settings"
 source "board/axera/common/laguna/Kconfig"
 endmenu

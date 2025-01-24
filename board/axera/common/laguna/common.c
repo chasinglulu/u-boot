@@ -644,3 +644,17 @@ int get_downif(void)
 
 	return downif;
 }
+
+bool is_secure_boot(void)
+{
+#if defined(CONFIG_LUA_SECURE_BOOT)
+	return true;
+#endif
+
+	return false;
+}
+
+void set_secureboot_env(bool secure)
+{
+	env_set_ulong("secureboot", secure ? 1 : 0);
+}

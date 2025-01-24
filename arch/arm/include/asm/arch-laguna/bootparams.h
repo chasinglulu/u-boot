@@ -98,6 +98,8 @@ int get_bootdevice(const char **name);
 int set_bootdevice_env(int bootdev);
 int get_bootstate(void);
 int get_downif(void);
+bool is_secure_boot(void);
+void set_secureboot_env(bool secure);
 
 #include <blk.h>
 #include <part.h>

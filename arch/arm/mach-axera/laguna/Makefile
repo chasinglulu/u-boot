@@ -11,3 +11,5 @@ else
 obj-y += cpu.o
 obj-$(CONFIG_CMD_CLK) += clk.o
 endif
+
+obj-$(CONFIG_LUA_PKEY_CODE) += keys.o
