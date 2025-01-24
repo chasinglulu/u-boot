@@ -258,8 +258,13 @@ static int spl_blk_load_multi_images(struct spl_image_info *spl_image,
 		memset(&image_info, 0, sizeof(image_info));
 		err = spl_blk_load_image_part(&image_info, bootdev,
 		                          dev_desc, &info);
-		if (err)
+		if (err) {
+			if (err == -EPERM) {
+				pr_err("Verfication failed in secure booting mode\n");
+				goto failed;
+			}
 			continue;
+		}
 
 		if (image_info.os == IH_OS_ARM_TRUSTED_FIRMWARE
 			|| (image_info.os == IH_OS_U_BOOT && !has_atf)) {
@@ -302,6 +307,7 @@ static int spl_blk_load_multi_images(struct spl_image_info *spl_image,
 		return -ENODATA;
 #endif
 
+failed:
 	return err;
 }
 SPL_LOAD_IMAGE_METHOD("nor_mtd_blk", 0, BOOT_DEVICE_NOR, spl_blk_load_multi_images);
