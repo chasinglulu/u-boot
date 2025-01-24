@@ -32,8 +32,8 @@ int soc_clk_dump(void)
 	if (ret)
 		return ret;
 
-	printf("   Rate            Name\n");
-	printf("--------------------------------------\n");
+	printf("      Rate            Name\n");
+	printf("-----------------------------------------\n");
 
 	uclass_foreach_dev(dev, uc) {
 		if (device_probe(dev))
@@ -50,10 +50,10 @@ int soc_clk_dump(void)
 				return ret;
 
 			rate = clk_get_rate(&clk);
-			if (rate > 1000000000) {
+			if (rate > 1000000000 && rate % 1000000000 == 0) {
 				rate /= 1000000000;
 				unit = "GHz";
-			} else if (rate > 1000000) {
+			} else if (rate > 1000000 && rate % 1000000 == 0) {
 				rate /= 1000000;
 				unit = "MHz";
 			} else if (rate > 1000) {
@@ -69,7 +69,7 @@ int soc_clk_dump(void)
 			    (rate == (unsigned long)-ENXIO))
 				printf(" %10s           ", "unknown");
 			else
-				printf(" %-3lu%s        ", rate, unit);
+				printf(" %6lu %s        ", rate, unit);
 
 			printf("%s\n", name);
 		}
