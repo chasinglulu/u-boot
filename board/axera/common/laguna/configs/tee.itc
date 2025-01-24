@@ -1,0 +1,78 @@
+/* SPDX-License-Identifier: GPL-2.0+
+ *
+ * OP-TEE image tree configuration (.itc) file
+ *
+ * Copyright (C) 2025 Charleye <wangkart@aliyun.com>
+ */
+
+/dts-v1/;
+/ {
+	description = "Trusted Execution Environment Image";
+	#address-cells = <2>;
+
+	images {
+		firmware-1 {
+			data = /incbin/("tee-pager_v2.bin");
+			description = "Trusted Execution Environment Image";
+			type = "firmware";
+			arch = "arm64";
+			os = "tee";
+			compression = "none";
+			load = <0x1 0x04000000>;
+			entry = <0x1 0x04000000>;
+			hash-1 {
+#if CONFIG_LUA_SHA256
+				algo = "sha256";
+#elif CONFIG_LUA_SHA384
+				algo = "sha384";
+#elif CONFIG_LUA_SHA512
+				algo = "sha512";
+#endif
+			};
+		};
+	};
+
+	configurations {
+		default = "conf-1";
+		conf-1 {
+			description = "OP-TEE";
+			firmware = "firmware-1";
+			loadables = "firmware-1";
+			signature {
+				sign-images = "firmware";
+#if CONFIG_LUA_RSA2048
+#if CONFIG_LUA_SHA256
+				algo = "sha256,rsa2048";
+#elif CONFIG_LUA_SHA384
+				algo = "sha384,rsa2048";
+#elif CONFIG_LUA_SHA512
+				algo = "sha512,rsa2048";
+#endif
+				key-name-hint = "akcipher2048";
+#endif
+
+#if CONFIG_LUA_RSA3072
+#if CONFIG_LUA_SHA256
+				algo = "sha256,rsa3072";
+#elif CONFIG_LUA_SHA384
+				algo = "sha384,rsa3072";
+#elif CONFIG_LUA_SHA512
+				algo = "sha512,rsa3072";
+#endif
+				key-name-hint = "akcipher3072";
+#endif
+
+#if CONFIG_LUA_RSA4096
+#if CONFIG_LUA_SHA256
+				algo = "sha256,rsa4096";
+#elif CONFIG_LUA_SHA384
+				algo = "sha384,rsa4096";
+#elif CONFIG_LUA_SHA512
+				algo = "sha512,rsa4096";
+#endif
+				key-name-hint = "akcipher4096";
+#endif
+			};
+		};
+	};
+};
