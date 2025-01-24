@@ -204,7 +204,7 @@
 		"    echo BOOT EXTLINUX FAILED; "                         \
 		"  else "                                                 \
 		"    echo Not Found ${prefix}${boot_syslinux_conf} on "   \
-		"           ${devtype} ${devnum}; "                       \
+		"           ${devtype} ${devnum}:${distro_bootpart}; "    \
 		"    exit -2; "                                           \
 		"fi\0"
 #define BOOTENV_DEV_NAME_BLK_EXTLINUX(devtypeu, devtypel, instance) "blk_extlinux "
@@ -238,7 +238,8 @@
 		"boot_addr_r=" __stringify(CONFIG_LUA_KERNEL_LOAD_ADDR)"\0"           \
 		"main_mtd=0\0"                                                        \
 		"safe_mtd=0\0"                                                        \
-		"mmc_dev=0\0"
+		"mmc_dev=0\0"                                                         \
+		"secureboot=0\0"
 
 #include <config_distro_bootcmd.h>
 

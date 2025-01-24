@@ -183,6 +183,9 @@ void spl_board_init(void)
 #if CONFIG_IS_ENABLED(ENV_SUPPORT)
 	env_relocate();
 	set_bootdevice_env(bp->bootdevice);
+
+	if (is_secure_boot())
+		set_secureboot_env(true);
 #endif
 
 	spl_lua_test();
@@ -237,6 +240,9 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
      || defined(CONFIG_SPL_MULTI_UART)
 int spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 {
+	if (env_get_yesno("secureboot") == 1)
+		return -EPERM;
+
 	switch (spl_image->os) {
 	case IH_OS_ARM_TRUSTED_FIRMWARE:
 		spl_image->load_addr = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
