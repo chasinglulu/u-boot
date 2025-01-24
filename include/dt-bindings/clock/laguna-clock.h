@@ -6,6 +6,11 @@
 #ifndef LAGUNA_CLOCK_H
 #define LAGUNA_CLOCK_H
 
+/* safety PLL */
+#define SAFE_EPLL                       0
+#define SAFE_RPLL                       1
+#define SAFE_FAB_PLL                    2
+
 /* safety subsystem clk_mux_0 register */
 #define CLK_SAFE_R5F                    0
 #define CLK_SAFE_QSPI                   1
@@ -218,6 +223,13 @@
 #define CLK_SAFE_EFS_CTRL0              2
 #define CLK_SAFE_EFS_CTRL1              3
 #define PCLK_SAFETY_PLL_CTRL            4
+
+/* main PLL */
+#define FAB_PLL                         0
+#define CPU_PLL                         1
+#define NPU_PLL                         2
+#define APLL                            3
+#define EPLL                            4
 
 /* common subsystem clk_mux_0 register */
 #define ACLK_TOP0                       0
