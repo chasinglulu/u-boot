@@ -366,6 +366,17 @@ int board_late_init(void)
 	if (bootstate == BOOTSTATE_DOWNLOAD)
 		env_set("download", "yes");
 
+	if (is_secure_boot()) {
+		env_set("fdtcontroladdr", NULL);
+		env_set("fdt_addr", NULL);
+		env_set_hex("kernel_addr_r",
+		         CONFIG_VAL(LUA_KERNEL_LOAD_ADDR) - SZ_32M);
+		env_set("boot_syslinux_conf", "extlinux_sign.conf");
+
+		set_secureboot_env(true);
+		env_set("verify", "Yes");
+	}
+
 	load_r5f_demo_into_ocm();
 	return 0;
 }
