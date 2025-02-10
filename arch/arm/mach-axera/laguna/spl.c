@@ -33,7 +33,7 @@ u32 spl_boot_device(void)
 		dev_id = BOOT_DEVICE_MMC1;
 		break;
 	case BOOTDEVICE_ONLY_NOR:
-	case BOOTDEIVCE_BOTH_NOR_NOR:
+	case BOOTDEVICE_BOTH_NOR_NOR:
 	case BOOTDEVICE_BOTH_NAND_NOR:
 	case BOOTDEVICE_BOTH_HYPER_NOR:
 		dev_id = BOOT_DEVICE_NOR;
