@@ -42,7 +42,9 @@ void *board_fdt_blob_setup(int *err)
 	fdt_addr = (ulong *)&_end;
 	if (!fdt_check_header(fdt_addr)) {
 		*err = 0;
-		return fdt_addr;
+		memmove(__bss_end, fdt_addr, fdt_totalsize(fdt_addr));
+		memset(__bss_start, 0, __bss_end - __bss_start);
+		return __bss_end;
 	}
 
 #ifndef CONFIG_SPL_BUILD
