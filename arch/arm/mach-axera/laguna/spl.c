@@ -167,7 +167,13 @@ void spl_board_init(void)
 	memset(bp, 0, sizeof(boot_params_t));
 
 	bootstate = get_bootstate();
-	printf("Boot State:    %d\n", bootstate);
+	if (bootstate > 0) {
+		const char *state = bootstate == BOOTSTATE_POWERUP ?
+		                           "Normal Boot" : "Download";
+		printf("Boot State:    %s (0x%x)\n", state, bootstate);
+	} else {
+		printf("Boot State:    Unknown\n");
+	}
 
 	bootdev = get_bootdevice(&name);
 	if (bootdev > 0) {
