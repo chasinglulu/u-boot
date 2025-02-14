@@ -213,12 +213,17 @@ void spl_display_print(void)
 {
 	unsigned long mpidr = read_mpidr() & MPIDR_HWID_BITMASK;
 
-	printf("EL level:      EL%x\n", current_el());
 	printf("Boot SPL on physical CPU%lx [0x%08lx]\n",
 	                   mpidr, read_midr());
+	printf("EL level:      EL%x\n", current_el());
 
 #ifdef CONFIG_LUA_GICV2_LOWLEVEL_INIT
 	printf("GICv2:         enabled\n");
+#endif
+
+#ifdef CONFIG_LUA_SECURE_BOOT
+	printf("Secure Boot:   %s\n", is_secure_boot() ?
+	                        "enabled" : "disabled");
 #endif
 }
 #endif
