@@ -13,14 +13,16 @@
 #include <cpu_func.h>
 
 static struct mm_region lua_mem_map[] = {
-	[MMIO_SAFETY_OCM] = {
+	/* Safety OCM */
+	{
 		.virt = MMAP_SAFETY_OCM_BASE,
 		.phys = MMAP_SAFETY_OCM_BASE,
 		.size = SZ_2M,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			PTE_BLOCK_INNER_SHARE
 	},
-	[MMIO_SAFETY_IRAM] = {
+	/* Safety iRAM */
+	{
 		.virt = MMAP_SAFETY_IRAM_BASE,
 		.phys = MMAP_SAFETY_IRAM_BASE,
 		.size = SZ_64K,
@@ -28,7 +30,8 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_INNER_SHARE
 	},
 #if defined(CONFIG_LUA_SAFETY_INIT)
-	[MMIO_SAFETY_PERI] = {
+	/* Safety peripherals region */
+	{
 		.virt = MMAP_SAFETY_PERI_BASE,
 		.phys = MMAP_SAFETY_PERI_BASE,
 		.size = SZ_4M,
@@ -37,7 +40,8 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_UXN
 	},
 #endif
-	[MMIO_COMMSYS] = {
+	/* common subsystem region */
+	{
 		.virt = MMAP_COMMSYS_BASE,
 		.phys = MMAP_COMMSYS_BASE,
 		.size = SZ_32M,
@@ -45,7 +49,16 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMIO_CPUSYS] = {
+	{
+		.virt = MMAP_DDRSYS_BASE,
+		.phys = MMAP_DDRSYS_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	/* cpu subsystem region */
+	{
 		.virt = MMAP_CPUSYS_BASE,
 		.phys = MMAP_CPUSYS_BASE,
 		.size = SZ_32M,
@@ -53,7 +66,8 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMIO_FLASHSYS] = {
+	/* flash subsystem region */
+	{
 		.virt = MMAP_FLASHSYS_BASE,
 		.phys = MMAP_FLASHSYS_BASE,
 		.size = SZ_32M,
@@ -61,7 +75,8 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMIO_PERISYS] = {
+	/* peripherals subsystem region */
+	{
 		.virt = MMAP_PERISYS_BASE,
 		.phys = MMAP_PERISYS_BASE,
 		.size = SZ_32M,
@@ -69,14 +84,40 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMIO_NPU_OCM] = {
+	{
+		.virt = MMAP_MMSYS_BASE,
+		.phys = MMAP_MMSYS_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	/* NPU OCM */
+	{
 		.virt = MMAP_NPUOCM_BASE,
 		.phys = MMAP_NPUOCM_BASE,
 		.size = SZ_2M,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			PTE_BLOCK_INNER_SHARE
 	},
-	[MMIO_TOP] = {
+	{
+		.virt = MMAP_NPUSYS_BASE,
+		.phys = MMAP_NPUSYS_BASE,
+		.size = SZ_16M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	{
+		.virt = MMAP_VPUSYS_BASE,
+		.phys = MMAP_VPUSYS_BASE,
+		.size = SZ_32M,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
+			PTE_BLOCK_UXN
+	},
+	/* top subsystem region */
+	{
 		.virt = MMAP_TOP_BASE,
 		.phys = MMAP_TOP_BASE,
 		.size = SZ_32M,
@@ -84,7 +125,8 @@ static struct mm_region lua_mem_map[] = {
 			PTE_BLOCK_NON_SHARE | PTE_BLOCK_PXN |
 			PTE_BLOCK_UXN
 	},
-	[MMIO_DRAM] = {
+	/* DDR region */
+	{
 		.virt = MMAP_DRAM_BASE,
 		.phys = MMAP_DRAM_BASE,
 		.size = SZ_4G,
