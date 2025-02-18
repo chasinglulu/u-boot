@@ -15,13 +15,74 @@ config CONSOLE_RECORD
 	  To enable console recording, call console_record_reset_enable()
 	  from your code.
 
+if CONSOLE_RECORD
+
 config CONSOLE_RECORD_INIT_F
 	bool "Enable console recording during pre-relocation init"
-	depends on CONSOLE_RECORD && SYS_MALLOC_F
-	default y
+	default y if CONSOLE_RECORD_ALLOC && SYS_MALLOC_F
+	default y if CONSOLE_RECORD_FIXED
 	help
 	  This option enables console recording during pre-relocation init.
 	  CONFIG_SYS_MALLOC_F must be enabled to use this feature.
+
+config SPL_CONSOLE_RECORD
+	bool "Enable console recording in SPL"
+	help
+	  This option enables console recording in SPL.
+
+choice
+	prompt "Console record location"
+	help
+	  Select the location of the console record buffer, via various means.
+
+config CONSOLE_RECORD_FIXED
+	bool "Place console record buffer at a fixed address in memory"
+	help
+	  Select this to used a fixed memory address for the console record.
+	  If the console record exists at this address from a previous phase,
+	  it used as is. If not it is created at this address in U-Boot.
+
+config CONSOLE_RECORD_ALLOC
+	bool "Allocate console record buffer"
+	help
+	  Allocate the console record using malloc(). This avoids the need to
+	  specify a fixed address on systems where this is unknown or can
+	  change at runtime.
+
+endchoice
+
+endif
+
+if CONSOLE_RECORD_FIXED
+
+config CONSOLE_RECORD_OUT_REUSE
+	bool "Reuse console record buffer"
+	help
+	  Reuse the output buffer. This is useful if you want to use
+	  the existing buffer from a previous boot stage. This can save memory
+	  and avoid reinitializing the buffer.
+
+config CONSOLE_RECORD_ENABLE_INIT
+	bool "Enable console recording during init"
+	help
+	  This option enables console recording during init.
+
+config CONSOLE_RECORD_FIXED_ADDR
+	hex "Fixed console record buffer address"
+	default 0x0
+	help
+	  Set the address of the fixed console output/input buffer.
+
+config CONSOLE_RECORD_FIXED_SIZE
+	hex "Fixed console record buffer size"
+	default 0x1000
+	help
+	  Set the size of the fixed console output/input buffer. When this fills up,
+	  no more data will be recorded until some is removed.
+
+endif
+
+if CONSOLE_RECORD_ALLOC
 
 config CONSOLE_RECORD_OUT_SIZE
 	hex "Output buffer size"
@@ -51,6 +112,8 @@ config CONSOLE_RECORD_IN_SIZE
 	  tstc() and getc() will use this in preference to real device input.
 	  The buffer is allocated immediately after the malloc() region is
 	  ready.
+
+endif
 
 config DISABLE_CONSOLE
 	bool "Add functionality to disable console completely"

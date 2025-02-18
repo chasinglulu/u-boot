@@ -743,8 +743,9 @@ void puts(const char *s)
 #ifdef CONFIG_CONSOLE_RECORD
 int console_record_init(void)
 {
-	int ret;
+	int ret = 0;
 
+#ifdef CONSOLE_RECORD_ALLOC
 	ret = membuff_new((struct membuff *)&gd->console_out,
 			  gd->flags & GD_FLG_RELOC ?
 				  CONFIG_CONSOLE_RECORD_OUT_SIZE :
@@ -753,6 +754,32 @@ int console_record_init(void)
 		return ret;
 	ret = membuff_new((struct membuff *)&gd->console_in,
 			  CONFIG_CONSOLE_RECORD_IN_SIZE);
+#elif defined(CONFIG_CONSOLE_RECORD_FIXED)
+	struct membuff *mb = NULL;
+	ulong addr, size;
+
+	/* Allocate fixed memory for console record */
+	addr = CONFIG_CONSOLE_RECORD_FIXED_ADDR;
+	size = CONFIG_CONSOLE_RECORD_FIXED_SIZE >> 1;
+
+	mb = (struct membuff *)&gd->console_out;
+	mb->start = (char *)addr;
+	if (!CONFIG_IS_ENABLED(CONSOLE_RECORD_OUT_REUSE) ||
+	       !console_record_avail()) {
+		membuff_init(mb, mb->start, size);
+	}
+
+	mb = (struct membuff *)&gd->console_in;
+	addr += size;
+	mb->start = (char *)addr;
+	membuff_init(mb, mb->start, size);
+
+#ifdef CONFIG_CONSOLE_RECORD_ENABLE_INIT
+	gd->flags &= ~GD_FLG_RECORD_OVF;
+	gd->flags |= GD_FLG_RECORD;
+#endif
+
+#endif /* CONFIG_CONSOLE_RECORD_FIXED */
 
 	return ret;
 }
