@@ -1,9 +1,11 @@
 #ifndef ASM_LAGUNA_BOOTPARAM_H_
 #define ASM_LAGUNA_BOOTPARAM_H_
 
+#include <membuff.h>
 typedef struct boot_params {
 	void *fdt_addr;
 	unsigned short bootdevice;
+	struct membuff spl_console_out;
 } boot_params_t;
 
 static inline boot_params_t *boot_params_get_base(void)

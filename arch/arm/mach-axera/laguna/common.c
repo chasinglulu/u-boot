@@ -216,6 +216,14 @@ static inline int fdt_blob_setup_console(void *fdt) { return 0; }
 
 int fdtdec_board_setup(const void *blob)
 {
+#if CONFIG_IS_ENABLED(CONSOLE_RECORD_OUT_REUSE)
+	boot_params_t *bp = boot_params_get_base();
+
+	/* Copy console output settings */
+	memcpy((void *)&gd->console_out,
+	        (void *)&bp->spl_console_out, sizeof(gd->console_out));
+#endif
+
 	return fdt_blob_setup_console((void *)blob);
 }
 

@@ -86,7 +86,11 @@ struct image_header *spl_get_load_buffer(ssize_t offset, size_t size)
 
 void spl_board_prepare_for_boot(void)
 {
-	/* Nothing to do */
+	boot_params_t *bp = boot_params_get_base();
+
+	/* Copy console output settings */
+	memcpy((void *)&bp->spl_console_out,
+	          (void *)&gd->console_out, sizeof(gd->console_out));
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,

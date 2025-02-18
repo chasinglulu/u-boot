@@ -896,6 +896,10 @@ void preloader_console_init(void)
 
 	gd->have_console = 1;
 
+#if CONFIG_IS_ENABLED(CONSOLE_RECORD)
+	console_record_init();
+#endif
+
 #if CONFIG_IS_ENABLED(BANNER_PRINT)
 	puts("\nU-Boot " SPL_TPL_NAME " " PLAIN_VERSION " (" U_BOOT_DATE " - "
 	     U_BOOT_TIME " " U_BOOT_TZ ")\n");
