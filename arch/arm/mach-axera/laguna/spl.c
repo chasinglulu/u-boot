@@ -234,6 +234,9 @@ void spl_display_print(void)
 
 void spl_perform_fixups(struct spl_image_info *spl_image)
 {
+	if (spl_image->flags & SPL_KIMAGE_FOUND)
+		return;
+
 	if (IS_ENABLED(CONFIG_SPL_ATF) &&
 		    spl_image->boot_device == BOOT_DEVICE_RAM
 		    && !(spl_image->flags & SPL_FIT_FOUND)
