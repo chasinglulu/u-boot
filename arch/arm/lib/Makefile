@@ -38,6 +38,7 @@ else
 obj-$(CONFIG_$(SPL_TPL_)FRAMEWORK) += spl.o
 obj-$(CONFIG_SPL_FRAMEWORK) += zimage.o
 obj-$(CONFIG_OF_LIBFDT) += bootm-fdt.o
+obj-$(CONFIG_SPL_FRAMEWORK) += image.o
 endif
 ifdef CONFIG_ARM64
 obj-$(CONFIG_$(SPL_TPL_)USE_ARCH_MEMSET) += memset-arm64.o
