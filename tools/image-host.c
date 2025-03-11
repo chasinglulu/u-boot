@@ -372,6 +372,8 @@ static int fit_image_setup_cipher(struct image_cipher_info *info,
 				  int noffset)
 {
 	char *algo_name;
+	const void *iv;
+	int ivlen;
 	char filename[128];
 	int ret = -1;
 
@@ -427,6 +429,13 @@ static int fit_image_setup_cipher(struct image_cipher_info *info,
 	if (!info->iv) {
 		printf("Can't allocate memory for iv\n");
 		ret = -1;
+		goto out;
+	}
+
+	iv = fdt_getprop(fit, noffset, "iv", &ivlen);
+	if (iv) {
+		memcpy((void *)info->iv, iv, ivlen);
+		ret = 0;
 		goto out;
 	}
 
