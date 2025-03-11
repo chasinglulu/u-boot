@@ -327,6 +327,29 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 		puts("OK\n");
 	}
 
+	/* Decrypt data before uncompress/move */
+	if (CONFIG_IS_ENABLED(FIT_CIPHER)) {
+		int cipher_noffset, ret;
+		void *dst;
+		size_t size_dst;
+
+		printf("## Decrypting Image %s ... ",
+			fit_get_name(fit, node, NULL));
+		cipher_noffset = fdt_subnode_offset(fit, node, FIT_CIPHER_NODENAME);
+		if (cipher_noffset < 0)
+			return 0;
+		ret = fit_image_decrypt_data(fit, node, cipher_noffset, src, length,
+				       &dst, &size_dst);
+		if (ret) {
+			puts("Error\n");
+			return -EACCES;
+		}
+		memmove(src, dst, size_dst);
+		free(dst);
+		length = size_dst;
+		puts("OK\n");
+	}
+
 	if (CONFIG_IS_ENABLED(FIT_IMAGE_POST_PROCESS))
 		board_fit_image_post_process(fit, node, &src, &length);
 
@@ -336,6 +359,7 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 		void *gunzip_dst;
 		ulong entry_point;
 		bool use_entry_point = false;
+		bool alloc_mem = false;
 
 		if (load_addr < CONFIG_SYS_BOOTM_LEN) {
 			printf("load_addr(0x%lx) is too small, cannot gunzip\n", load_addr);
@@ -348,9 +372,13 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 			debug("gunzip to entry_point: 0x%p\n", gunzip_dst);
 			use_entry_point = true;
 		} else {
-			gunzip_dst = map_sysmem(load_addr - CONFIG_SYS_BOOTM_LEN, CONFIG_SYS_BOOTM_LEN);
-			debug("gunzip to new address: 0x%p = load_addr(0x%lx) - CONFIG_SYS_BOOTM_LEN(0x%x)\n",
-			       gunzip_dst, load_addr, CONFIG_SYS_BOOTM_LEN);
+			if (length < SZ_2M) {
+				gunzip_dst = malloc(SZ_2M);
+				alloc_mem = true;
+			} else {
+				gunzip_dst = map_sysmem(load_addr - CONFIG_SYS_BOOTM_LEN, CONFIG_SYS_BOOTM_LEN);
+			}
+			debug("gunzip to new address: 0x%p\n", gunzip_dst);
 		}
 
 		if (gunzip(gunzip_dst, CONFIG_SYS_BOOTM_LEN, src, &size)) {
@@ -358,9 +386,17 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 			return -EIO;
 		}
 
+		if (alloc_mem && size > SZ_2M) {
+			printf("Uncompressed size (0x%lx) is greater than 2M\n", size);
+			return -EIO;
+		}
+
 		length = size;
 		if (!use_entry_point && gunzip_dst != load_ptr)
 			memcpy(load_ptr, gunzip_dst, length);
+
+		if (alloc_mem)
+			free(gunzip_dst);
 	} else {
 		if (load_ptr != src)
 			memcpy(load_ptr, src, length);
