@@ -6,6 +6,17 @@
  */
 
 / {
+#if CONFIG_IS_ENABLED(FIT_CIPHER)
+	cipher {
+		key-aes256-dev {
+			key = <0x5e9bffda 0x0ced7cce 0x25eb59b9 0x26d9be1e
+			       0x1de934bf 0xe0a61183 0x4ba8247a 0x9833453e>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+		};
+	};
+#endif
+
 	signature {
 		u-boot,dm-pre-reloc;
 		u-boot,dm-spl;
