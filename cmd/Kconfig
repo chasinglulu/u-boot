@@ -943,12 +943,12 @@ config CMD_BCB
 	    https://android.googlesource.com/platform/bootable/recovery
 	  - Inspect/dump the contents of the BCB fields
 
-config CMD_BOOTCTRL
-	bool "bootctrl"
-	depends on MMC
+config CMD_ABC
+	bool "abc"
+	depends on BLK
 	depends on PARTITIONS
 	help
-	  Read/modify/write the fields of Bootloader Control metadata, usually
+	  Read/modify/write the fields of Bootloader A/B control metadata, usually
 	  stored on the flash "misc" partition with its structure defined in:
 	  https://android.googlesource.com/platform/bootable/recovery/+/master/
 	  bootloader_message/include/bootloader_message/bootloader_message.h
