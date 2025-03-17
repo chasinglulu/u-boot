@@ -87,38 +87,64 @@ static int ab_control_create_from_disk(struct blk_desc *dev_desc,
 				       const struct disk_partition *part_info,
 				       struct bootloader_control **abc)
 {
-	ulong abc_offset, abc_blocks, ret;
+	ulong abc_offset, abc_blocks;
+	struct bootloader_control *metadata;
+	ulong abc_pos, size;
+	char *buf;
+	int ret;
 
-	abc_offset = offsetof(struct bootloader_message_ab, slot_suffix);
-	if (abc_offset % SZ_512) {
-		log_err("ANDROID: Boot control block not block aligned.\n");
-		return -EINVAL;
+	abc_pos = offsetof(struct bootloader_message_ab, slot_suffix);
+	if (abc_pos % dev_desc->blksz) {
+		log_warning("ANDROID: Boot control offset is not aligned with block size.\n");
+		abc_offset = 0;
+	} else {
+		abc_offset = abc_pos / part_info->blksz;
 	}
-	abc_offset /= part_info->blksz;
 
 	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control),
 				  part_info->blksz);
-	if (abc_offset + abc_blocks > part_info->size) {
+	if (abc_blocks > part_info->size) {
 		log_err("ANDROID: boot control partition too small. Need at");
 		log_err(" least %lu blocks but have %lu blocks.\n",
-			abc_offset + abc_blocks, part_info->size);
+				abc_blocks, part_info->size);
 		return -EINVAL;
 	}
-	*abc = malloc_cache_aligned(abc_blocks * part_info->blksz);
-	if (!*abc)
-		return -ENOMEM;
 
-	ret = blk_dread(dev_desc, part_info->start + abc_offset, abc_blocks,
-			*abc);
-	if (IS_ERR_VALUE(ret)) {
-		log_err("ANDROID: Could not read from boot ctrl partition\n");
-		free(*abc);
-		return -EIO;
+	size = roundup(sizeof(struct bootloader_message_ab), part_info->blksz);
+	buf = malloc_cache_aligned(size);
+	if (!buf) {
+		log_err("ANDROID: Out of memory\n");
+		return -ENOMEM;
 	}
 
+	ret = blk_dread(dev_desc, part_info->start + abc_offset, abc_blocks,
+			buf);
+	if (IS_ERR_VALUE(ret)) {
+		log_err("ANDROID: Could not read from boot ctrl partition\n");
+		ret = -EIO;
+		goto failed;
+	}
+
+	size = roundup(sizeof(struct bootloader_control), part_info->blksz);
+	metadata = malloc_cache_aligned(size);
+	if (!metadata) {
+		log_err("ANDROID: Could not allocate A/B metadata memory\n");
+		ret = -ENOMEM;
+		goto failed;
+	}
+
+	if (abc_offset == 0)
+		memcpy(metadata, buf + abc_pos, sizeof(struct bootloader_control));
+	else
+		memcpy(metadata, buf, sizeof(struct bootloader_control));
+
+	*abc = metadata;
+	ret = 0;
 	log_debug("ANDROID: Loaded ABC, %lu blocks\n", abc_blocks);
 
-	return 0;
+failed:
+	free(buf);
+	return ret;
 }
 
 /**
@@ -137,20 +163,52 @@ static int ab_control_store(struct blk_desc *dev_desc,
 			    const struct disk_partition *part_info,
 			    struct bootloader_control *abc)
 {
-	ulong abc_offset, abc_blocks, ret;
+	ulong abc_offset, abc_blocks;
+	ulong abc_pos, size;
+	char *buf;
+	int ret;
 
-	abc_offset = offsetof(struct bootloader_message_ab, slot_suffix) /
-		     part_info->blksz;
-	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control),
-				  part_info->blksz);
-	ret = blk_dwrite(dev_desc, part_info->start + abc_offset, abc_blocks,
-			 abc);
-	if (IS_ERR_VALUE(ret)) {
-		log_err("ANDROID: Could not write back the misc partition\n");
-		return -EIO;
+	abc_pos = offsetof(struct bootloader_message_ab, slot_suffix);
+	if (abc_pos % dev_desc->blksz)
+		abc_offset = 0;
+	else
+		abc_offset = abc_pos / part_info->blksz;
+	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control), part_info->blksz);
+
+	size = roundup(sizeof(struct bootloader_message_ab), part_info->blksz);
+	buf = malloc_cache_aligned(size);
+	if (!buf) {
+		log_err("ANDROID: Out of memory\n");
+		return -ENOMEM;
 	}
 
-	return 0;
+	ret = blk_dread(dev_desc, part_info->start + abc_offset, abc_blocks,
+				buf);
+	if (IS_ERR_VALUE(ret)) {
+		log_err("ANDROID: Could not read from misc partition\n");
+		ret = -EIO;
+		goto failed;
+	}
+
+	if (abc_offset == 0)
+		memcpy(buf + abc_pos, abc, sizeof(struct bootloader_control));
+	else
+		memcpy(buf, abc, sizeof(struct bootloader_control));
+
+	ret = blk_dwrite(dev_desc, part_info->start + abc_offset, abc_blocks,
+				buf);
+	if (IS_ERR_VALUE(ret)) {
+		log_err("ANDROID: Could not write back the misc partition\n");
+		ret = -EIO;
+		goto failed;
+	}
+
+	ret = 0;
+	log_debug("ANDROID: Stored ABC, %lu blocks\n", abc_blocks);
+
+failed:
+	free(buf);
+	return ret;
 }
 
 /**

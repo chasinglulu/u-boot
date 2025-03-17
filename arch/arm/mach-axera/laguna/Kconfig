@@ -346,6 +346,7 @@ config LUA_AB
 	bool "A/B Support"
 	select ANDROID_AB
 	select CMD_AB_SELECT
+	select CMD_ABC
 	help
 	  AVB has been designed to work with A/B by requiring that
 	  the A/B suffix is never used in any partition names stored
