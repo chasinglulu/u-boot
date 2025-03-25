@@ -34,6 +34,12 @@
 			method = "smc";
 			status = "disabled";
 		};
+
+		optee: optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+			status = "disabled";
+		};
 	};
 
 	gic: interrupt-controller@08000000 {
