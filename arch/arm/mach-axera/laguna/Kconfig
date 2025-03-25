@@ -56,16 +56,50 @@ config LUA_OCM_BASE
 	hex "Laguna NPU OCM Base Address"
 	default 0x14000000
 
+menu "Bootflow Settings"
+
+config LUA_ATF_SUPPORT
+	bool "Enable Arm Trusted Firmware support"
+	help
+	  This option enables Arm Trusted Firmware support.
+
+config LUA_OPTEE_SUPPORT
+	bool "Enable OP-TEE support"
+	help
+	  This option enables OP-TEE support.
+
+endmenu
+
 menu "SPL Loading Images"
 	depends on SPL
 
 config LUA_SPL_ATF_LOAD_ADDR
 	hex "ATF firmware loaded address"
+	depends on LUA_ATF_SUPPORT
 	default 0x100104000
+
+config LUA_SPL_ATF_LOAD_SIZE
+	hex "ATF firmware loaded size"
+	depends on LUA_ATF_SUPPORT
+	default 0x200000
 
 config LUA_SPL_OPTEE_LOAD_ADDR
 	hex "OP-TEE firmware loaded address"
+	depends on LUA_OPTEE_SUPPORT
 	default 0x104000000
+
+config LUA_SPL_OPTEE_LOAD_SIZE
+	hex "OP-TEE firmware loaded size"
+	depends on LUA_OPTEE_SUPPORT
+	default 0x2000000
+
+config LUA_SPL_UBOOT_LOAD_ADDR
+	hex "U-Boot firmware loaded address"
+	default 0x100200000
+
+config LUA_SPL_UBOOT_LOAD_SIZE
+	hex "U-Boot firmware loaded size"
+	default 0x400000
 
 endmenu
 

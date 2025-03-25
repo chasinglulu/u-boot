@@ -432,8 +432,120 @@ int last_stage_init(void)
 #endif
 
 #if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_OF_SYSTEM_SETUP)
+
+static int ft_system_reserve_memory(void *blob)
+{
+	struct fdt_memory carveout[] = {
+#if IS_ENABLED(CONFIG_LUA_ATF_SUPPORT)
+		{
+			.start = CONFIG_LUA_SPL_ATF_LOAD_ADDR,
+			.end = CONFIG_LUA_SPL_ATF_LOAD_ADDR + CONFIG_LUA_SPL_ATF_LOAD_SIZE - 1,
+		},
+#endif
+#if IS_ENABLED(CONFIG_LUA_OPTEE_SUPPORT)
+		{
+			.start = CONFIG_LUA_SPL_OPTEE_LOAD_ADDR,
+			.end = CONFIG_LUA_SPL_OPTEE_LOAD_ADDR + CONFIG_LUA_SPL_OPTEE_LOAD_SIZE - 1,
+		},
+#endif
+#if IS_ENABLED(CONFIG_CONSOLE_RECORD_FIXED)
+		{
+			.start = CONFIG_CONSOLE_RECORD_FIXED_ADDR,
+			.end = CONFIG_CONSOLE_RECORD_FIXED_ADDR + CONFIG_CONSOLE_RECORD_FIXED_SIZE - 1,
+		},
+#endif
+	};
+	const char *nodename[] = {
+#if IS_ENABLED(CONFIG_LUA_ATF_SUPPORT)
+		"atf_reserved",
+#endif
+#if IS_ENABLED(CONFIG_LUA_OPTEE_SUPPORT)
+		"optee_reserved",
+#endif
+#if IS_ENABLED(CONFIG_CONSOLE_RECORD_FIXED)
+		"bootlog_reserved",
+#endif
+	};
+	unsigned long flags = FDTDEC_RESERVED_MEMORY_NO_MAP;
+	int ret, i;
+
+	assert(ARRAY_SIZE(carveout) == ARRAY_SIZE(nodename));
+
+	for (i = 0; i < ARRAY_SIZE(carveout); i++) {
+		ret = fdtdec_add_reserved_memory(blob,
+			nodename[i], &carveout[i],
+			NULL, 0, NULL, flags);
+		if (ret < 0) {
+			pr_err("failed to add %s memory: %d\n", nodename[i], ret);
+			return ret;
+		}
+		pr_info("Add %s memory: 0x%llx-0x%llx\n",
+			nodename[i], carveout[i].start, carveout[i].end);
+	}
+
+	return 0;
+}
+
+static int ft_system_hwinfo_bootlog(void *blob, int nodeoffset)
+{
+#if IS_ENABLED(CONFIG_CONSOLE_RECORD_FIXED)
+	uint64_t addr = CONFIG_CONSOLE_RECORD_FIXED_ADDR;
+	uint64_t size = CONFIG_CONSOLE_RECORD_FIXED_SIZE;
+	fdt32_t cells[2] = {}, *ptr = cells;
+
+	*ptr++ = cpu_to_fdt32(upper_32_bits(addr));
+	*ptr++ = cpu_to_fdt32(lower_32_bits(addr));
+	fdt_setprop(blob, nodeoffset, "axera,bootlog-record-addr", cells, 2 * sizeof(cells));
+
+	ptr = cells;
+	*ptr++ = cpu_to_fdt32(upper_32_bits(size));
+	*ptr++ = cpu_to_fdt32(lower_32_bits(size));
+	fdt_setprop(blob, nodeoffset, "axera,bootlog-record-len", cells, 2 * sizeof(cells));
+#endif
+
+	return 0;
+}
+
+static int ft_system_hwinfo(void *blob)
+{
+	int parent;
+	fdt32_t boardid, bootdev;
+	const char *chipname;
+	const char *bootdev_name = NULL;
+
+	parent = fdt_path_offset(blob, "/hw_info_display");
+	if (parent < 0) {
+		pr_err("failed to find '/hw_info_display' node\n");
+		return -EINVAL;
+	}
+
+	boardid = cpu_to_fdt32(env_get_ulong("boardid", 10, -1));
+	if (boardid == -1U)
+		boardid = 0;
+
+	chipname = env_get("chipname");
+	if (!chipname)
+		chipname = "Laguna";
+
+	fdt_setprop(blob, parent, "axera,board-id", &boardid, sizeof(boardid));
+	fdt_setprop_string(blob, parent, "axera,chip-name", chipname);
+
+	ft_system_hwinfo_bootlog(blob, parent);
+
+	bootdev = cpu_to_fdt32(get_bootdevice(&bootdev_name));
+	if (bootdev_name) {
+		fdt_setprop_string(blob, parent, "axera,boot-device", bootdev_name);
+		fdt_setprop(blob, parent, "axera,boot-device-id", &bootdev, sizeof(bootdev));
+	}
+
+	return 0;
+}
+
 int ft_system_setup(void *blob, struct bd_info *bd)
 {
+	ft_system_reserve_memory(blob);
+	ft_system_hwinfo(blob);
+
 	return 0;
 }
 #endif

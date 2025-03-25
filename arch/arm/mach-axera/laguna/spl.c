@@ -97,6 +97,7 @@ int spl_parse_board_header(struct spl_image_info *spl_image,
 				  const struct spl_boot_device *bootdev,
 				  const void *image_header, size_t size)
 {
+#if IS_ENABLED(CONFIG_LUA_ATF_SUPPORT)
 	if (IS_ENABLED(CONFIG_SPL_ATF) &&
 		    bootdev->boot_device == BOOT_DEVICE_RAM
 		    && current_el() == 3) {
@@ -105,6 +106,7 @@ int spl_parse_board_header(struct spl_image_info *spl_image,
 
 		return 0;
 	}
+#endif
 
 	return -EINVAL;
 }
@@ -262,13 +264,17 @@ int spl_board_perform_legacy_fixups(struct spl_image_info *spl_image)
 		return -EPERM;
 
 	switch (spl_image->os) {
+#if IS_ENABLED(CONFIG_LUA_ATF_SUPPORT)
 	case IH_OS_ARM_TRUSTED_FIRMWARE:
 		spl_image->load_addr = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
 		spl_image->entry_point = CONFIG_LUA_SPL_ATF_LOAD_ADDR;
 		break;
+#endif
+#if IS_ENABLED(CONFIG_LUA_OPTEE_SUPPORT)
 	case IH_OS_TEE:
 		spl_image->load_addr = CONFIG_LUA_SPL_OPTEE_LOAD_ADDR;
 		break;
+#endif
 	case IH_OS_U_BOOT:
 		spl_image->load_addr = CONFIG_SYS_TEXT_BASE;
 		spl_image->entry_point = CONFIG_SYS_TEXT_BASE;
