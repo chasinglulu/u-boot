@@ -16,6 +16,39 @@
 #define MTDPARTS_LEN    256
 #define MTDIDS_LEN      128
 
+#if defined(CONFIG_LUA_MTDPARTS_READ)
+loff_t board_mtdparts_offset(uint8_t mtdtype, bool backup)
+{
+	loff_t offset = 0;
+	size_t sbl, metadata;
+
+	switch (mtdtype) {
+	case MTD_NORFLASH:
+		sbl = CONFIG_LUA_SBL_SIZE_IN_NORFLASH;
+		metadata = CONFIG_LUA_METADATA_SIZE_IN_NORFLASH;
+		break;
+	case MTD_NANDFLASH:
+	case MTD_MLCNANDFLASH:
+		sbl = CONFIG_LUA_SBL_SIZE_IN_NANDFLASH;
+		metadata = CONFIG_LUA_METADATA_SIZE_IN_NANDFLASH;
+		break;
+	default:
+		pr_err("Not supported MTD type\n");
+		return -EAGAIN;
+	}
+
+	offset = sbl;
+#ifdef CONFIG_LUA_AB
+	/* A/B slot */
+	offset <<= 1;
+#endif
+	if (backup)
+		offset += metadata;
+
+	return offset;
+}
+#endif
+
 static __maybe_unused
 struct blk_desc *find_vaild_mtd_device(void)
 {

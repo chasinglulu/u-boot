@@ -7,6 +7,50 @@ config LUA_MTDPARTS_READ
 	  This option allows us to dynamically build the variables mtdids
 	  and mtdparts at runtime by reading mtdparts string from mtd device.
 
+if LUA_MTDPARTS_READ
+
+menu "Fixed partitions that affect mtdparts reading"
+
+config LUA_SBL_SIZE_IN_NORFLASH
+	hex "SBL Partition Size in NOR Flash"
+	default 0x20000
+	help
+	  This defines the size of SBL partition in NOR Flash.
+
+config LUA_SBL_SIZE_IN_NANDFLASH
+	hex "SBL Partition Size in NAND Flash"
+	default 0xC0000
+	help
+	  This defines the size of SBL partition in NAND Flash.
+
+config LUA_SBL_SIZE_IN_HYPERFLASH
+	hex "SBL Partition Size in Hyper Flash"
+	default 0x40000
+	help
+	  This defines the size of SBL partition in Hyper Flash.
+
+config LUA_METADATA_SIZE_IN_NORFLASH
+	hex "Metadata Partition Size in NOR Flash"
+	default 0x20000
+	help
+	  This defines the size of Metadata partition in NOR Flash.
+
+config LUA_METADATA_SIZE_IN_NANDFLASH
+	hex "Metadata Partition Size in NAND Flash"
+	default 0xC0000
+	help
+	  This defines the size of Metadata partition in NAND Flash.
+
+config LUA_METADATA_SIZE_IN_HYPERFLASH
+	hex "Metadata Partition Size in Hyper Flash"
+	default 0x40000
+	help
+	  This defines the size of Metadata partition in Hyper Flash.
+
+endmenu
+
+endif
+
 config LUA_SPI_NOR_RUNTIME
 	bool "Allow SPI NOR to be configured at runtime"
 	depends on SYS_MTDPARTS_RUNTIME

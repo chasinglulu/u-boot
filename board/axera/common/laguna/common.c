@@ -24,8 +24,10 @@
 /* Supported partition identifier for safety R5F */
 const char *safe_part_id[] = {
 	"sbl",
+	"metadata",
 	"spl",
 	"rtos",
+	"metadata_bak",
 	"sbl_a",
 	"sbl_b",
 	"spl_a",

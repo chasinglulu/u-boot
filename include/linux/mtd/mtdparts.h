@@ -15,9 +15,6 @@
 
 #define MTDPART_NAME_LEN                 (SZ_32)
 #define MTDPARTS_SIZE                    (SZ_1K)
-#define MTDPARTS_BASE                    (SZ_128K - MTDPARTS_SIZE)
-#define MTDPARTS_BAKEUP_NORFLASH_BASE    (SZ_128K + MTDPARTS_BASE)
-#define MTDPARTS_BAKEUP_NANDFLASH_BASE   (SZ_512K + SZ_256K + MTDPARTS_BASE)
 
 typedef struct {
 	u8 b[16];

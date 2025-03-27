@@ -1149,6 +1149,12 @@ U_BOOT_PART_TYPE(mtd) = {
 	.test		= part_test_mtd,
 };
 
+loff_t __weak board_mtdparts_offset(uint8_t mtdtype, bool backup)
+{
+	/* Return -ENODATA if not implemented */
+	return -ENODATA;
+}
+
 static void prepare_backup_mtdparts(mtdparts_t *mpr)
 {
 	uint32_t calc_crc32;
@@ -1182,13 +1188,19 @@ mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
                     const char *str_guid)
 {
 	struct mtd_info *master = blk_desc_to_mtd(dev_desc);
-	loff_t offset = MTDPARTS_BASE;
+	loff_t offset;
 	lbaint_t lba;
 
 	if (!master)
 		return -EINVAL;
 	debug("MTD type: %d\n", master->type);
 
+	offset = board_mtdparts_offset(master->type, false);
+	if (offset < 0) {
+		pr_err("Failed to get mtdparts offset for MTD type %d\n", master->type);
+		return -ENODATA;
+	}
+	debug("offset: 0x%llx\n", offset);
 	mpr->signature = cpu_to_le64(MTDPARTS_SIGNATURE_UBOOT);
 	mpr->revision = cpu_to_le32(MTDPARTS_REVISION_V1);
 	mpr->header_size = cpu_to_le32(sizeof(*mpr));
@@ -1196,20 +1208,15 @@ mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
 	lba = offset / dev_desc->blksz;
 	mpr->my_lba = cpu_to_le64(lba);
 	mpr->my_offset = cpu_to_le32(offset - lba * dev_desc->blksz);
-	switch (master->type) {
-	case MTD_NORFLASH:
-		offset = MTDPARTS_BAKEUP_NORFLASH_BASE;
-		lba = offset / dev_desc->blksz;
-		break;
-	case MTD_NANDFLASH:
-	case MTD_MLCNANDFLASH:
-		offset = MTDPARTS_BAKEUP_NANDFLASH_BASE;
-		lba = offset / dev_desc->blksz;
-		break;
-	default:
-		pr_err("Not supported MTD type\n");
-		return -EAGAIN;
+
+	/* Get the mtdparts backup offset */
+	offset = board_mtdparts_offset(master->type, true);
+	if (offset < 0) {
+		pr_err("Failed to get mtdparts backup offset for MTD type %d\n", master->type);
+		return -ENODATA;
 	}
+	debug("backup offset: 0x%llx\n", offset);
+	lba = offset / dev_desc->blksz;
 	mpr->alternate_lba = cpu_to_le64(lba);
 	mpr->alternate_offset = cpu_to_le32(offset - lba * dev_desc->blksz);
 	mpr->header_crc32 = 0;
@@ -1448,7 +1455,12 @@ static int find_valid_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 	if (!dev_desc || !mpr)
 		return -EINVAL;
 
-	mtdparts_fill_header(dev_desc, mpr, NULL);
+	r = mtdparts_fill_header(dev_desc, mpr, NULL);
+	if (r < 0) {
+		pr_err("%s: *** ERROR: Failed to fill up mtdparts header ***\n",
+		            __func__);
+		return r;
+	}
 
 	blkcnt = DIV_ROUND_UP_ULL(mpr->total_size, dev_desc->blksz);
 	buf = calloc(dev_desc->blksz * blkcnt, sizeof(char));
