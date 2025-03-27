@@ -64,6 +64,16 @@
 		status = "okay";
 	};
 
+	safe_aon_glb: safe_aon_glb@006CF000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x00 0x006CF000 0x00 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
+		status = "okay";
+	};
+
 	safe_top_glb: safe_top_glb@006D9000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x00 0x006D9000 0x00 0x1000>;
@@ -83,7 +93,7 @@
 
 		download_if {
 			compatible = "syscon-sysinfo";
-			regmap = <&safe_glb 0x224>;
+			regmap = <&safe_aon_glb 0x184>;
 			syscon-shift = <1>;
 			syscon-mask = <7>;
 			status = "okay";
