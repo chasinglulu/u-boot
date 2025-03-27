@@ -40,7 +40,7 @@ static int spl_ocm_load_image(struct spl_image_info *spl_image,
 	ulong image_start = CONFIG_VAL(TEXT_BASE) + CONFIG_VAL(OCM_LATTER_OFFSET);
 	ulong size = CONFIG_VAL(OCM_LATTER_SIZE);
 
-	printf("image_start: 0x%lx\n", image_start);
+	debug("latter image start address: 0x%lx size: 0x%lx\n", image_start, size);
 
 	/* Copy u-boot.img image from OCM into DDR */
 	memcpy((void *)CONFIG_SPL_LOAD_FIT_ADDRESS, (void *)image_start, size);
