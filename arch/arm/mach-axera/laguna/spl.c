@@ -8,6 +8,7 @@
 #include <asm/system.h>
 #include <semihosting.h>
 #include <android_ab.h>
+#include <asm/io.h>
 #include <hang.h>
 #include <image.h>
 #include <init.h>
@@ -122,6 +123,13 @@ static inline void setup_caches(void)
 #if CONFIG_IS_ENABLED(SOC_INIT)
 void spl_soc_init(void)
 {
+#if defined (CONFIG_LUA_CUSTOM_BOOTSTRAP)
+	/* unlock bootstrap register write permission */
+	writel(BIT(0), CONFIG_LUA_BOOTSTRAP_REGADDR);
+
+	/* Customize bootstrap register value */
+	writel(CONFIG_LUA_BOOTSTRAP_REGVAL, CONFIG_LUA_BOOTSTRAP_REGADDR + 0xC);
+#endif
 }
 #endif
 
