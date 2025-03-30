@@ -20,6 +20,7 @@
 #include <asm/io.h>
 #include <div64.h>
 #include <linux/glbcon.h>
+#include <linux/delay.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -588,8 +589,11 @@ int ns16550_serial_probe(struct udevice *dev)
 		subsysctl_assert(&subsys_ctl);
 
 	ret = reset_get_bulk(dev, &reset_bulk);
-	if (!ret)
+	if (!ret) {
+		reset_assert_bulk(&reset_bulk);
+		udelay(50);
 		reset_deassert_bulk(&reset_bulk);
+	}
 
 	com_port->plat = dev_get_plat(dev);
 	ns16550_init(com_port, -1);
