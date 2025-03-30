@@ -20,6 +20,7 @@
 #include <test/test.h>
 #include <test/ut.h>
 #include <asm/arch/bootparams.h>
+#include <dm/device-internal.h>
 
 u32 spl_boot_device(void)
 {
@@ -92,6 +93,53 @@ void spl_board_prepare_for_boot(void)
 	/* Copy console output settings */
 	memcpy((void *)&bp->spl_console_out,
 	          (void *)&gd->console_out, sizeof(gd->console_out));
+}
+
+void spl_board_prepare(void)
+{
+	boot_params_t *bp = boot_params_get_base();
+	ulong devseq[2] = {~0ULL, ~0ULL};
+	struct udevice *dev = NULL;
+	int ret, i;
+
+	switch (bp->bootdevice) {
+	case BOOTDEVICE_ONLY_NAND:
+		devseq[0] = env_get_ulong("main_mtd", 10, ~0ULL);
+		break;
+	case BOOTDEVICE_BOTH_NOR_NAND:
+		devseq[0] = env_get_ulong("safe_mtd", 10, ~0ULL);
+		devseq[1] = env_get_ulong("main_mtd", 10, ~0ULL);
+		break;
+	case BOOTDEVICE_BOTH_NOR_EMMC:
+		devseq[0] = env_get_ulong("safe_mtd", 10, ~0ULL);
+		break;
+	case BOOTDEVICE_ONLY_NOR:
+	case BOOTDEVICE_ONLY_HYPER:
+		pr_err("TODO: Not implemented\n");
+		return;
+	default:
+		debug("No need to prepare\n");
+		return;
+	}
+
+	if (devseq[0] == ~0ULL && devseq[1] == ~0ULL) {
+		pr_err("Invalid device sequence\n");
+		return;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(devseq); i++) {
+		if (devseq[i] == ~0ULL)
+			continue;
+
+		ret = uclass_get_device_by_seq(UCLASS_MTD, devseq[i], &dev);
+		if (!dev || ret) {
+			pr_err("Failed to get MTD device\n");
+			return;
+		}
+
+		debug("Removing MTD device: %s\n", dev->name);
+		device_remove(dev, DM_REMOVE_NORMAL);
+	}
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,

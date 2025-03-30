@@ -222,6 +222,16 @@ __weak void spl_board_prepare_for_boot(void)
 	/* Nothing to do! */
 }
 
+/*
+ * Weak default function for board specific cleanup/preparation before
+ * jumping to the next image. Some boards/platforms might not need it, so just
+ * provide an empty stub here.
+ */
+__weak void spl_board_prepare(void)
+{
+	/* Nothing to do! */
+}
+
 __weak struct image_header *spl_get_load_buffer(ssize_t offset, size_t size)
 {
 	return map_sysmem(CONFIG_SYS_TEXT_BASE + offset, 0);
@@ -845,6 +855,8 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 			printf("Warning: Failed to finish bloblist (ret=%d)\n",
 			       ret);
 	}
+
+	spl_board_prepare();
 
 	switch (spl_image.os) {
 	case IH_OS_U_BOOT:
