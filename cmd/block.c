@@ -34,13 +34,18 @@ static int do_mmc_block(struct cmd_tbl *cmdtp, int flag, int argc,
 	return blk_common_cmd(argc, argv, IF_TYPE_MMC, &if_devnum);
 }
 
-static void block_display_line(struct udevice *dev, int index)
+static void block_display_line(struct udevice *dev)
 {
-	printf("%-3i %c %s", index,
+	struct blk_desc *desc;
+
+	printf("%3i     %c %-16s  ", dev_seq(dev),
 	       dev_get_flags(dev) & DM_FLAG_ACTIVATED ? '*' : ' ',
 	       dev->name);
-	if (dev->seq_ != -1)
-		printf(", seq %d", dev_seq(dev));
+
+	desc = dev_get_uclass_plat(dev);
+	printf("      %s         %u",
+	         blk_get_if_type_name(desc->if_type),
+	         desc->devnum);
 	puts("\n");
 }
 
@@ -66,9 +71,10 @@ static int do_block(struct cmd_tbl *cmdtp, int flag, int argc,
 	switch (argc) {
 	case 2:
 		if (strncmp(argv[1], "list", 4) == 0) {
-			i = 0;
+			printf(" seq      name                    type     devnum\n");
+			printf("------------------------------------------------------\n");
 			uclass_id_foreach_dev(UCLASS_BLK, dev, uc)
-				block_display_line(dev, i++);
+				block_display_line(dev);
 
 			return CMD_RET_SUCCESS;
 		}
