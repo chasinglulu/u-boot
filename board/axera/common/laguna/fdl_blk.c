@@ -78,10 +78,10 @@ gpt_partitions_fill(struct blk_desc *dev_desc,
 #endif
 #endif
 
-	if (!strncasecmp((void *)part->name, "kernel", 6))
-		part->bootable = PART_BOOTABLE;
-	else
-		part->bootable = 0;
+		if (!strncasecmp((void *)part->name, "kernel", 6))
+			part->bootable = PART_BOOTABLE;
+		else
+			part->bootable = 0;
 
 #ifdef CONFIG_PARTITION_TYPE_GUID
 		uuid_bin_to_str(default_data_guid_bin,
@@ -129,25 +129,19 @@ get_partition_count_by_id(struct fdl_part_table *tab,
                                 char **part_id, int len)
 {
 	struct disk_partition *part;
-	int i, j;
-	int count = 0;
-	int strlen1, strlen2;
+	int i, count = 0;
 
 	if (!tab || !part_id)
 		return -EINVAL;
 
 	part = tab->part;
-	for (i = 0; i < tab->number; i++, part++) {
-		for (j = 0; j < len; j++) {
-			strlen1 = strlen((void *)part->name);
-			strlen2 = strlen(part_id[j]);
-			if (strlen1 != strlen2 ||
-			    strcmp((void *)part->name, part_id[j])) {
+	for (part = tab->part; part < tab->part + tab->number; part++) {
+		for (i = 0; i < len; i++) {
+			if (strcmp((void *)part->name, part_id[i]))
 				continue;
-			} else {
-				count++;
-				break;
-			}
+
+			count++;
+			break;
 		}
 	}
 
@@ -158,10 +152,9 @@ static struct fdl_part_table
 *get_partitions_by_id(struct fdl_part_table *tab,
                             char **part_id, int len)
 {
-	struct fdl_part_table *pt;
+	struct fdl_part_table *new_tab;
 	struct disk_partition *part;
-	int strlen1, strlen2;
-	int count, i, j;
+	int count, i;
 	int idx = 0;
 
 	if (!tab || !part_id)
@@ -173,29 +166,50 @@ static struct fdl_part_table
 		return ERR_PTR(count);
 	}
 
-	pt = malloc(sizeof(*pt) + count * sizeof(*part));
-	if (!pt) {
+	new_tab = malloc(sizeof(*new_tab) + count * sizeof(*part));
+	if (!new_tab) {
 		pr_err("Out of memory\n");
 		return ERR_PTR(-ENOMEM);
 	}
-	pt->number = count;
+	new_tab->number = count;
 
-	part = tab->part;
-	for (i = 0; i < tab->number; i++, part++) {
-		for (j = 0; j < len; j++) {
-			strlen1 = strlen((void *)part->name);
-			strlen2 = strlen(part_id[j]);
-			if (strlen1 != strlen2 ||
-			    strcmp((void *)part->name, part_id[j])) {
+	for (part = tab->part; part < tab->part + tab->number; part++) {
+		for (i = 0; i < len; i++) {
+			if (strcmp((void *)part->name, part_id[i]))
 				continue;
-			} else {
-				memcpy(&pt->part[idx++], part, sizeof(*part));
-				break;
-			}
+
+			memcpy(&new_tab->part[idx++], part, sizeof(*part));
+			break;
 		}
 	}
 
-	return pt;
+	return new_tab;
+}
+
+static void update_partitions_by_tab(struct fdl_part_table *orig_tab,
+                                     struct fdl_part_table *new_tab)
+{
+	struct disk_partition *p1, *p2;
+	uint32_t part_cnt, i = 0;
+
+	if (!orig_tab || !new_tab)
+		return;
+
+	part_cnt = min(orig_tab->number, new_tab->number);
+
+	for (p1 = orig_tab->part; p1 < orig_tab->part + orig_tab->number; p1++) {
+		for (p2 = new_tab->part; p2 < new_tab->part + new_tab->number; p2++) {
+			if (!strcmp((void *)p1->name, (void *)p2->name)) {
+				memcpy(p1, p2, sizeof(*p1));
+				i++;
+			}
+		}
+		if (i == part_cnt)
+			break;
+	}
+
+	if (unlikely(i != part_cnt))
+		pr_warn("New partition tab is not a subset of original partition tab\n");
 }
 
 static lbaint_t
@@ -237,7 +251,7 @@ align_nand_partitions(struct blk_desc *dev_desc, struct disk_partition *partitio
 	switch (mtd->type) {
 	case MTD_NANDFLASH:
 	case MTD_MLCNANDFLASH:
-		debug("erasesize: 0x%x\n", mtd->erasesize);
+		debug("MTD Nand erasesize: 0x%x\n", mtd->erasesize);
 		break;
 	default:
 		return;
@@ -245,9 +259,10 @@ align_nand_partitions(struct blk_desc *dev_desc, struct disk_partition *partitio
 
 	part = partitions;
 	while (part_count--) {
-		size = part->size * SZ_512;
-		size = ALIGN(size , mtd->erasesize);
-		part->size = DIV_ROUND_UP(size, dev_desc->blksz);
+		debug("%s: Partition '%s': size: 0x%lx, Device '%s': blksz: 0x%lx\n", __func__,
+		        part->name, part->size, dev_desc->bdev->name, dev_desc->blksz);
+		size = ALIGN(part->size * SZ_512 , mtd->erasesize);
+		part->size = DIV_ROUND_UP(size, SZ_512);
 		part++;
 	}
 }
@@ -258,12 +273,9 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 	struct blk_desc *blk_desc1 = NULL;
 	struct disk_partition pi;
 	struct blk_desc *dev;
-	ulong blkcnt, written;
-	ulong main_mtd;
-	ulong safe_mtd;
-	ulong mmc_dev;
-	int bootdev;
-	int ret;
+	ulong sector, blkcnt, written;
+	ulong main_mtd, safe_mtd, mmc_dev;
+	int ret, bootdev;
 
 	bootdev = get_bootdevice(NULL);
 	if (bootdev < 0) {
@@ -338,8 +350,14 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 
 writing:
 	blkcnt = DIV_ROUND_UP_ULL(image_size, dev->blksz);
-	written = blk_dwrite(dev, pi.start,
+	sector = pi.start;
+	debug("'%s' partition: sector: 0x%lx, size: 0x%lx\n",
+	                            pi.name, pi.start, pi.size);
+	debug("'%s' device: blkcnt: 0x%lx blksz: 0x%lx\n",
+	                    dev->bdev->name, blkcnt, dev->blksz);
+	written = blk_dwrite(dev, sector,
 	                             blkcnt, fdl_buf_addr);
+	debug("blk_dwrite: ret = %ld\n", written);
 	if (written != blkcnt) {
 		debug("Size of written image not equal to expected size (%lu != %lu)\n",
 		                written * dev->blksz, image_size);
@@ -360,17 +378,13 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 	struct fdl_part_table *mmc_tab = NULL;
 	struct fdl_part_table *mtd_tab = NULL;
 	int mmc_part_count, mtd_part_count;
-	char *str_disk_guid = NULL;
+	char *str_disk_guid = NULL, *prefix = NULL;
+	ulong main_mtd, safe_mtd, mmc_dev;
 	char bootmode[32];
-	char *prefix = NULL;
 	lbaint_t mtdparts_size;
 	bool gpt = false;
 	bool mtdparts = false;
-	ulong main_mtd;
-	ulong safe_mtd;
-	ulong mmc_dev;
-	int bootdev;
-	int ret;
+	int ret, bootdev;
 
 	ret = partitions_id_check(ptab);
 	if (ret < 0) {
@@ -442,6 +456,7 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 			return -EINVAL;
 		align_nand_partitions(mtd_desc,
 		       mtd_tab->part, mtd_tab->number);
+		update_partitions_by_tab(ptab, mtd_tab);
 
 		/* mtdparts string would written into safety SPI nor flash */
 		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);

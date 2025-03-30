@@ -1200,7 +1200,7 @@ mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
 		pr_err("Failed to get mtdparts offset for MTD type %d\n", master->type);
 		return -ENODATA;
 	}
-	debug("offset: 0x%llx\n", offset);
+	debug("%s: written mtdparts offset: 0x%llx\n", __func__, offset);
 	mpr->signature = cpu_to_le64(MTDPARTS_SIGNATURE_UBOOT);
 	mpr->revision = cpu_to_le32(MTDPARTS_REVISION_V1);
 	mpr->header_size = cpu_to_le32(sizeof(*mpr));
@@ -1215,7 +1215,7 @@ mtdparts_fill_header(struct blk_desc *dev_desc, mtdparts_t *mpr,
 		pr_err("Failed to get mtdparts backup offset for MTD type %d\n", master->type);
 		return -ENODATA;
 	}
-	debug("backup offset: 0x%llx\n", offset);
+	debug("%s: written mtdparts backup offset: 0x%llx\n", __func__, offset);
 	lba = offset / dev_desc->blksz;
 	mpr->alternate_lba = cpu_to_le64(lba);
 	mpr->alternate_offset = cpu_to_le32(offset - lba * dev_desc->blksz);
@@ -1250,8 +1250,16 @@ static int do_mtdparts(struct blk_desc *dev_desc, char *str_mtdparts,
 	p = str_mtdparts + prefix_len;
 	part = partitions;
 	for (i = 0; i < part_count; i++, part++) {
+		debug("%s: Partition '%s': 0x%lx, Device '%s': 0x%lx\n", __func__,
+		      part->name, part->size, dev_desc->bdev->name, dev_desc->blksz);
+
+		if (dev_desc->blksz % SZ_512) {
+			pr_err("Device block size is not multiple of 512\n");
+			return -EINVAL;
+		}
+
 		snprintf(name, MTDPART_NAME_LEN, "0x%lX(%s),",
-		             part->size * dev_desc->blksz, part->name);
+		                part->size * SZ_512, part->name);
 		if (part->bootable) {
 			name[strlen(name) - 1] = '\0';
 			strcat(name, "bootable,");
@@ -1349,6 +1357,7 @@ int mtdparts_restore(struct blk_desc *dev_desc, const char *str_disk_guid,
 		debug("Failed to build a string of mtdparts\n");
 		return ret;
 	}
+	debug("%s: written mtdparts string: %s\n", __func__, buffer);
 
 	ret = mtdparts_copy(dev_desc, mpr, buffer);
 	if (unlikely(ret < 0))
