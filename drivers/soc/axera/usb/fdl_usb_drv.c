@@ -16,12 +16,6 @@
 
 #include "usb_drv.h"
 
-#define NOOP(...)
-
-#define dbg    NOOP
-#define info   NOOP
-#define err    printf
-
 #define upper_32_bits(n) ((u32)(((n) >> 16) >> 16))
 #define lower_32_bits(n) ((u32)(n))
 
@@ -43,7 +37,7 @@ static void dwc3_flush_cache(long addr, long length)
 	unsigned long end = roundup((unsigned long)addr + length,
 				    ARCH_DMA_MINALIGN);
 
-	dbg("flush cache: start:%p, end:%p\n", (void *)start, (void *)end);
+	pr_debug("flush cache: start:%p, end:%p\n", (void *)start, (void *)end);
 	flush_dcache_range(start, end);
 }
 
@@ -53,7 +47,7 @@ static void dwc3_invalidate_cache(long addr, long length)
 	unsigned long end = roundup((unsigned long)addr + length,
 				    ARCH_DMA_MINALIGN);
 
-	dbg("invalidate cache: start:%p, end:%p\n", (void *)start, (void *)end);
+	pr_debug("invalidate cache: start:%p, end:%p\n", (void *)start, (void *)end);
 	invalidate_dcache_range(start, end);
 }
 
@@ -75,7 +69,7 @@ static int dwc3_send_ep_cmd(dwc3_device_t *dev, unsigned ep, unsigned cmd,
 		timeout--;
 	} while (timeout > 0);
 
-	err("send ep cmd timeout\r\n");
+	pr_err("send ep cmd timeout\r\n");
 	return -1;
 }
 
@@ -104,37 +98,37 @@ static void dwc3_process_event_buf(dwc3_device_t *dwc,
 
 	is_in = ep & 1;
 	dwc3_ep = is_in ? dwc->in_ep : dwc->out_ep;
-	dbg("dwc3_process_event_buf\r\n");
+	pr_debug("dwc3_process_event_buf\r\n");
 
 	switch (event & DEPEVT_INTTYPE_BITS) {
 	case DEPEVT_XFER_CMPL << DEPEVT_INTTYPE_SHIFT:
 		dwc3_ep->ep.xfer_started = 0;
 		if (dwc3_ep == dwc->out_ep) {
 			dwc3_trb_t *trb = dwc3_ep->ep.dma_desc;
-			dbg("ep out interrupt: DEPEVT_XFER_CMPL\n");
-			// dbg("ep-out trb addr: %p, trb size:%ld, recv buf addr:%p\n",
+			pr_debug("ep out interrupt: DEPEVT_XFER_CMPL\n");
+			// pr_debug("ep-out trb addr: %p, trb size:%ld, recv buf addr:%p\n",
 				// trb, sizeof(*trb), (void *)(trb->bpl + ((uintptr_t)trb->bph << 32)));
-			dbg("ep-out trb addr: %p, trb size:%ld\n", trb, sizeof(*trb));
+			pr_debug("ep-out trb addr: %p, trb size:%ld\n", trb, sizeof(*trb));
 			dwc3_invalidate_cache((long)trb, sizeof(dwc3_trb_t));
 			usb_out_len = dwc->recv_len - (trb->size & DWC3_TRB_SIZE_MASK);
 			if(usb_out_len > 0)
 				dwc3_invalidate_cache((uintptr_t)(trb->bpl + ((uintptr_t)trb->bph << 32)), usb_out_len);
-			dbg("recv actual:%d bytes\r\n", usb_out_len);
+			pr_debug("recv actual:%d bytes\r\n", usb_out_len);
 
 			if(usb_out_len == 0)	// receive a zero-length packet from host
 				usb_receive(dwc, dwc->recv_buf, dwc->recv_len); //receive again!
 		}
 		if (dwc3_ep == dwc->in_ep) {
-			dbg("ep in interrupt: DEPEVT_XFER_CMPL\r\n");
+			pr_debug("ep in interrupt: DEPEVT_XFER_CMPL\r\n");
 			dwc3_trb_t *trb = dwc3_ep->ep.dma_desc;
-			dbg("ep-in trb addr: %p, trb size:%ld\n", trb, sizeof(*trb));
+			pr_debug("ep-in trb addr: %p, trb size:%ld\n", trb, sizeof(*trb));
 			dwc3_invalidate_cache((long)trb, sizeof(dwc3_trb_t));
-			dbg("send, remain data:%d Bytes\r\n", (trb->size & DWC3_TRB_SIZE_MASK));
+			pr_debug("send, remain data:%d Bytes\r\n", (trb->size & DWC3_TRB_SIZE_MASK));
 			usb_in_len = dwc->send_len - (trb->size & DWC3_TRB_SIZE_MASK);
 		}
 		break;
 	case DEPEVT_XFER_IN_PROG << DEPEVT_INTTYPE_SHIFT:
-		dbg("ep interrupt: DEPEVT_XFER_IN_PROG\r\n");
+		pr_debug("ep interrupt: DEPEVT_XFER_IN_PROG\r\n");
 		break;
 	default:
 		break;
@@ -154,7 +148,7 @@ static u32 get_eventbuf_event(dwc3_device_t *dev, int size)
 	if (dev->event_ptr >= dev->event_buf + size)
 		dev->event_ptr = dev->event_buf;
 
-	dbg("current event ptr:%p, event:%x\n", dev->event_ptr, event);
+	pr_debug("current event ptr:%p, event:%x\n", dev->event_ptr, event);
 	return event;
 }
 
@@ -171,7 +165,7 @@ static void dwc3_handle_event(dwc3_device_t *dwc, u32 buf)
 		return;
 
 	for (i = 0; i < count; i += 4) {
-		dbg("get a usb event\n");
+		pr_debug("get a usb event\n");
 
 		event = get_eventbuf_event(dwc, dwc->event_size);
 		writel(4, (void *)dwc->reg_base + DWC3_GEVNTCOUNT(buf));
@@ -199,7 +193,7 @@ static void usb_receive(dwc3_device_t *dev, dma_addr_t addr, int len)
 	struct dwc3_gadget_ep_cmd_params params;
 
 	if (ep->ep.xfer_started) {
-		err("ep out transfer started\r\n");
+		pr_err("ep out transfer started\r\n");
 		return;
 	}
 
@@ -232,7 +226,7 @@ static int fdl_usb_drv_recv(uint8_t* buf, uint32_t len, uint32_t timeout_ms)
 		transfer_size = ROUND(len, dev->out_ep->ep.maxpacket);
 	}
 
-	info("usb recv: addr:%p, ep_maxpacket:%d, len:%d, transfer_size:%d\n",
+	pr_info("usb recv: addr:%p, ep_maxpacket:%d, len:%d, transfer_size:%d\n",
 	               buf, dev->out_ep->ep.maxpacket, len, transfer_size);
 
 	usb_out_len = 0;
@@ -243,12 +237,12 @@ static int fdl_usb_drv_recv(uint8_t* buf, uint32_t len, uint32_t timeout_ms)
 		dwc3_handle_interrupt(dev);
 		elapsed += get_timer(ticks);
 		if (usb_out_len > 0) {
-			info("receive %d bytes data from host\r\n", usb_out_len);
+			pr_info("receive %d bytes data from host\r\n", usb_out_len);
 			return usb_out_len;
 		}
 
 		if (elapsed > timeout_ms) {
-			debug("%s: timeout\n", __func__);
+			pr_debug("%s: timeout\n", __func__);
 			ret = -ETIMEDOUT;
 			goto failed;
 		}
@@ -270,7 +264,7 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 	int ret;
 	u8 zlp = 0;
 
-	info("usb send: addr:%p, len:%d\r\n", buf, len);
+	pr_info("usb send: addr:%p, len:%d\r\n", buf, len);
 
 	/* Zero-Length Packet check */
 	zlp = (len && !(len % ep->ep.maxpacket)) ? 1 : 0;
@@ -281,7 +275,7 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 		zlp ? 0 : DWC3_TRB_CTRL_LST);
 
 	if (zlp) {	//send zero-length packet to host
-		dbg("send zero-length packet\r\n");
+		pr_debug("send zero-length packet\r\n");
 		dwc3_prepare_one_trb(ep->ep.dma_desc + 1, 0,
 			0, DWC3_TRBCTL_NORMAL,
 			DWC3_TRB_CTRL_LST);
@@ -303,7 +297,7 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 		dwc3_handle_interrupt(dev);
 		elapsed += get_timer(ticks);
 		if (usb_in_len > 0) {
-			info("send %d bytes data to host\r\n", usb_in_len);
+			pr_info("send %d bytes data to host\r\n", usb_in_len);
 			return usb_in_len;
 		}
 
@@ -335,7 +329,7 @@ static void dwc3_event_buffers_setup(dwc3_device_t *dwc3_dev)
 	dwc3_dev->event_size = DWC3_EVENT_BUFFERS_SIZE >> 2;
 	dwc3_dev->event_ptr = dwc3_dev->event_buf;
 
-	dbg("event buffer addr:%p, size:%d\n", event_buffer, DWC3_EVENT_BUFFERS_SIZE);
+	pr_debug("event buffer addr:%p, size:%d\n", event_buffer, DWC3_EVENT_BUFFERS_SIZE);
 }
 
 static void dwc3_ep_init(dwc3_device_t *dev)
@@ -386,8 +380,8 @@ static void dwc3_ep_init(dwc3_device_t *dev)
 	ep_in->ep.maxpacket = maxpacket;
 	ep_in->ep.xfer_started = 0;
 
-	dbg("ep-out trb addr:%p\n", (void *)ep_out->ep.dma_desc);
-	dbg("ep-in trb addr:%p\n", (void *)ep_in->ep.dma_desc);
+	pr_debug("ep-out trb addr:%p\n", (void *)ep_out->ep.dma_desc);
+	pr_debug("ep-in trb addr:%p\n", (void *)ep_in->ep.dma_desc);
 }
 
 static int fdl_usb_drv_init(void)
