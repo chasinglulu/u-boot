@@ -21,25 +21,35 @@ void *fdl_buf_addr;
 /**
  * fdl_buf_size - size of the fdl download buffer
  */
-u32 fdl_buf_size;
+uint32_t fdl_buf_size;
+
+/*
+ * fdl_loglevel - FDL log level
+ */
+fdl_loglevel_t fdl_loglevel = FDL_LOGLEVEL_INFO;
+
+void fdl_set_loglevel(fdl_loglevel_t level)
+{
+	fdl_loglevel = level;
+}
 
 uint16_t fdl_checksum(const char *buffer, int len)
 {
-	uint32_t sum = 0;
+	uint32_t checksum = 0;
 
 	while (len > 1) {
-		sum += *(uint16_t*)buffer;
+		checksum += *(uint16_t*)buffer;
 		buffer += sizeof(uint16_t);
 		len -= sizeof(uint16_t);
 	}
 
 	if (len == 1)
-		sum += *buffer;
+		checksum += *buffer;
 
-	sum = (sum & 0xFFFF) + (sum >> 16);
-	sum += (sum >> 16);
+	checksum = (checksum & 0xFFFF) + (checksum >> 16);
+	checksum += (checksum >> 16);
 
-	return (uint16_t)(~sum);
+	return (uint16_t)(~checksum);
 }
 
 uint32_t fdl_checksum32(uint32_t chksum, const char *buffer, uint32_t len)
@@ -52,7 +62,7 @@ uint32_t fdl_checksum32(uint32_t chksum, const char *buffer, uint32_t len)
 
 uint32_t fdl_rawdata_checksum(const char *buffer, uint32_t len)
 {
-	uint32_t checksum;
+	uint32_t checksum = 0;
 
 	while (len > 3) {
 		checksum += *(uint32_t*)buffer;
@@ -66,14 +76,14 @@ uint32_t fdl_rawdata_checksum(const char *buffer, uint32_t len)
 	return checksum;
 }
 
-int fdl_packet_check(struct fdl_struct *fdl, const char *packet,
+int fdl_packet_check(struct fdl_info *fdl, const char *packet,
                         char *response)
 {
 	struct fdl_packet *pp = NULL;
 	struct fdl_header *head = NULL;
 	uint16_t chksum, calc_chksum;
 	uint32_t magic, bytecode, size;
-	int len = FDL_STRUCT_2NDF_AND_3RDF_LEN;
+	int len = FDL_CHECKSUM_FIXED_LEN;
 
 	if (unlikely(!packet) ||
 	     unlikely(!fdl)) {
@@ -86,12 +96,12 @@ int fdl_packet_check(struct fdl_struct *fdl, const char *packet,
 	magic = head->magic;
 	bytecode = head->bytecode;
 	size = head->size;
-	debug("magic: 0x%X size: 0x%x, bytecode: 0x%X\n", magic, size, bytecode);
+	fdl_debug("magic: 0x%X size: 0x%x, bytecode: 0x%X\n", magic, size, bytecode);
 
 	chksum = *(uint16_t *)(pp->payload + head->size);
 	calc_chksum = fdl_checksum((void *)&head->size, size + len);
-	if (chksum != calc_chksum) {
-		debug("calc_chksum: 0x%x mismatch chksum: 0x%x\n", calc_chksum, chksum);
+	if (calc_chksum != chksum) {
+		fdl_debug("Invaild FDL checksum (expected %.8x, found %.8x\n", calc_chksum, chksum);
 		fdl_fail_null(FDL_RESPONSE_VERIFY_CHECKSUM_FAIL, response);
 		return -EINVAL;
 	}
@@ -123,7 +133,7 @@ int fdl_get_resp_size(const char *response)
 	if (fdl_response_check(response))
 		return 0;
 
-	return head->size + FDL_STRUCT_5THF_BUT4TH_LEN;
+	return head->size + FDL_PROTO_FIXED_LEN;
 }
 
 /**
@@ -139,7 +149,7 @@ void fdl_response(int tag, char *response,
 	struct fdl_packet *pp = NULL;
 	struct fdl_header *head = NULL;
 	char *buffer = NULL;
-	int len = FDL_STRUCT_2NDF_AND_3RDF_LEN;
+	int len = FDL_CHECKSUM_FIXED_LEN;
 	uint16_t chksum, *p;
 	va_list args;
 
@@ -151,7 +161,7 @@ void fdl_response(int tag, char *response,
 	if (format) {
 		va_start(args, format);
 		vsnprintf(pp->payload,
-		     FDL_RESP_PLAYLOAD_LEN - 1,
+		     FDL_RESP_PLAYLOAD_MAX_LEN - 1,
 		     format, args);
 		va_end(args);
 
@@ -173,7 +183,7 @@ void fdl_response_data(int tag, char *response,
 	struct fdl_packet *pp = NULL;
 	struct fdl_header *head = NULL;
 	char *payload = NULL;
-	uint32_t len = FDL_STRUCT_2NDF_AND_3RDF_LEN;
+	uint32_t len = FDL_CHECKSUM_FIXED_LEN;
 	uint16_t chksum, *p;
 
 	if (unlikely(!data)) {
@@ -256,7 +266,7 @@ void fdl_command(int tag, char *command)
 	struct fdl_packet *pp = NULL;
 	struct fdl_header *head = NULL;
 	char *buffer = NULL;
-	int len = FDL_STRUCT_2NDF_AND_3RDF_LEN;
+	int len = FDL_CHECKSUM_FIXED_LEN;
 	uint16_t chksum, *p;
 
 	pp = (void *)command;
@@ -282,6 +292,6 @@ void fdl_init(void *buf_addr, u32 buf_size)
 	fdl_buf_size = buf_size ? buf_size : CONFIG_FDL_BUF_SIZE;
 
 #ifdef CONFIG_FDL_DEBUG
-	exec_cmd_cnt = 0;
+	fdl_execute_received = 0;
 #endif
 }
