@@ -254,12 +254,12 @@ static int spl_blk_load_multi_images(struct spl_image_info *spl_image,
 		            BOOT_SLOT_NAME(ab_slot));
 		err = get_part_by_name(dev_desc, name, &info);
 		if (err < 0) {
-			debug("Could not find \"%s\" partition", name);
+			debug("Could not find \"%s\" partition\n", name);
 			snprintf(name, sizeof(name), "%s",
 			            spl_board_get_part_name(i));
 			err = get_part_by_name(dev_desc, name, &info);
 			if (err < 0) {
-				debug("Also could not find \"%s\" partition", name);
+				debug("Also could not find \"%s\" partition\n", name);
 				continue;
 			}
 		}

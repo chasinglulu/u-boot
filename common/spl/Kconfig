@@ -1313,7 +1313,7 @@ config SPL_OCM_LATTER_OFFSET
 config SPL_OCM_LATTER_SIZE
 	hex "Max Size of Latter Firmware"
 	depends on SPL_OCM_SUPPORT
-	default 0x180000
+	default 0x1C0000
 	help
 	  Define other image size.
 
