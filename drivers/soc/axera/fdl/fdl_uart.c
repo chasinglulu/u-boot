@@ -13,7 +13,9 @@
 #include <linux/err.h>
 #include <fdl.h>
 #include <malloc.h>
-#include <hexdump.h>
+
+/* check if handshake is successful */
+static bool connected = false;
 
 static void _serial_putc(struct udevice *dev, char ch)
 {
@@ -58,7 +60,8 @@ static void fdl_response_tx(struct udevice *dev, const char *response)
 	int i = 0;
 	int len = fdl_get_resp_size(response);
 
-	// print_hex_dump("RESPONSE: ", DUMP_PREFIX_OFFSET, 16, 64, response, len, true);
+	FDL_DUMP("RESPONSE: ", response, len);
+
 	while(len--)
 		_serial_putc(dev, response[i++]);
 }
@@ -135,7 +138,7 @@ retry:
 		if (unlikely(ret < 0))
 			goto failed;
 
-		if (ret == 0x9F || ret == 0x3C)
+		if (ret == 0x9F || (ret == 0x3C && !connected))
 			break;
 	}
 
@@ -147,7 +150,7 @@ retry:
 				goto failed;
 
 			if (ret != 0x3C) {
-				pr_err("handshake failed\n");
+				fdl_err("handshake failed\n");
 				handshake = 3;
 				goto retry;
 			}
@@ -173,34 +176,36 @@ retry:
 		*pos++ = ret;
 
 		switch (rx_count) {
-		case FDL_STRUCT_1STF_LEN:
+		case FDL_MAGIC_END:
 			magic = head->magic;
 			if (magic != FDL_MAGIC) {
-				pr_err("magic wrong (magic = 0x%x)\n", magic);
-				goto retry;
+				fdl_err("Wrong magic (0x%x)\n", magic);
+				ret = -EINVAL;
+				goto failed;
 			}
 			break;
-		case FDL_STRUCT_2NDF_LEN:
+		case FDL_SIZE_END:
 			size = head->size;
-			if (size > FDL_COMMAND_LEN - FDL_STRUCT_5THF_BUT4TH_LEN) {
-				char *tmp = malloc(size + FDL_STRUCT_5THF_BUT4TH_LEN);
+			/* expand command buffer */
+			if (size > FDL_COMMAND_LEN - FDL_PROTO_FIXED_LEN) {
+				char *tmp = malloc(size + FDL_PROTO_FIXED_LEN);
 				if (unlikely(!tmp)) {
-					pr_err("Out of memory\n");
+					fdl_err("Out of memory\n");
 					ret = -ENOMEM;
 					goto failed;
 				}
-				memcpy(tmp, buffer, FDL_STRUCT_2NDF_LEN);
-				pos = tmp + FDL_STRUCT_2NDF_LEN;
+				memcpy(tmp, buffer, FDL_SIZE_END);
+				pos = tmp + FDL_SIZE_END;
 				free(buffer);
 				buffer = tmp;
 			}
 			break;
-		case FDL_STRUCT_3RDF_LEN:
+		case FDL_BYTECODE_END:
 			bytecode = head->bytecode;
 			break;
 		}
 
-		if ((rx_count - FDL_STRUCT_5THF_BUT4TH_LEN) == size)
+		if ((rx_count - FDL_PROTO_FIXED_LEN) == size)
 			break;
 	}
 
@@ -218,12 +223,12 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 {
 	char *cmd_packet = NULL;
 	char response[FDL_RESPONSE_LEN];
-	struct fdl_struct fdl;
+	struct fdl_info fdl;
 	struct fdl_header *head;
 	struct fdl_packet __maybe_unused *packet;
-	struct fdl_raw_tx __maybe_unused *tx;
+	struct fdl_tx_info __maybe_unused *payload;
 	uint32_t __maybe_unused fdl_data_len;
-	uint32_t __maybe_unused calc_chksum;
+	uint32_t __maybe_unused checksum;
 	char __maybe_unused *fdl_data = NULL;
 	int ret;
 
@@ -231,7 +236,7 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 	memset(response, 0, sizeof(response));
 
 	if (unlikely(need_ack)) {
-		/* ACK the previous execute command */
+		fdl_debug("Acknowledge the previous execute command\n");
 		fdl_okay_null(FDL_RESPONSE_ACK, response);
 		fdl_response_tx(dev, response);
 	}
@@ -242,9 +247,10 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 			if (!timeout && ret == -ETIMEDOUT)
 				continue;
 
-			pr_err("Failed to receive command packet [ret %d]\n", ret);
+			fdl_err("Failed to receive command packet [ret %d]\n", ret);
 			return ret;
 		}
+		FDL_DUMP("COMMAND: ", cmd_packet, ret);
 
 		ret = fdl_packet_check(&fdl, cmd_packet, response);
 		if (unlikely(ret < 0))
@@ -253,43 +259,48 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 		ret = fdl_handle_command(&fdl, response);
 		if (unlikely(ret < 0)) {
 			head = (void *)&fdl;
-			pr_err("Unable to handle 0x%X command\n", head->bytecode);
+			fdl_err("Unable to handle 0x%X command\n", head->bytecode);
 			goto failed;
 		}
 
-		if (fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_END_DATA)) {
+		if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_END_DATA)) {
 			ret = fdl_data_complete(response);
 			if (unlikely(ret < 0))
 				goto failed;
 		}
+
+		if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_HANDSHAKE))
+			connected = true;
+		else if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_EXECUTE))
+			connected = false;
+
 		fdl_response_tx(dev, response);
 
 #ifdef CONFIG_FDL_RAW_DATA_DL
-		if (!fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_MIDST_DATA))
+		if (!fdl_compare_command_by_tag(&fdl, FDL_COMMAND_MIDST_DATA))
 			continue;
 
-		packet = (void *)response;
-		tx = (void *)packet->payload;
-
-		fdl_data_len = tx->len;
+		payload = (void *)&fdl_tx_payload_info;
+		fdl_data_len = payload->len;
 		fdl_data = malloc(fdl_data_len);
 		if (unlikely(!fdl_data)) {
-			debug("Out of memory\n");
+			fdl_debug("Out of memory\n");
 			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
 			goto failed;
 		}
 
 		ret = fdl_uart_data_download(dev, fdl_data, fdl_data_len);
 		if (unlikely(ret < 0)) {
-			debug("fdl_uart_data_download failed (ret = %d)\n", ret);
+			fdl_debug("fdl_uart_data_download failed (ret = %d)\n", ret);
 			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
 			goto failed;
 		}
+		FDL_DUMP("PAYLOAD DATA: ", fdl_data, fdl_data_len);
 
-		if (tx->chksum_en) {
-			calc_chksum = fdl_rawdata_checksum((void *)fdl_data, fdl_data_len);
-			debug("calc: 0x%x checksum: 0x%x\n", calc_chksum, tx->chksum);
-			if (calc_chksum != tx->chksum) {
+		if (payload->chksum_en) {
+			checksum = fdl_rawdata_checksum((void *)fdl_data, fdl_data_len);
+			if (checksum != payload->chksum) {
+				fdl_debug("Invalid raw data checksum (expected %.8x, found %.8x)\n", checksum, payload->chksum);
 				ret = -EINVAL;
 				fdl_fail_null(FDL_RESPONSE_VERIFY_CHECKSUM_FAIL, response);
 				goto failed;
@@ -300,6 +311,7 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 		if (unlikely(ret < 0))
 			goto failed;
 
+		fdl_debug("Payload data download completed\n");
 		fdl_okay_null(FDL_RESPONSE_ACK, response);
 		fdl_response_tx(dev, response);
 #endif
@@ -330,12 +342,15 @@ static int do_fdl_uart(struct cmd_tbl *cmdtp, int flag, int argc,
 			return CMD_RET_USAGE;
 	}
 
+	connected = false;
+	// fdl_set_loglevel(FDL_LOGLEVEL_DEBUG);
+
 	uclass_get_device_by_seq(UCLASS_SERIAL, seq, &dev);
 	if (IS_ERR_OR_NULL(dev)) {
-		pr_err("Not found seq '%d' UART device\n", seq);
+		fdl_err("Not found seq '%d' UART device\n", seq);
 		return CMD_RET_FAILURE;
 	}
-	printf("device name: %s\n", dev->name);
+	fdl_debug("device name: %s\n", dev->name);
 
 	ret = fdl_uart_process(dev, true, false);
 	if (ret < 0)
@@ -358,11 +373,12 @@ int fdl_uart_download(int dev_idx, bool timeout)
 
 	uclass_get_device_by_seq(UCLASS_SERIAL, dev_idx, &dev);
 	if (IS_ERR_OR_NULL(dev)) {
-		pr_err("Not found seq '%d' UART device\n", dev_idx);
+		fdl_err("Not found seq '%d' UART device\n", dev_idx);
 		return -ENODEV;
 	}
-	debug("device name: %s\n", dev->name);
+	fdl_debug("FDL UART device name: %s\n", dev->name);
 
+	// fdl_set_loglevel(FDL_LOGLEVEL_DEBUG);
 	ret = fdl_uart_process(dev, timeout, true);
 	if (ret < 0)
 		return ret;
