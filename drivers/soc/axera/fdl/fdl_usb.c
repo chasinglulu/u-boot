@@ -25,6 +25,7 @@ static void fdl_response_tx(struct udevice *dev, const char *response)
 {
 	int len = fdl_get_resp_size(response);
 
+	FDL_DUMP("RESPONSE: ", response, len);
 	fdl_usb_drv_write(dev, response, len);
 }
 
@@ -108,7 +109,7 @@ restart:
 		while (handshake--) {
 			ch = *start++;
 			if (ch != 0x3C) {
-				pr_err("handshake failed\n");
+				fdl_err("handshake failed\n");
 				handshake = 3;
 				goto restart;
 			}
@@ -124,17 +125,17 @@ restart:
 	head = (void *)pp;
 	magic = head->magic;
 	if (unlikely(magic != FDL_MAGIC)) {
-		pr_err("magic wrong\n");
+		fdl_err("Wrong magic (0x%X)\n", magic);
 		goto restart;
 	}
 
 	size = head->size;
-	total = size + FDL_STRUCT_5THF_BUT4TH_LEN;
+	total = size + FDL_PROTO_FIXED_LEN;
 	if (unlikely(total > remaining)) {
 		rx_max_len = ROUND(total, maxpacket);
 		start = malloc(rx_max_len);
 		if (!start) {
-			pr_err("Out of memory\n");
+			fdl_err("Out of memory\n");
 			ret = -ENOMEM;
 			goto failed;
 		}
@@ -162,13 +163,12 @@ static int fdl_usb_process(struct udevice *dev, bool timeout, bool need_ack)
 {
 	char *cmd_packet = NULL;
 	char response[FDL_RESPONSE_LEN];
-	struct fdl_struct fdl;
+	struct fdl_info fdl;
 	struct fdl_header *head;
-	struct fdl_packet __maybe_unused *packet;
-	struct fdl_raw_tx __maybe_unused *tx;
+	struct fdl_tx_info __maybe_unused *payload;
 	char __maybe_unused *fdl_data = NULL;
 	uint32_t __maybe_unused fdl_data_len;
-	uint32_t __maybe_unused calc_chksum;
+	uint32_t __maybe_unused checksum;
 	int ret;
 
 	fdl_init(NULL, 0);
@@ -178,20 +178,23 @@ static int fdl_usb_process(struct udevice *dev, bool timeout, bool need_ack)
 	maxpacket = fdl_usb_drv_get_maxpacket(dev);
 
 	if (unlikely(need_ack)) {
-		/* ACK the previous execute command */
+		fdl_debug("Acknowledge the previous execute command\n");
 		fdl_okay_null(FDL_RESPONSE_ACK, response);
-		fdl_response_tx(dev, response);
+		fdl_response_tx(dev, response);;
 	}
 
 	while (true) {
 		ret = fdl_packet_rx(dev, &cmd_packet);
 		if (ret < 0) {
-			if (!timeout && ret == -ETIMEDOUT)
+			if (!timeout && ret == -ETIMEDOUT) {
+				fdl_err("Timeout to receive command packet\n");
 				continue;
+			}
 
-			pr_err("Failed to receive command packet [ret %d]\n", ret);
+			fdl_err("Failed to receive command packet [ret %d]\n", ret);
 			return CMD_RET_FAILURE;
 		}
+		FDL_DUMP("COMMAND: ", cmd_packet, ret);
 
 		ret = fdl_packet_check(&fdl, cmd_packet, response);
 		if (ret < 0)
@@ -200,10 +203,10 @@ static int fdl_usb_process(struct udevice *dev, bool timeout, bool need_ack)
 		ret = fdl_handle_command(&fdl, response);
 		if (ret < 0) {
 			head = (void *)&fdl;
-			pr_err("Unable to handle 0x%X command\n", head->bytecode);
+			fdl_err("Unable to handle 0x%X command\n", head->bytecode);
 			goto failed;
 		}
-		if (fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_END_DATA)) {
+		if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_END_DATA)) {
 			ret = fdl_data_complete(response);
 			if (ret < 0)
 				goto failed;
@@ -211,39 +214,41 @@ static int fdl_usb_process(struct udevice *dev, bool timeout, bool need_ack)
 		fdl_response_tx(dev, response);
 
 #ifdef CONFIG_FDL_RAW_DATA_DL
-		if (!fdl_compare_comm_bytecode(&fdl, FDL_COMMAND_MIDST_DATA))
+		if (!fdl_compare_command_by_tag(&fdl, FDL_COMMAND_MIDST_DATA))
 			continue;
 
-		packet = (void *)response;
-		tx = (void *)packet->payload;
-
-		fdl_data_len = ROUND(tx->len, maxpacket);
+		payload = (void *)&fdl_tx_payload_info;
+		fdl_data_len = ROUND(payload->len, maxpacket);
 		fdl_data = malloc(fdl_data_len);
 		if (unlikely(!fdl_data)) {
-			debug("Out of memory\n");
+			fdl_debug("Out of memory\n");
 			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
 			goto failed;
 		}
+		fdl_debug("fdl_data_len: %d\n", fdl_data_len);
 
 		ret = fdl_usb_data_download(dev, fdl_data, fdl_data_len);
 		if (ret < 0) {
 			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
 			goto failed;
 		}
-		if (tx->chksum_en) {
-			calc_chksum = fdl_rawdata_checksum((void *)fdl_data, tx->len);
-			debug("calc: 0x%x checksum: 0x%x\n", calc_chksum, tx->chksum);
-			if (calc_chksum != tx->chksum) {
+		FDL_DUMP("PAYLOAD DATA: ", fdl_data, fdl_data_len);
+
+		if (payload->chksum_en) {
+			checksum = fdl_rawdata_checksum((void *)fdl_data, payload->len);
+			if (checksum != payload->chksum) {
+				fdl_debug("Invalid raw data checksum (expected %.8x, found %.8x)\n", checksum, payload->chksum);
 				ret = -EINVAL;
 				fdl_fail_null(FDL_RESPONSE_VERIFY_CHECKSUM_FAIL, response);
 				goto failed;
 			}
 		}
 
-		ret = fdl_data_download(fdl_data, tx->len, response);
+		ret = fdl_data_download(fdl_data, payload->len, response);
 		if (ret < 0)
 			goto failed;
 
+		fdl_debug("Payload data download over USB completed\n");
 		fdl_okay_null(FDL_RESPONSE_ACK, response);
 		fdl_response_tx(dev, response);
 #endif
@@ -266,11 +271,12 @@ static int do_fdl_usb(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	fdl_usb_drv_get(&dev);
 	if (IS_ERR_OR_NULL(dev)) {
-		pr_err("Not found FDL USB device\n");
+		fdl_err("Not found FDL USB device\n");
 		return CMD_RET_FAILURE;
 	}
-	printf("device name: %s\n", dev->name);
+	fdl_debug("device name: %s\n", dev->name);
 
+	// fdl_set_loglevel(FDL_LOGLEVEL_DEBUG);
 	ret = fdl_usb_process(dev, true, false);
 	if (ret < 0)
 		return CMD_RET_FAILURE;
@@ -292,11 +298,12 @@ int fdl_usb_download(int dev_idx, bool timeout)
 
 	fdl_usb_drv_get(&dev);
 	if (IS_ERR_OR_NULL(dev)) {
-		pr_err("Not found FDL USB device\n");
+		fdl_err("Not found FDL USB device\n");
 		return -ENODEV;
 	}
-	debug("device name: %s\n", dev->name);
+	fdl_debug("device name: %s\n", dev->name);
 
+	// fdl_set_loglevel(FDL_LOGLEVEL_DEBUG);
 	ret = fdl_usb_process(dev, timeout, true);
 	if (ret < 0)
 		return ret;
