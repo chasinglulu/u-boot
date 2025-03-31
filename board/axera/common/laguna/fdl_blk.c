@@ -25,7 +25,6 @@
 #include <asm/u-boot.h>
 #include <android_ab.h>
 
-
 /* PARTITION_SYSTEM_GUID */
 const unsigned char default_system_guid_bin[UUID_BIN_LEN] = {
 	0x28, 0x73, 0x2A, 0xC1,
@@ -267,15 +266,20 @@ align_nand_partitions(struct blk_desc *dev_desc, struct disk_partition *partitio
 	}
 }
 
-int fdl_blk_write_data(const char *part_name, size_t image_size)
+static int
+fdl_blk_get_dev_and_part(const char *part_name,
+                         struct blk_desc **dev_desc,
+                         struct disk_partition *part)
 {
 	struct blk_desc *blk_desc = NULL;
 	struct blk_desc *blk_desc1 = NULL;
-	struct disk_partition pi;
-	struct blk_desc *dev;
-	ulong sector, blkcnt, written;
+	struct blk_desc *found_dev = NULL;
+	struct disk_partition part_info;
 	ulong main_mtd, safe_mtd, mmc_dev;
-	int ret, bootdev;
+	int bootdev, ret;
+
+	if (!part_name || !dev_desc || !part)
+		return -EINVAL;
 
 	bootdev = get_bootdevice(NULL);
 	if (bootdev < 0) {
@@ -300,8 +304,7 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 		if (unlikely(main_mtd == ~0UL))
 			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
 
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD,
-		              main_mtd);
+		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
 		if (IS_ERR_OR_NULL(blk_desc))
 			return -ENXIO;
 		break;
@@ -313,21 +316,24 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 		if (unlikely(main_mtd == ~0UL))
 			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
 
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD,
-		               CONFIG_FDL_FLASH_NOR_MTD_DEV);
-		blk_desc1 = get_blk_by_devnum(IF_TYPE_MTD,
-		               CONFIG_FDL_FLASH_NAND_MTD_DEV);
+		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
+		blk_desc1 = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
 		if (IS_ERR_OR_NULL(blk_desc) ||
-		     IS_ERR_OR_NULL(blk_desc1))
+		    IS_ERR_OR_NULL(blk_desc1))
 			return -ENXIO;
 		break;
 	case BOOTDEVICE_BOTH_NOR_EMMC:
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD,
-		                CONFIG_FDL_FLASH_NOR_MTD_DEV);
-		blk_desc1 = get_blk_by_devnum(IF_TYPE_MMC,
-		                    CONFIG_FDL_FLASH_MMC_DEV);
+		mmc_dev = env_get_ulong("mmc_dev", 10, ~0UL);
+		if (unlikely(mmc_dev == ~0UL))
+			mmc_dev = CONFIG_FDL_FLASH_MMC_DEV;
+		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);
+		if (unlikely(safe_mtd == ~0UL))
+			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
+
+		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
+		blk_desc1 = get_blk_by_devnum(IF_TYPE_MMC, mmc_dev);
 		if (IS_ERR_OR_NULL(blk_desc) ||
-		     IS_ERR_OR_NULL(blk_desc1))
+		    IS_ERR_OR_NULL(blk_desc1))
 			return -ENXIO;
 		break;
 	default:
@@ -335,37 +341,22 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 		return -EBUSY;
 	}
 
-	ret = get_part_by_name(blk_desc1, part_name, &pi);
+	ret = get_part_by_name(blk_desc1, part_name, &part_info);
 	if (ret > 0) {
-		dev = blk_desc1;
-		goto writing;
+		found_dev = blk_desc1;
+		goto found;
 	}
 
-	ret = get_part_by_name(blk_desc, part_name, &pi);
+	ret = get_part_by_name(blk_desc, part_name, &part_info);
 	if (ret < 0) {
 		debug("Not found '%s' partition\n", part_name);
-		return -EIO;
+		return -ENODEV;
 	}
-	dev = blk_desc;
+	found_dev = blk_desc;
 
-writing:
-	blkcnt = DIV_ROUND_UP_ULL(image_size, dev->blksz);
-	sector = pi.start;
-	debug("'%s' partition: sector: 0x%lx, size: 0x%lx\n",
-	                            pi.name, pi.start, pi.size);
-	debug("'%s' device: blkcnt: 0x%lx blksz: 0x%lx\n",
-	                    dev->bdev->name, blkcnt, dev->blksz);
-	written = blk_dwrite(dev, sector,
-	                             blkcnt, fdl_buf_addr);
-	debug("blk_dwrite: ret = %ld\n", written);
-	if (written != blkcnt) {
-		debug("Size of written image not equal to expected size (%lu != %lu)\n",
-		                written * dev->blksz, image_size);
-		return -EIO;
-	}
-	printf("\nwritting of %lu bytes into '%s' partition finished\n",
-	                  image_size, part_name);
-
+found:
+	*dev_desc = found_dev;
+	memcpy(part, &part_info, sizeof(*part));
 	return 0;
 }
 
@@ -557,98 +548,116 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 
 int fdl_blk_erase(const char *part_name, size_t size)
 {
-	struct blk_desc *mmc_desc = NULL;
-	struct blk_desc *mtd0_desc = NULL;
-	struct blk_desc *mtd1_desc = NULL;
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
 	bool eraseall = false;
-	ulong main_mtd;
-	ulong safe_mtd;
-	ulong mmc_dev;
-	int bootdev;
 	int ret;
 
 	if (!part_name && size == ~0ULL)
 		eraseall = true;
 
-	bootdev = get_bootdevice(NULL);
-	if (bootdev < 0) {
-		debug("Invaild boot device\n");
-		return -EINVAL;
-	}
-	debug("%s: bootdevice: %d\n", __func__, bootdev);
-	set_bootdevice_env(bootdev);
-
-	switch (bootdev) {
-	case BOOTDEVICE_ONLY_EMMC:
-		mmc_dev = env_get_ulong("mmc_dev", 10, ~0UL);
-		if (unlikely(mmc_dev == ~0UL))
-			mmc_dev = CONFIG_FDL_FLASH_MMC_DEV;
-
-		mmc_desc = get_blk_by_devnum(IF_TYPE_MMC, mmc_dev);
-		if (IS_ERR_OR_NULL(mmc_desc))
-			return -ENXIO;
-		break;
-	case BOOTDEVICE_ONLY_NAND:
-		main_mtd = env_get_ulong("main_mtd", 10, ~0UL);
-		if (unlikely(main_mtd == ~0UL))
-			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
-
-		mtd0_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
-		if (IS_ERR_OR_NULL(mtd0_desc))
-			return -ENXIO;
-		break;
-	case BOOTDEVICE_BOTH_NOR_NAND:
-		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);
-		if (unlikely(safe_mtd == ~0UL))
-			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
-		main_mtd = env_get_ulong("main_mtd", 10, ~0UL);
-		if (unlikely(main_mtd == ~0UL))
-			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
-
-		mtd0_desc = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
-		mtd1_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
-		if (IS_ERR_OR_NULL(mtd0_desc) ||
-		     IS_ERR_OR_NULL(mtd1_desc))
-			return -ENXIO;
-		break;
-	case BOOTDEVICE_BOTH_NOR_EMMC:
-		mmc_dev = env_get_ulong("mmc_dev", 10, ~0UL);
-		if (unlikely(mmc_dev == ~0UL))
-			mmc_dev = CONFIG_FDL_FLASH_MMC_DEV;
-		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);
-		if (unlikely(safe_mtd == ~0UL))
-			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
-
-		mmc_desc = get_blk_by_devnum(IF_TYPE_MMC, mmc_dev);
-		mtd0_desc = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
-		if (IS_ERR_OR_NULL(mmc_desc) ||
-		     IS_ERR_OR_NULL(mtd0_desc))
-			return -ENXIO;
-		break;
-	default:
-		debug("Not supported boot device\n");
-		return -EBUSY;
+	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
+	if (ret && !eraseall) {
+		debug("%s: Failed to get device descriptor and partition information\n", __func__);
+		return ret;
 	}
 
 	if (eraseall) {
-		if (mmc_desc) {
-			printf("mmc lba: 0x%lx\n", mmc_desc->lba);
-			ret = blk_derase(mmc_desc, 0, mmc_desc->lba);
-		}
-		if (mtd0_desc)
-			ret = blk_derase(mtd0_desc, 0, mtd0_desc->lba);
-		if (mtd1_desc)
-			ret = blk_derase(mtd1_desc, 0, mtd1_desc->lba);
-
+		printf("Erase the whole device: lba = 0x%lx\n", dev_desc->lba);
+		ret = blk_derase(dev_desc, 0, dev_desc->lba);
 		if (ret < 0) {
 			printf("Failed to erase the whole device (ret = %d)\n", ret);
 			return ret;
 		}
-		printf("%s\n", __func__);
 	} else {
 		/* FIXME: TODO */
 		printf("TODO\n");
 	}
+
+	return 0;
+}
+
+int fdl_blk_write_data(const char *part_name, size_t image_size)
+{
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
+	ulong sector, blkcnt, written;
+	int ret;
+
+	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
+	if (ret) {
+		debug("%s: Failed to get device descriptor and partition information\n", __func__);
+		return ret;
+	}
+
+	blkcnt = DIV_ROUND_UP_ULL(image_size, dev_desc->blksz);
+	sector = part_info.start;
+	debug("'%s' partition: sector: 0x%lx, size: 0x%lx\n",
+	      part_info.name, part_info.start, part_info.size);
+	debug("'%s' device: blkcnt: 0x%lx blksz: 0x%lx\n",
+	      dev_desc->bdev->name, blkcnt, dev_desc->blksz);
+
+	written = blk_dwrite(dev_desc, sector,
+	                       blkcnt, fdl_buf_addr);
+	debug("blk_dwrite: ret = %ld\n", written);
+	if (written != blkcnt) {
+		debug("Size of written image not equal to expected size (%lu != %lu)\n",
+		      written * dev_desc->blksz, image_size);
+		return -EIO;
+	}
+	printf("\nwritting of %lu bytes into '%s' partition finished\n",
+	                        image_size, part_name);
+
+	return 0;
+}
+
+int fdl_blk_get_part_info(const char *part_name, struct disk_partition *pi)
+{
+	struct blk_desc *dev = NULL;
+	int ret;
+
+	ret = fdl_blk_get_dev_and_part(part_name, &dev, pi);
+	if (ret) {
+		debug("%s: Failed to get device descriptor and partition information\n", __func__);
+		return ret;
+	}
+
+	debug("'%s' partition: start: 0x%lx, size: 0x%lx\n",
+	      pi->name, pi->start, pi->size);
+
+	return 0;
+}
+
+int fdl_blk_read_data(const char *part_name, size_t image_size)
+{
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info;
+	ulong sector, blkcnt, read_blk;
+	int ret;
+
+	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
+	if (ret) {
+		debug("Failed to get device descriptor and partition information\n");
+		return ret;
+	}
+
+	blkcnt = DIV_ROUND_UP_ULL(image_size, dev_desc->blksz);
+	sector = part_info.start;
+	debug("'%s' partition: sector: 0x%lx, size: 0x%lx\n",
+	          part_info.name, part_info.start, part_info.size);
+	debug("'%s' device: blkcnt: 0x%lx blksz: 0x%lx\n",
+	      dev_desc->bdev->name, blkcnt, dev_desc->blksz);
+
+	read_blk = blk_dread(dev_desc, sector,
+	                       blkcnt, fdl_buf_addr);
+	debug("blk_dread: ret = %ld\n", read_blk);
+	if (read_blk != blkcnt) {
+		debug("Size of written image not equal to expected size (%lu != %lu)\n",
+		              read_blk * dev_desc->blksz, image_size);
+		return -EIO;
+	}
+	printf("\nreading of %lu bytes from '%s' partition finished\n",
+	                   image_size, part_name);
 
 	return 0;
 }

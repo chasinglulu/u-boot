@@ -13,7 +13,7 @@
 #include <linux/delay.h>
 
 /**
- * fdl_image_size - the size of FDL image received in bytes
+ * fdl_image_size - the size of FDL image received/transmitted in bytes
  */
 static uint32_t fdl_image_size;
 
@@ -27,6 +27,11 @@ static char fdl_part[FDL_PART_NAME_MAX_LEN];
  */
 static uint32_t fdl_bytes_received;
 
+/*
+ * fdl_bytes_tansimitted - number of bytes transmitted
+ */
+static uint32_t fdl_bytes_transmitted;
+
 /**
  * fdl_bytes_expected - number of bytes expected in the current download
  */
@@ -36,6 +41,11 @@ static uint32_t fdl_bytes_expected;
  * fdl_tx_payload_info - FDL TX payload information
  */
 struct fdl_tx_info fdl_tx_payload_info = { 0 };
+
+/*
+ * fdl_rx_payload_info - FDL RX payload information
+ */
+ struct fdl_rx_info fdl_rx_payload_info = { 0 };
 
 /*
  * fdl_execute_received - number of FDL execute command received
@@ -170,6 +180,27 @@ int fdl_data_download(const void *fdl_data,
 	return 0;
 }
 
+int fdl_data_upload(void *fdl_data,
+                     uint64_t offset,
+                     uint32_t fdl_data_len, char *response)
+{
+	if (fdl_data_len == 0 ||
+	    (fdl_bytes_transmitted + fdl_data_len) >
+	                 fdl_bytes_expected) {
+		fdl_debug("Transmitted invalid data length\n");
+		fdl_fail_null(FDL_RESPONSE_INVALID_SIZE, response);
+		return -EINVAL;
+	}
+	fdl_debug("offset: 0x%llx, len: 0x%x, transmitted: 0x%x\n",
+	            offset, fdl_data_len, fdl_bytes_transmitted);
+
+	memcpy(fdl_data, fdl_buf_addr + offset, fdl_data_len);
+
+	fdl_bytes_transmitted += fdl_data_len;
+
+	return 0;
+}
+
 /**
  * fdl_data_complete() - Mark current transfer complete
  *
@@ -196,6 +227,29 @@ int fdl_data_complete(char *response)
 	ret = fdl_blk_write_data(fdl_part, fdl_image_size);
 	if (ret < 0) {
 		fdl_debug("Unable to write date\n");
+		fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * fdl_data_upload_start() - Mark current upload start
+ *
+ * @response: Pointer to FDL response buffer
+ *
+ */
+int fdl_data_upload_start(char *response)
+{
+	int ret;
+
+	fdl_crit("\nreceiving of %d bytes finished\n", fdl_bytes_expected);
+	fdl_bytes_transmitted = 0;
+
+	ret = fdl_blk_read_data(fdl_part, fdl_bytes_expected);
+	if (ret < 0) {
+		fdl_debug("Unable to read data\n");
 		fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
 		return -EINVAL;
 	}
@@ -600,25 +654,105 @@ static int read_chip_uid(struct fdl_info *fdl, char *response)
 static int start_rx_msg(struct fdl_info *fdl, char *response)
 {
 	const char *str = "okay";
+	char part_name[FDL_PART_NAME_MAX_LEN];
+	struct fdl_rx_msg *rx = NULL;
+	struct disk_partition part_info = { 0 };
+	uint64_t part_size;
+	char *name = NULL;
+	int ret;
 
 	if (unlikely(!response))
 		return -EIO;
 
-	fdl_okay(FDL_RESPONSE_ACK, str, response);
+	if (unlikely(!fdl))
+		return -EINVAL;
 
+	rx = (void *)fdl->payload_data;
+
+	name = (void *)rx;
+	for (int i = 0; i < FDL_PART_NAME_MAX_LEN; i++) {
+		uint16_t ch16 = *(uint16_t *)(name + 2 * i);
+		if (!ch16 || i == FDL_PART_NAME_MAX_LEN - 1) {
+			part_name[i] = '\0';
+			break;
+		}
+		part_name[i] = (char)ch16;
+	}
+	memcpy(fdl_part, part_name, FDL_PART_NAME_MAX_LEN);
+	fdl_debug("name: %s size: 0x%llX\n", part_name, rx->size);
+
+	fdl_bytes_transmitted = 0;
+
+	fdl_bytes_expected = rx->size;
+	if (fdl_bytes_expected == 0) {
+		fdl_debug("Expected the whole partition size\n");
+		ret = fdl_blk_get_part_info(part_name, &part_info);
+		if (ret < 0) {
+			fdl_debug("Unable to get partition information\n");
+			fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+			return 1;
+		}
+		fdl_debug("Partition name: %s size: 0x%lx\n", part_info.name, part_info.size);
+
+		part_size = part_info.size;
+		fdl_response_data(FDL_RESPONSE_INVALID_SIZE, response,
+		            (char *)&part_size, sizeof(part_size));
+		return 1;
+	}
+
+	fdl_debug("fdl_bytes_expected: 0x%X fdl_buf_size: 0x%X\n",
+	                    fdl_bytes_expected, fdl_buf_size);
+	if (fdl_bytes_expected > fdl_buf_size) {
+		fdl_debug("FDL upload buffer too small\n");
+		fdl_fail_null(FDL_RESPONSE_INVALID_SIZE, response);
+		return 1;
+	} else {
+		fdl_crit("Starting upload of %d bytes\n",
+		                        fdl_bytes_expected);
+	}
+
+	fdl_okay(FDL_RESPONSE_ACK, str, response);
 	return 0;
 }
 
 static int rx_data(struct fdl_info *fdl, char *response)
 {
 	const char *str = "okay";
+	struct fdl_rx_info *payload = NULL;
 
 	if (unlikely(!response))
 		return -EIO;
 
-	fdl_okay(FDL_RESPONSE_ACK, str, response);
+	if (!fdl)
+		return -EINVAL;
 
+	payload = (void *)fdl->payload_data;
+	fdl_debug("Receiving payload data: Offset = 0x%llX Length = 0x%X\n",
+	                 payload->offset, payload->length);
+
+	memcpy(&fdl_rx_payload_info, payload, sizeof(*payload));
+
+	fdl_okay(FDL_RESPONSE_ACK, str, response);
 	return 0;
+}
+
+const char *fdl_response_upload(const char *fdl_data, uint32_t fdl_data_len)
+{
+	char *response = NULL;
+
+	if (unlikely(!fdl_data) || unlikely(!fdl_data_len))
+		return NULL;
+
+	response = malloc(FDL_PROTO_FIXED_LEN + fdl_data_len);
+	if (unlikely(!response)) {
+		fdl_debug("Out of memory\n");
+		return NULL;
+	}
+
+	fdl_response_data(FDL_RESPONSE_FLASH_DATA, response,
+	           fdl_data, fdl_data_len);
+
+	return response;
 }
 
 static int terminate_rx(struct fdl_info *fdl, char *response)

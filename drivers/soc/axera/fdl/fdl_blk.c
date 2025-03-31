@@ -8,6 +8,18 @@
 #include <common.h>
 #include <fdl.h>
 
+__weak int fdl_blk_get_part_info(const char *part_name, struct disk_partition *pi)
+{
+	/* Nothing to do */
+	return -ENODEV;
+}
+
+__weak int fdl_blk_read_data(const char *part_name, size_t size)
+{
+	/* Nothing to do */
+	return 0;
+}
+
 __weak int fdl_blk_write_data(const char *part_name, size_t image_size)
 {
 	/* Nothing to do */

@@ -182,6 +182,37 @@ struct __packed fdl_tx_info {
 	uint32_t chksum;
 };
 
+
+/*
+ * FDL RX Message Format
+ * -------------------------------------------------------
+ * | part_name | size | reserved |
+ * -------------------------------------------------------
+ *
+ * part_name: 72 bytes, partition name
+ * size: 8 bytes, partition size
+ * reserved: 8 bytes, reserved
+ */
+struct __packed fdl_rx_msg {
+	char part_name[FDL_PART_ID_MAX_LEN];
+	uint64_t size;
+	uint64_t reserved;
+};
+
+/*
+ * FDL RX Payload Data Format
+ * -------------------------------------------------------
+ * | offset | len |
+ * -------------------------------------------------------
+ *
+ * offset: 8 bytes, offset of the payload data
+ * length: 4 bytes, length of the payload data
+ */
+struct __packed fdl_rx_info {
+	uint64_t offset;
+	uint32_t length;
+};
+
 /*
  * FDL Erase Payload Data Format
  * -------------------------------------------------------
@@ -314,6 +345,10 @@ extern uint32_t fdl_execute_received;
  */
 extern struct fdl_tx_info fdl_tx_payload_info;
 
+/*
+ * fdl_rx_payload_info - FDL RX payload information
+ */
+extern struct fdl_rx_info fdl_rx_payload_info;
 
 uint16_t fdl_checksum(const char *buffer, int len);
 uint32_t fdl_checksum32(uint32_t chksum, const char *buffer, uint32_t len);
@@ -342,8 +377,14 @@ int fdl_packet_check(struct fdl_info *fdl, const char *packet,
                            char *response);
 int fdl_data_download(const void *fdl_data, uint32_t fdl_data_len,
                            char *response);
+int fdl_data_upload_start(char *response);
+int fdl_data_upload(void *fdl_data, uint64_t offset,
+                           uint32_t fdl_data_len, char *response);
+const char *fdl_response_upload(const char *fdl_data, uint32_t fdl_data_len);
 
 /* block device operation functions */
+int fdl_blk_get_part_info(const char *part_name, struct disk_partition *pi);
+int fdl_blk_read_data(const char *part_name, size_t size);
 int fdl_blk_write_data(const char *part_name, size_t image_size);
 int fdl_blk_write_partition(struct fdl_part_table *part_tab);
 int fdl_blk_erase(const char *part_name, size_t size);

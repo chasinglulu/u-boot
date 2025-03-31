@@ -17,7 +17,7 @@
 /* check if handshake is successful */
 static bool connected = false;
 
-static void _serial_putc(struct udevice *dev, char ch)
+static int _serial_putc(struct udevice *dev, char ch)
 {
 	struct dm_serial_ops *ops = serial_get_ops(dev);
 	int err;
@@ -28,6 +28,8 @@ static void _serial_putc(struct udevice *dev, char ch)
 	do {
 		err = ops->putc(dev, ch);
 	} while (err == -EAGAIN);
+
+	return err;
 }
 
 static int __serial_getc(struct udevice *dev)
@@ -110,6 +112,78 @@ int fdl_uart_data_download(struct udevice *dev, char *data, size_t size)
 	}
 
 	return 0;
+}
+
+static int fdl_uart_data_upload(struct udevice *dev, const char *data, size_t size)
+{
+	uint32_t ticks, elapsed = 0;
+	uint32_t timeout = CONFIG_VAL(FDL_TIMEOUT);
+	int ret = 0;
+
+	while (size--) {
+		ticks = get_timer(0);
+		ret = _serial_putc(dev, *data++);
+		elapsed += get_timer(ticks);
+
+		if (elapsed > timeout)
+			return -ETIMEDOUT;
+
+		if (unlikely(ret < 0))
+			return ret;
+	}
+
+	return 0;
+}
+
+static int fdl_uart_upload(struct udevice *dev, char *response)
+{
+	char *fdl_tx_buf = NULL;
+	struct fdl_rx_info *rx_info;
+	uint32_t fdl_data_len;
+	const char *upload_resp = NULL;
+	int ret = 0;
+
+	rx_info = (void *)&fdl_rx_payload_info;
+	fdl_data_len = rx_info->length;
+
+	fdl_tx_buf = malloc(fdl_data_len);
+	if (unlikely(!fdl_tx_buf)) {
+		fdl_debug("Out of memory\n");
+		fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+		return -ENOMEM;
+	}
+
+	/* memcpy fdl_buffer into fdl_tx_buffer */
+	ret = fdl_data_upload(fdl_tx_buf, rx_info->offset, fdl_data_len, response);
+	if (unlikely(ret < 0)) {
+		fdl_err("fdl_data_rx failed (ret = %d)\n", ret);
+		fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+		goto failed;
+	}
+
+	upload_resp = fdl_response_upload(fdl_tx_buf, fdl_data_len);
+	if (unlikely(!upload_resp)) {
+		fdl_err("fdl_data_upload_response failed\n");
+		fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+		goto failed;
+	}
+
+	/* Upload data with UART */
+	ret = fdl_uart_data_upload(dev, upload_resp, fdl_get_resp_size(upload_resp));
+	if (unlikely(ret < 0)) {
+		fdl_debug("fdl_uart_data_upload failed (ret = %d)\n", ret);
+		fdl_fail_null(FDL_RESPONSE_OPERATION_FAIL, response);
+	}
+
+	ret = 0;
+
+failed:
+	if (fdl_tx_buf)
+		free(fdl_tx_buf);
+	if (upload_resp)
+		free((void *)upload_resp);
+
+	return ret;
 }
 
 static int fdl_packet_rx(struct udevice *dev, char **packet)
@@ -269,10 +343,24 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 				goto failed;
 		}
 
+		if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_START_READ_FLASH)) {
+			ret = fdl_data_upload_start(response);
+			if (unlikely(ret < 0))
+				goto failed;
+		}
+
 		if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_HANDSHAKE))
 			connected = true;
 		else if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_EXECUTE))
 			connected = false;
+
+		if (fdl_compare_command_by_tag(&fdl, FDL_COMMAND_MIDST_READ_FLASH)) {
+			ret = fdl_uart_upload(dev, response);
+			if (unlikely(ret < 0))
+				goto failed;
+
+			continue;
+		}
 
 		fdl_response_tx(dev, response);
 
