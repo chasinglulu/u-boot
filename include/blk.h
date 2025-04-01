@@ -683,6 +683,17 @@ ulong blk_write_devnum(enum if_type if_type, int devnum, lbaint_t start,
 		       lbaint_t blkcnt, const void *buffer);
 
 /**
+ * blk_erase_devnum - erase blocks from a block device by device number
+ * @if_type: interface type
+ * @devnum: device number
+ * @blk: starting block number
+ * @cnt: number of blocks to erase
+ * Return: number of blocks actually erased
+ */
+ ulong blk_erase_devnum(enum if_type if_type, int devnum,
+		       lbaint_t blk, ulong cnt);
+
+/**
  * blk_select_hwpart_devnum() - select a hardware partition
  *
  * This is similar to blk_dselect_hwpart() but it looks up the interface and

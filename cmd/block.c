@@ -18,20 +18,10 @@ static int blk_dev = -1;
 static int if_devnum = -1;
 static enum if_type if_type = IF_TYPE_UNKNOWN;
 
-static int do_mtdblock(struct cmd_tbl *cmdtp, int flag, int argc,
-                        char *const argv[])
+static void block_display_header(void)
 {
-#if defined(CONFIG_DM_MTD)
-	mtd_probe_devices();
-#endif
-
-	return blk_common_cmd(argc, argv, IF_TYPE_MTD, &if_devnum);
-}
-
-static int do_mmc_block(struct cmd_tbl *cmdtp, int flag, int argc,
-                        char *const argv[])
-{
-	return blk_common_cmd(argc, argv, IF_TYPE_MMC, &if_devnum);
+	printf(" seq      name                    type     devnum\n");
+	printf("------------------------------------------------------\n");
 }
 
 static void block_display_line(struct udevice *dev)
@@ -71,8 +61,7 @@ static int do_block(struct cmd_tbl *cmdtp, int flag, int argc,
 	switch (argc) {
 	case 2:
 		if (strncmp(argv[1], "list", 4) == 0) {
-			printf(" seq      name                    type     devnum\n");
-			printf("------------------------------------------------------\n");
+			block_display_header();
 			uclass_id_foreach_dev(UCLASS_BLK, dev, uc)
 				block_display_line(dev);
 
@@ -132,11 +121,13 @@ static int do_block(struct cmd_tbl *cmdtp, int flag, int argc,
 	}
 
 	switch ((int)if_type) {
-	case IF_TYPE_MMC:
-		ret = do_mmc_block(cmdtp, flag, argc, params);
-		break;
 	case IF_TYPE_MTD:
-		ret = do_mtdblock(cmdtp, flag, argc, params);
+#if defined(CONFIG_DM_MTD)
+		mtd_probe_devices();
+#endif
+	/* fall through */
+	case IF_TYPE_MMC:
+		ret = blk_common_cmd(argc, params, if_type, &if_devnum);
 		break;
 	default:
 		ret = CMD_RET_FAILURE;
@@ -160,5 +151,6 @@ U_BOOT_CMD(
 	"block read addr blk# cnt - read `cnt' blocks starting at block\n"
 	"     `blk#' to memory address `addr'\n"
 	"block write addr blk# cnt - write `cnt' blocks starting at block\n"
-	"     `blk#' from memory address `addr'"
+	"     `blk#' from memory address `addr'\n"
+	"block erase blk# cnt - erase `cnt' blocks starting at block `blk#'\n"
 );
