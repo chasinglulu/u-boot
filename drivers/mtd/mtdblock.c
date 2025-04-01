@@ -211,6 +211,63 @@ out:
 	return write_cnt;
 }
 
+static unsigned long mtd_blk_erase(struct udevice *dev, lbaint_t start, lbaint_t blkcnt)
+{
+	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
+	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
+	unsigned int sect_size = block_dev->blksz;
+	lbaint_t cur = start, blocks_todo = blkcnt;
+	ulong erased_total = 0;
+	int ret = 0;
+	u8 *buf;
+
+	buf = malloc(mtd->erasesize);
+	if (!buf)
+		return -ENOMEM;
+
+	while (blocks_todo > 0) {
+		loff_t sect_start = cur * sect_size;
+		loff_t erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
+		u32 offset = sect_start - erase_start;
+		size_t cur_size = min_t(size_t, mtd->erasesize - offset,
+					blocks_todo * sect_size);
+		size_t retlen;
+		lbaint_t erased;
+
+		ret = mtd_read(mtd, erase_start, mtd->erasesize, &retlen, buf);
+		if (ret)
+			goto out;
+
+		if (retlen != mtd->erasesize) {
+			pr_err("mtdblock: failed to read block 0x" LBAF "\n", cur);
+			ret = -EIO;
+			goto out;
+		}
+
+		memset(buf + offset, 0xFF, cur_size);
+
+		ret = mtd_erase_write(mtd, erase_start, buf);
+		if (ret) {
+			pr_err("mtdblock: failed to erase block 0x" LBAF "\n", cur);
+			goto out;
+		}
+
+		erased = cur_size / sect_size;
+
+		blocks_todo -= erased;
+		cur += erased;
+		erased_total += erased;
+	}
+
+out:
+	free(buf);
+
+	if (ret)
+		return ret;
+
+	return erased_total;
+}
+
 static int mtd_blk_probe(struct udevice *dev)
 {
 	struct blk_desc *bdesc;
@@ -236,6 +293,7 @@ static int mtd_blk_probe(struct udevice *dev)
 static const struct blk_ops mtd_blk_ops = {
 	.read = mtd_blk_read,
 	.write = mtd_blk_write,
+	.erase = mtd_blk_erase,
 };
 
 U_BOOT_DRIVER(mtd_blk) = {
