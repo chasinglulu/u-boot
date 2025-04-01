@@ -151,8 +151,8 @@ void dev_print (struct blk_desc *dev_desc)
 		printf("%s VirtIO Block Device\n", dev_desc->vendor);
 		break;
 	case IF_TYPE_MTD:
-		puts("device type MTD\n");
-		return;
+		printf("%s MTD Block Device\n", dev_desc->product);
+		break;
 	case IF_TYPE_DOC:
 		puts("device type DOC\n");
 		return;

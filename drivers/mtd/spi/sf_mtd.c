@@ -44,12 +44,6 @@ struct spinor_plat {
 
 static int spi_nor_mtd_bind(struct udevice *dev)
 {
-	if (blk_enabled()) {
-		struct spinor_plat *plat = dev_get_plat(dev);
-
-		return mtd_bind(dev, &plat->mtd);
-	}
-
 	return 0;
 }
 
@@ -57,8 +51,15 @@ static int spi_nor_mtd_probe(struct udevice *dev)
 {
 	struct spinor_plat *plat = dev_get_plat(dev);
 	struct mtd_info *mtd = dev_get_uclass_priv(dev);
+	int ret;
 
 	plat->mtd = mtd;
+
+	if (blk_enabled()) {
+		ret = mtd_bind(dev, &plat->mtd);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }

@@ -87,6 +87,12 @@ int mtd_bind(struct udevice *dev, struct mtd_info **mtdp)
 	dev_set_priv(bdev, mtdp);
 	bdesc->bdev = bdev;
 	bdesc->part_type = PART_TYPE_MTD;
+	bdesc->log2blksz = LOG2(bdesc->blksz);
+
+	if (mtd) {
+		bdesc->lba = lldiv(mtd->size, bdesc->blksz);
+		snprintf(bdesc->product, sizeof(bdesc->product), "%s", mtd->name);
+	}
 
 	return 0;
 }
