@@ -58,7 +58,7 @@ int nand_register(int devnum, struct mtd_info *mtd)
 	nand_info[devnum] = mtd;
 
 	sprintf(dev_name[devnum], "nand%d", devnum);
-	mtd->name = dev_name[devnum];
+	mtd->name = strdup(dev_name[devnum]);
 
 #ifdef CONFIG_MTD
 	/*
