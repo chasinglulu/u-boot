@@ -494,6 +494,51 @@ void set_bootstate_env(uint32_t bootstate)
 	bootstate_inited = true;
 }
 
+static __maybe_unused
+int probe_mtd_device(bool is_nor)
+{
+	struct uclass *uc;
+	struct udevice *dev;
+	int ret = -ENODEV;
+
+	if (is_nor) {
+		/* probe all SPI NOR Flash devices */
+		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
+			;
+	}
+
+	/* iterate through available devices of MTD uclass */
+	ret = uclass_get(UCLASS_MTD, &uc);
+	if (ret)
+		return ret;
+	uclass_foreach_dev(dev, uc) {
+		struct mtd_info *mtd = NULL;
+
+		mtd = dev_get_uclass_priv(dev);
+		if (!mtd)
+			continue;
+
+		if (is_nor && mtd->type == MTD_NORFLASH) {
+			debug("Found NOR device %s\n", dev->name);
+			goto found;
+		} else if (!is_nor && (mtd->type == MTD_NANDFLASH ||
+			mtd->type == MTD_MLCNANDFLASH)) {
+			debug("Found NAND device %s\n", dev->name);
+			goto found;
+		} else {
+			continue;
+		}
+found:
+		ret = device_probe(dev);
+		if (ret) {
+			debug("Failed to probe device %s (ret = %d)\n", dev->name, ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 int get_bootdevice(const char **name)
 {
 #if CONFIG_IS_ENABLED(BOOT_DEVICE_GPIO)
@@ -566,20 +611,28 @@ int get_bootdevice(const char **name)
 	goto result;
 
 main_select:
+	debug("Getting main domain bootmode...\n");
 	if (bootstate == BOOTSTATE_DOWNLOAD) {
 		/* FDL download */
 		main_bootmode = env_get_ulong("main_bootmode", 10, ~0ULL);
 		if (unlikely(main_bootmode == ~0ULL))
 			return -EINVAL;
 	} else {
+		/* probe essential MTD device */
+		ret = probe_mtd_device(is_nor);
+		if (ret < 0)
+			return ret;
+
 		/* Normal boot */
 		if (is_nor)
 			dev_desc = find_safety_nor();
 		else
 			dev_desc = find_safety_nand();
 		ret = read_full_mtdparts(dev_desc, &full_mtdparts);
-		if (ret < 0)
+		if (ret < 0) {
+			debug("Failed to read full mtdparts string (ret = %d)\n", ret);
 			return ret;
+		}
 		asterisk = strchr(full_mtdparts, '*');
 		main_bootmode = simple_strtoul(asterisk + 1, NULL, 10);
 		free(full_mtdparts);
