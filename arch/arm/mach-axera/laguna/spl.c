@@ -313,13 +313,13 @@ int spl_board_get_devnum(uint bootdev_type)
 
 	switch (bootdev_type) {
 	case BOOT_DEVICE_MMC1:
-		devnum = env_get_ulong("mmc_dev", 10, ~0ULL);
+		devnum = env_get_ulong(env_get_name(ENV_MMC_DEV), 10, ~0ULL);
 		break;
 	case BOOT_DEVICE_NOR:
-		devnum = env_get_ulong("safe_mtd", 10, ~0ULL);
+		devnum = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL);
 		break;
 	case BOOT_DEVICE_NAND:
-		devnum = env_get_ulong("main_mtd", 10, ~0ULL);
+		devnum = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);
 		break;
 	default:
 		return -1;

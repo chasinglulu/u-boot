@@ -614,7 +614,7 @@ void board_nand_init(void)
 
 void board_prep_linux(bootm_headers_t *images)
 {
-	ulong bootdev = env_get_ulong("bootdevice", 10, ~0ULL);
+	ulong bootdev = env_get_ulong(env_get_name(ENV_BOOTDEVICE), 10, ~0ULL);
 
 	if (bootdev == ~0ULL) {
 		debug("Not found 'bootdevice' environment variable\n");

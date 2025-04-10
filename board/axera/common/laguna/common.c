@@ -21,6 +21,27 @@
 #include <asm/arch/bootparams.h>
 #include <linux/mtd/mtdparts.h>
 
+/* Supporred environment variable name */
+const char *env_name[] = {
+	[ENV_BOOTDEVICE]     = "bootdevice",
+	[ENV_BOOTSTATE]      = "bootstate",
+	[ENV_MAIN_MTD]       = "main_mtd",
+	[ENV_SAFE_MTD]       = "safe_mtd",
+	[ENV_MMC_DEV]        = "mmc_dev",
+	[ENV_DEVTYPE]        = "devtype",
+	[ENV_DEVNUM]         = "devnum",
+	[ENV_SECUREBOOT]     = "secureboot",
+	[ENV_DOWNIF]         = "downif"
+};
+
+inline const char *env_get_name(int index)
+{
+	if (index < 0 || index >= ARRAY_SIZE(env_name))
+		return NULL;
+
+	return env_name[index];
+}
+
 /* Supported partition identifier for safety R5F */
 const char *safe_part_id[] = {
 	"sbl",
@@ -270,12 +291,12 @@ int set_bootdevice_env(int bootdev)
 
 			mmc = mmc_get_mmc_dev(dev);
 			if (mmc && !mmc_init(mmc) && IS_MMC(mmc)) {
-				env_set_ulong("mmc_dev", dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_MMC_DEV), dev_seq(dev));
 				break;
 			}
 		}
-		env_set("devtype", "mmc");
-		env_set_ulong("devnum", dev_seq(dev));
+		env_set(env_get_name(ENV_DEVTYPE), "mmc");
+		env_set_ulong(env_get_name(ENV_DEVNUM), dev_seq(dev));
 		break;
 	case BOOTDEVICE_ONLY_NAND:
 		/* iterate through available devices of MTD uclass */
@@ -292,12 +313,12 @@ int set_bootdevice_env(int bootdev)
 
 			if (mtd && (mtd->type == MTD_NANDFLASH ||
 			       mtd->type == MTD_MLCNANDFLASH)) {
-				env_set_ulong("main_mtd", dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_MAIN_MTD), dev_seq(dev));
 				break;
 			}
 		}
-		env_set("devtype", "mtd");
-		env_set_ulong("devnum", dev_seq(dev));
+		env_set(env_get_name(ENV_DEVTYPE), "mtd");
+		env_set_ulong(env_get_name(ENV_DEVNUM), dev_seq(dev));
 		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
 		/* probe all SPI NOR Flash devices */
@@ -318,14 +339,14 @@ int set_bootdevice_env(int bootdev)
 
 			if (mtd && (mtd->type == MTD_NANDFLASH ||
 			       mtd->type == MTD_MLCNANDFLASH)) {
-				env_set_ulong("main_mtd", dev_seq(dev));
-				env_set_ulong("devnum", dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_MAIN_MTD), dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_DEVNUM), dev_seq(dev));
 			}
 
 			if (mtd && mtd->type == MTD_NORFLASH)
-				env_set_ulong("safe_mtd", dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_SAFE_MTD), dev_seq(dev));
 		}
-		env_set("devtype", "mtd");
+		env_set(env_get_name(ENV_DEVTYPE), "mtd");
 		debug("main_mtd: 0x%lx safe_mtd: 0x%lx\n",
 		           env_get_ulong("main_mtd", 10, ~0ULL),
 		           env_get_ulong("safe_mtd", 10, ~0ULL));
@@ -343,12 +364,12 @@ int set_bootdevice_env(int bootdev)
 
 			mmc = mmc_get_mmc_dev(dev);
 			if (mmc && !mmc_init(mmc) && IS_MMC(mmc)) {
-				env_set_ulong("mmc_dev", dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_MMC_DEV), dev_seq(dev));
 				break;
 			}
 		}
-		env_set("devtype", "mmc");
-		env_set_ulong("devnum", dev_seq(dev));
+		env_set(env_get_name(ENV_DEVTYPE), "mmc");
+		env_set_ulong(env_get_name(ENV_DEVNUM), dev_seq(dev));
 
 		/* probe all SPI NOR Flash devices */
 		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
@@ -366,7 +387,7 @@ int set_bootdevice_env(int bootdev)
 
 			mtd = dev_get_uclass_priv(dev);
 			if (mtd && mtd->type == MTD_NORFLASH) {
-				env_set_ulong("safe_mtd", dev_seq(dev));
+				env_set_ulong(env_get_name(ENV_SAFE_MTD), dev_seq(dev));
 				break;
 			}
 		}
@@ -379,7 +400,7 @@ int set_bootdevice_env(int bootdev)
 		return -EBUSY;
 	}
 
-	env_set_ulong("bootdevice", bootdev);
+	env_set_ulong(env_get_name(ENV_BOOTDEVICE), bootdev);
 	bootdev_inited = true;
 	return 0;
 }
@@ -491,7 +512,7 @@ void set_bootstate_env(uint32_t bootstate)
 	if (likely(bootstate_inited))
 		return;
 
-	env_set_ulong("bootstate", bootstate);
+	env_set_ulong(env_get_name(ENV_BOOTSTATE), bootstate);
 	bootstate_inited = true;
 }
 
@@ -701,6 +722,18 @@ int get_downif(void)
 	return downif;
 }
 
+void set_downif_env(int downif)
+{
+	static bool downif_inited= false;
+
+	if (likely(downif_inited))
+		return;
+
+	env_set_ulong(env_get_name(ENV_DOWNIF), downif);
+
+	downif_inited = true;
+}
+
 bool is_secure_boot(void)
 {
 #if defined(CONFIG_LUA_SECURE_BOOT)
@@ -712,7 +745,13 @@ bool is_secure_boot(void)
 
 void set_secureboot_env(bool secure)
 {
-	env_set_ulong("secureboot", secure ? 1 : 0);
+	static bool secure_inited= false;
+
+	if (likely(secure_inited))
+		return;
+
+	env_set_ulong(env_get_name(ENV_SECUREBOOT), secure ? 1 : 0);
+	secure_inited = true;
 }
 
 void remove_mtd_device(int bootdev)
@@ -723,14 +762,14 @@ void remove_mtd_device(int bootdev)
 
 	switch (bootdev) {
 	case BOOTDEVICE_ONLY_NAND:
-		devseq[0] = env_get_ulong("main_mtd", 10, ~0ULL);
+		devseq[0] = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);
 		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
-		devseq[0] = env_get_ulong("safe_mtd", 10, ~0ULL);
-		devseq[1] = env_get_ulong("main_mtd", 10, ~0ULL);
+		devseq[0] = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL);
+		devseq[1] = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);
 		break;
 	case BOOTDEVICE_BOTH_NOR_EMMC:
-		devseq[0] = env_get_ulong("safe_mtd", 10, ~0ULL);
+		devseq[0] = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL);
 		break;
 	case BOOTDEVICE_ONLY_NOR:
 	case BOOTDEVICE_ONLY_HYPER:

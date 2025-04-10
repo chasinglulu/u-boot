@@ -92,6 +92,18 @@ enum {
 	BOOTMODE_MAIN_COUNT,
 };
 
+enum {
+	ENV_BOOTDEVICE = 0,
+	ENV_BOOTSTATE,
+	ENV_MAIN_MTD,
+	ENV_SAFE_MTD,
+	ENV_MMC_DEV,
+	ENV_DEVTYPE,
+	ENV_DEVNUM,
+	ENV_SECUREBOOT,
+	ENV_DOWNIF,
+};
+
 extern const char *safe_part_id[];
 extern const char *main_part_id[];
 int get_safe_part_id_count(void);
@@ -100,9 +112,11 @@ int get_bootdevice(const char **name);
 int set_bootdevice_env(int bootdev);
 int get_bootstate(void);
 int get_downif(void);
+void set_downif_env(int downif);
 bool is_secure_boot(void);
 void set_secureboot_env(bool secure);
 void remove_mtd_device(int bootdev);
+const char *env_get_name(int index);
 
 #include <blk.h>
 #include <part.h>
