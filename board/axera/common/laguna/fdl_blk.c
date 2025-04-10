@@ -558,15 +558,15 @@ int fdl_blk_erase(const char *part_name, size_t size)
 
 	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
 	if (ret && !eraseall) {
-		debug("%s: Failed to get device descriptor and partition information\n", __func__);
+		pr_err("%s: Failed to get device descriptor and partition information\n", __func__);
 		return ret;
 	}
 
 	if (eraseall) {
-		printf("Erase the whole device: lba = 0x%lx\n", dev_desc->lba);
+		debug("Erase the whole device: lba = 0x%lx\n", dev_desc->lba);
 		ret = blk_derase(dev_desc, 0, dev_desc->lba);
 		if (ret < 0) {
-			printf("Failed to erase the whole device (ret = %d)\n", ret);
+			pr_err("Failed to erase the whole device (ret = %d)\n", ret);
 			return ret;
 		}
 	} else {
@@ -586,7 +586,7 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 
 	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
 	if (ret) {
-		debug("%s: Failed to get device descriptor and partition information\n", __func__);
+		pr_err("%s: Failed to get device descriptor and partition information\n", __func__);
 		return ret;
 	}
 
@@ -601,7 +601,7 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 	                       blkcnt, fdl_buf_addr);
 	debug("blk_dwrite: ret = %ld\n", written);
 	if (written != blkcnt) {
-		debug("Size of written image not equal to expected size (%lu != %lu)\n",
+		pr_err("Size of written image not equal to expected size (%lu != %lu)\n",
 		      written * dev_desc->blksz, image_size);
 		return -EIO;
 	}
@@ -618,7 +618,7 @@ int fdl_blk_get_part_info(const char *part_name, struct disk_partition *pi)
 
 	ret = fdl_blk_get_dev_and_part(part_name, &dev, pi);
 	if (ret) {
-		debug("%s: Failed to get device descriptor and partition information\n", __func__);
+		pr_err("%s: Failed to get device descriptor and partition information\n", __func__);
 		return ret;
 	}
 
@@ -637,7 +637,7 @@ int fdl_blk_read_data(const char *part_name, size_t image_size)
 
 	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
 	if (ret) {
-		debug("Failed to get device descriptor and partition information\n");
+		pr_err("Failed to get device descriptor and partition information\n");
 		return ret;
 	}
 
@@ -652,7 +652,7 @@ int fdl_blk_read_data(const char *part_name, size_t image_size)
 	                       blkcnt, fdl_buf_addr);
 	debug("blk_dread: ret = %ld\n", read_blk);
 	if (read_blk != blkcnt) {
-		debug("Size of written image not equal to expected size (%lu != %lu)\n",
+		pr_err("Size of written image not equal to expected size (%lu != %lu)\n",
 		              read_blk * dev_desc->blksz, image_size);
 		return -EIO;
 	}

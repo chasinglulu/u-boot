@@ -650,6 +650,7 @@ main_select:
 			dev_desc = find_safety_nor();
 		else
 			dev_desc = find_safety_nand();
+		debug("Found safety device %s\n", dev_desc ? dev_desc->bdev->name : "Unknown");
 		ret = read_full_mtdparts(dev_desc, &full_mtdparts);
 		if (ret < 0) {
 			debug("Failed to read full mtdparts string (ret = %d)\n", ret);
