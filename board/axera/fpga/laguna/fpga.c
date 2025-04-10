@@ -96,6 +96,18 @@ int dw_spi_get_clk(struct udevice *bus, ulong *rate)
 #if defined (CONFIG_OF_LIBFDT) && defined (CONFIG_OF_BOARD_SETUP)
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
+#if defined(CONFIG_FDT_FIXUP_PARTITIONS)
+	static struct node_info nodes[] = {
+		{ "jedec,spi-nor", MTD_DEV_TYPE_NOR, },
+		{ "spi-nand", MTD_DEV_TYPE_NAND, },
+		{ "spi-nand", MTD_DEV_TYPE_SPINAND, },
+	};
+
+	/* Update partition nodes using info from mtdparts env var */
+	puts("   Updating MTD partitions...\n");
+	fdt_fixup_mtdparts(blob, nodes, ARRAY_SIZE(nodes));
+#endif
+
 	return 0;
 }
 #endif
