@@ -178,6 +178,11 @@ void spl_soc_init(void)
 	/* Customize bootstrap register value */
 	writel(CONFIG_LUA_BOOTSTRAP_REGVAL, CONFIG_LUA_BOOTSTRAP_REGADDR + 0xC);
 #endif
+
+#if defined (CONFIG_LUA_CUSTOM_DOWNLOAD_IF)
+	/* Customize download interface register value */
+	writel(CONFIG_LUA_DOWNLOAD_IF_REGVAL, CONFIG_LUA_DOWNLOAD_IF_REGADDR);
+#endif
 }
 #endif
 

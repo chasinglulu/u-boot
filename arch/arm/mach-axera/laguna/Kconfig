@@ -472,6 +472,26 @@ config LUA_BOOTSTRAP_REGVAL
 	help
 	  Specify a bootstrap register value.
 
+config LUA_CUSTOM_DOWNLOAD_IF
+	bool "Customize Download Interface Register Value"
+	help
+	  This option enable us to customize the download interface register value
+	  used for debugging booting and downloading.
+
+config LUA_DOWNLOAD_IF_REGADDR
+	hex "Download Interface Register Address"
+	depends on LUA_CUSTOM_DOWNLOAD_IF
+	default 0x006CF184
+	help
+	  Specify a download interface register address.
+
+config LUA_DOWNLOAD_IF_REGVAL
+	hex "Download Interface Register Value"
+	depends on LUA_CUSTOM_DOWNLOAD_IF
+	default 0x0
+	help
+	  Specify a download interface register value.
+
 endmenu
 
 endmenu
