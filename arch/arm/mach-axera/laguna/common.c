@@ -27,6 +27,7 @@
 #include <android_ab.h>
 #include <linux/ctype.h>
 #include <hang.h>
+#include <image.h>
 
 #include <asm/arch/bootparams.h>
 #include <asm/arch/cpu.h>
@@ -243,6 +244,7 @@ ulong board_get_usable_ram_top(ulong total_size)
 	return CONFIG_LUA_DRAM_BASE + SZ_4G - 1;
 }
 
+#ifdef CONFIG_LUA_AB
 static int scan_dev_for_extlinux_ab(void)
 {
 	struct blk_desc *dev_desc;
@@ -340,6 +342,9 @@ retry:
 	env_set("prefix", "/");
 	return 0;
 }
+#else
+static inline int scan_dev_for_extlinux_ab(void) { return 0; }
+#endif
 
 #ifdef CONFIG_BOARD_LATE_INIT
 #ifdef CONFIG_LUA_R5F_DEMO_CV
@@ -397,6 +402,8 @@ static void enter_download_mode(void)
 {
 	int downif = get_downif();
 	int ret;
+
+	debug("%s: download interface: %d\n", __func__, downif);
 
 	switch (downif) {
 	case DOWNLOAD_IF_UART:
@@ -604,3 +611,15 @@ void board_nand_init(void)
 }
 #endif
 #endif /* !CONFIG_SPI_BUILD */
+
+void board_prep_linux(bootm_headers_t *images)
+{
+	ulong bootdev = env_get_ulong("bootdevice", 10, ~0ULL);
+
+	if (bootdev == ~0ULL) {
+		debug("Not found 'bootdevice' environment variable\n");
+		return;
+	}
+
+	remove_mtd_device(bootdev);
+}

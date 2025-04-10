@@ -102,6 +102,7 @@ int get_bootstate(void);
 int get_downif(void);
 bool is_secure_boot(void);
 void set_secureboot_env(bool secure);
+void remove_mtd_device(int bootdev);
 
 #include <blk.h>
 #include <part.h>

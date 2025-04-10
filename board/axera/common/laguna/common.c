@@ -379,6 +379,7 @@ int set_bootdevice_env(int bootdev)
 		return -EBUSY;
 	}
 
+	env_set_ulong("bootdevice", bootdev);
 	bootdev_inited = true;
 	return 0;
 }
@@ -712,4 +713,50 @@ bool is_secure_boot(void)
 void set_secureboot_env(bool secure)
 {
 	env_set_ulong("secureboot", secure ? 1 : 0);
+}
+
+void remove_mtd_device(int bootdev)
+{
+	ulong devseq[2] = {~0ULL, ~0ULL};
+	struct udevice *dev = NULL;
+	int ret, i;
+
+	switch (bootdev) {
+	case BOOTDEVICE_ONLY_NAND:
+		devseq[0] = env_get_ulong("main_mtd", 10, ~0ULL);
+		break;
+	case BOOTDEVICE_BOTH_NOR_NAND:
+		devseq[0] = env_get_ulong("safe_mtd", 10, ~0ULL);
+		devseq[1] = env_get_ulong("main_mtd", 10, ~0ULL);
+		break;
+	case BOOTDEVICE_BOTH_NOR_EMMC:
+		devseq[0] = env_get_ulong("safe_mtd", 10, ~0ULL);
+		break;
+	case BOOTDEVICE_ONLY_NOR:
+	case BOOTDEVICE_ONLY_HYPER:
+		pr_err("TODO: Not implemented\n");
+		return;
+	default:
+		debug("No need to prepare\n");
+		return;
+	}
+
+	if (devseq[0] == ~0ULL && devseq[1] == ~0ULL) {
+		pr_err("Invalid device sequence\n");
+		return;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(devseq); i++) {
+		if (devseq[i] == ~0ULL)
+			continue;
+
+		ret = uclass_get_device_by_seq(UCLASS_MTD, devseq[i], &dev);
+		if (!dev || ret) {
+			pr_err("Failed to get MTD device\n");
+			return;
+		}
+
+		debug("Removing MTD device: %s\n", dev->name);
+		device_remove(dev, DM_REMOVE_NORMAL);
+	}
 }
