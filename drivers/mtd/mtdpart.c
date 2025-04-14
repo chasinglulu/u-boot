@@ -1304,7 +1304,7 @@ int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 		goto err;
 	memcpy(buf + mpr->my_offset, mpr, mpr->total_size);
 
-	debug("my lba: %llx\n", mpr->my_lba);
+	debug("my lba: %llx\n", le64_to_cpu(mpr->my_lba));
 	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
 	                blkcnt, buf) != blkcnt)
 		goto err;
@@ -1316,6 +1316,7 @@ int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 		goto err;
 	memcpy(buf + mpr->alternate_offset, mpr, mpr->total_size);
 
+	debug("my alternate lba: %llx\n", le64_to_cpu(mpr->my_lba));
 	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
 	                blkcnt, buf) != blkcnt)
 		goto err;
