@@ -50,7 +50,7 @@ loff_t board_mtdparts_offset(uint8_t mtdtype, bool backup)
 #endif
 
 static __maybe_unused
-struct blk_desc *find_vaild_mtd_device(void)
+struct blk_desc *find_vaild_mtdblock_device(void)
 {
 	struct blk_desc *blk_desc;
 	ulong main_mtd;
@@ -59,13 +59,13 @@ struct blk_desc *find_vaild_mtd_device(void)
 
 	bootdev = get_bootdevice(NULL);
 	if (bootdev < 0) {
-		debug("Invaild boot device\n");
+		debug("%s: Invaild boot device\n", __func__);
 		return ERR_PTR(-EINVAL);
 	}
 
 	switch (bootdev) {
 	case BOOTDEVICE_ONLY_NAND:
-		main_mtd = env_get_ulong("main_mtd", 10, ~0UL);
+		main_mtd = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0UL);
 		if (unlikely(main_mtd == ~0UL))
 			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
 
@@ -75,7 +75,7 @@ struct blk_desc *find_vaild_mtd_device(void)
 		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
 		/* mtdparts string written into safety SPI nor flash */
-		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);
+		safe_mtd = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0UL);
 		if (unlikely(safe_mtd == ~0UL))
 			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
 
@@ -84,7 +84,7 @@ struct blk_desc *find_vaild_mtd_device(void)
 			return ERR_PTR(-ENXIO);
 		break;
 	case BOOTDEVICE_BOTH_NOR_EMMC:
-		safe_mtd = env_get_ulong("safe_mtd", 10, ~0UL);
+		safe_mtd = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0UL);
 		if (unlikely(safe_mtd == ~0UL))
 			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
 
@@ -93,7 +93,7 @@ struct blk_desc *find_vaild_mtd_device(void)
 			return ERR_PTR(-ENXIO);
 		break;
 	default:
-		debug("Not supported boot device\n");
+		debug("%s: Not supported boot device\n", __func__);
 		return ERR_PTR(-EBUSY);
 	}
 
@@ -244,18 +244,19 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 #if defined(CONFIG_LUA_MTDPARTS_READ)
 	/* probe all MTD devices */
 	uclass_foreach_dev_probe(UCLASS_MTD, dev)
-		debug("SPI NAND Flash device = %s\n", dev->name);
+		debug("MTD device: %s\n", dev->name);
 
-	dev_desc = find_vaild_mtd_device();
+	dev_desc = find_vaild_mtdblock_device();
 	if (IS_ERR_OR_NULL(dev_desc)) {
-		debug("Unable to find vaild device\n");
+		debug("Unable to find vaild MTD block device\n");
 		return;
 	}
+	debug("MTD block device: %s\n", dev_desc->bdev->name);
 	mtd = blk_desc_to_mtd(dev_desc);
 
 	ret = read_full_mtdparts(dev_desc, &full_mtdparts);
 	if (ret < 0) {
-		debug("Failed to read mtdparts from mtd device (%s)\n", mtd->name);
+		debug("Failed to read mtdparts from mtd block device\n");
 		return;
 	}
 	debug("full mtdparts: %s\n", full_mtdparts);

@@ -348,8 +348,8 @@ int set_bootdevice_env(int bootdev)
 		}
 		env_set(env_get_name(ENV_DEVTYPE), "mtd");
 		debug("main_mtd: 0x%lx safe_mtd: 0x%lx\n",
-		           env_get_ulong("main_mtd", 10, ~0ULL),
-		           env_get_ulong("safe_mtd", 10, ~0ULL));
+		           env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL),
+		           env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL));
 		break;
 	case BOOTDEVICE_BOTH_NOR_EMMC:
 		ret = uclass_get(UCLASS_MMC, &uc);
@@ -392,7 +392,7 @@ int set_bootdevice_env(int bootdev)
 			}
 		}
 		debug("safe mtd: 0x%lx\n",
-		            env_get_ulong("safe_mtd", 10, ~0ULL));
+		            env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL));
 
 		break;
 	default:
@@ -637,8 +637,10 @@ main_select:
 	if (bootstate == BOOTSTATE_DOWNLOAD) {
 		/* FDL download */
 		main_bootmode = env_get_ulong("main_bootmode", 10, ~0ULL);
-		if (unlikely(main_bootmode == ~0ULL))
+		if (unlikely(main_bootmode == ~0ULL)) {
+			env_set("need_main_bootmode", "yes");
 			return -EINVAL;
+		}
 	} else {
 		/* probe essential MTD device */
 		ret = probe_mtd_device(is_nor);
@@ -777,7 +779,7 @@ void remove_mtd_device(int bootdev)
 		pr_err("TODO: Not implemented\n");
 		return;
 	default:
-		debug("No need to prepare\n");
+		debug("No device need to remove\n");
 		return;
 	}
 
@@ -792,7 +794,7 @@ void remove_mtd_device(int bootdev)
 
 		ret = uclass_get_device_by_seq(UCLASS_MTD, devseq[i], &dev);
 		if (!dev || ret) {
-			pr_err("Failed to get MTD device\n");
+			pr_err("Failed to get MTD device '%ld'\n (ret = %d)", devseq[i], ret);
 			return;
 		}
 
