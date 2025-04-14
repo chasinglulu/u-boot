@@ -111,6 +111,13 @@ static ulong mtd_blk_read(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 		loff_t sect_start = cur * sect_size;
 		size_t retlen;
 
+		while (mtd_block_isbad(mtd, sect_start)) {
+			pr_warn("mtd_blk_read: skipping bad block at 0x%llx\n",
+			          ALIGN_DOWN(sect_start, mtd->erasesize));
+			sect_start += mtd->erasesize;
+			debug("%s: new sector start: 0x%llx\n", __func__, sect_start);
+		}
+
 		ret = mtd_read(mtd, sect_start, sect_size, &retlen, dst);
 		if (ret)
 			return ret;
@@ -147,15 +154,61 @@ static int mtd_erase_write(struct mtd_info *mtd, uint64_t start, const void *src
 		return ret;
 
 	if (retlen != mtd->erasesize) {
-		pr_err("mtdblock: failed to read block at 0x%llx\n", start);
+		pr_err("mtd_erase_write: failed to write block at 0x%llx\n", start);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static ulong mtd_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
-			   const void *src)
+static ulong mtd_nand_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
+                                  const void *src)
+{
+	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
+	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
+	unsigned int sect_size = block_dev->blksz;
+	lbaint_t cur = start;
+	ulong write_cnt = 0;
+
+	debug("%s: start: 0x%lx, blkcnt: %ld, src: %p\n",
+	           __func__, start, blkcnt, src);
+
+	while (write_cnt < blkcnt) {
+		int ret;
+		loff_t sect_start = cur * sect_size;
+		struct mtd_oob_ops io_op = { 0 };
+
+		while (mtd_block_isbad(mtd, sect_start)) {
+			pr_warn("mtd_nand_blk_write: skipping bad block at 0x%llx\n",
+			              ALIGN_DOWN(sect_start, mtd->erasesize));
+			sect_start += mtd->erasesize;
+			debug("%s: new sector start: 0x%llx\n", __func__, sect_start);
+		}
+
+		io_op.mode = MTD_OPS_AUTO_OOB;
+		io_op.len = sect_size;
+		io_op.ooblen = 0;
+		io_op.datbuf = (void *)src;
+		io_op.oobbuf = NULL;
+
+		debug("%s: writing %u bytes to 0x%llx\n", __func__, sect_size, sect_start);
+		ret = mtd_write_oob(mtd, sect_start, &io_op);
+
+		if (io_op.retlen != sect_size) {
+			pr_err("mtdblock: failed to write block 0x" LBAF "\n", cur);
+			return -EIO;
+		}
+
+		cur++;
+		src += sect_size;
+		write_cnt++;
+	}
+
+	return write_cnt;
+}
+
+static ulong mtd_nor_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
+                                 const void *src)
 {
 	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
 	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
@@ -211,61 +264,53 @@ out:
 	return write_cnt;
 }
 
+static ulong mtd_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
+	const void *src)
+{
+	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
+	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
+
+	if (mtd_type_is_nand(mtd))
+		return mtd_nand_blk_write(dev, start, blkcnt, src);
+	else
+		return mtd_nor_blk_write(dev, start, blkcnt, src);
+}
+
 static unsigned long mtd_blk_erase(struct udevice *dev, lbaint_t start, lbaint_t blkcnt)
 {
 	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
 	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
 	unsigned int sect_size = block_dev->blksz;
-	lbaint_t cur = start, blocks_todo = blkcnt;
 	ulong erased_total = 0;
-	int ret = 0;
-	u8 *buf;
+	struct erase_info erase_op = { 0 };
+	u64 offset, len;
+	int ret;
 
-	buf = malloc(mtd->erasesize);
-	if (!buf)
-		return -ENOMEM;
+	offset = start * sect_size;
+	len = blkcnt * sect_size;
 
-	while (blocks_todo > 0) {
-		loff_t sect_start = cur * sect_size;
-		loff_t erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
-		u32 offset = sect_start - erase_start;
-		size_t cur_size = min_t(size_t, mtd->erasesize - offset,
-					blocks_todo * sect_size);
-		size_t retlen;
-		lbaint_t erased;
+	erase_op.mtd = mtd;
+	erase_op.addr = offset;
+	erase_op.len = mtd->erasesize;
+	erase_op.scrub = 0;
 
-		ret = mtd_read(mtd, erase_start, mtd->erasesize, &retlen, buf);
-		if (ret)
-			goto out;
+	while (len) {
+		ret = mtd_erase(mtd, &erase_op);
 
-		if (retlen != mtd->erasesize) {
-			pr_err("mtdblock: failed to read block 0x" LBAF "\n", cur);
-			ret = -EIO;
-			goto out;
-		}
-
-		memset(buf + offset, 0xFF, cur_size);
-
-		ret = mtd_erase_write(mtd, erase_start, buf);
 		if (ret) {
-			pr_err("mtdblock: failed to erase block 0x" LBAF "\n", cur);
-			goto out;
+			/* Abort if its not a bad block error */
+			if (ret != -EIO)
+				break;
+			printf("mtd_blk_erase: Skipping bad block at 0x%08llx\n",
+			       erase_op.addr);
 		}
 
-		erased = cur_size / sect_size;
-
-		blocks_todo -= erased;
-		cur += erased;
-		erased_total += erased;
+		len -= mtd->erasesize;
+		erase_op.addr += mtd->erasesize;
+		erased_total++;
 	}
 
-out:
-	free(buf);
-
-	if (ret)
-		return ret;
-
-	return erased_total;
+	return erased_total * (mtd->erasesize / sect_size);
 }
 
 static int mtd_blk_probe(struct udevice *dev)
