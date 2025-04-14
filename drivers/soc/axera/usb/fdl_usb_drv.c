@@ -193,7 +193,7 @@ static void usb_receive(dwc3_device_t *dev, dma_addr_t addr, int len)
 	struct dwc3_gadget_ep_cmd_params params;
 
 	if (ep->ep.xfer_started) {
-		pr_err("ep out transfer started\r\n");
+		pr_warn("ep out transfer started\r\n");
 		return;
 	}
 
