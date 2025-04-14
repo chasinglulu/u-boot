@@ -548,30 +548,109 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 
 int fdl_blk_erase(const char *part_name, size_t size)
 {
-	struct blk_desc *dev_desc = NULL;
-	struct disk_partition part_info = { 0 };
-	bool eraseall = false;
-	int ret;
+	struct blk_desc *blk_desc = NULL;
+	ulong main_mtd;
+	int bootdev, ret;
+	struct udevice *dev;
+	struct uclass *uc;
+	struct mtd_info *mtd;
 
-	if (!part_name && size == ~0ULL)
-		eraseall = true;
+	if (likely(!part_name) && likely(size == ~0ULL))
+		goto eraseall;
 
-	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
-	if (ret && !eraseall) {
-		pr_err("%s: Failed to get device descriptor and partition information\n", __func__);
-		return ret;
+	debug("Erasing partition: '%s' size: 0x%lx\n", part_name, size);
+	/* FIXME: TODO */
+	printf("TODO: Not Implemented yet\n");
+
+	return 0;
+
+eraseall:
+	bootdev = get_bootdevice(NULL);
+	if (bootdev < 0) {
+		if (env_get_yesno("need_main_bootmode") == 1)
+			goto erase_both_dev;
+		debug("Invaild boot device\n");
+		return -EINVAL;
+	}
+	debug("%s: bootdevice: %d\n", __func__, bootdev);
+	set_bootdevice_env(bootdev);
+
+	switch (bootdev) {
+	case BOOTDEVICE_ONLY_NAND:
+		main_mtd = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0UL);
+		if (unlikely(main_mtd == ~0UL))
+			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
+
+		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
+		if (IS_ERR_OR_NULL(blk_desc))
+			return -ENXIO;
+		break;
+	case BOOTDEVICE_ONLY_EMMC:
+		debug("Not need erasing the whole eMMC\n");
+		return 0;
+	case BOOTDEVICE_BOTH_NOR_NAND:
+	case BOOTDEVICE_BOTH_NOR_EMMC:
+		goto erase_both_dev;
+	default:
+		debug("Not supported boot device\n");
+		return -EBUSY;
 	}
 
-	if (eraseall) {
-		debug("Erase the whole device: lba = 0x%lx\n", dev_desc->lba);
-		ret = blk_derase(dev_desc, 0, dev_desc->lba);
-		if (ret < 0) {
-			pr_err("Failed to erase the whole device (ret = %d)\n", ret);
-			return ret;
+	debug("Erasing single device '%s'...\n", blk_desc->bdev->name);
+	ret = blk_derase(blk_desc, 0, blk_desc->lba);
+	if (ret != blk_desc->lba) {
+		pr_err("Failed to erase the whole device '%s' (ret = %d)\n", blk_desc->bdev->name, ret);
+		return -EIO;
+	}
+
+	return 0;
+
+erase_both_dev:
+	debug("Erasing both device...\n");
+
+	uclass_foreach_dev_probe(UCLASS_MTD, dev) {
+		printf("MTD device: %s\n", dev->name);
+	}
+
+	ret = uclass_get(UCLASS_BLK, &uc);
+	if (ret)
+		return ret;
+	uclass_foreach_dev(dev, uc) {
+		debug("Block device: %s\n", dev->name);
+
+		blk_desc = dev_get_uclass_plat(dev);
+		if (IS_ERR_OR_NULL(blk_desc)) {
+			pr_err("Failed to get device descriptor\n");
+			continue;
 		}
-	} else {
-		/* FIXME: TODO */
-		printf("TODO\n");
+
+		if (blk_desc->if_type != IF_TYPE_MTD) {
+			debug("Skip device '%s' (not MTD)\n", blk_desc->bdev->name);
+			continue;
+		}
+
+		mtd = blk_desc_to_mtd(blk_desc);
+		if (!mtd_type_is_nand(mtd)) {
+			debug("Skip device '%s' (not NAND)\n", blk_desc->bdev->name);
+			continue;
+		}
+
+		debug("Erasing device '%s'...\n", blk_desc->bdev->name);
+		ret = blk_derase(blk_desc, 0, blk_desc->lba);
+		if (ret != blk_desc->lba) {
+			pr_err("Failed to erase the whole device '%s' (ret = %d)\n", blk_desc->bdev->name, ret);
+			return -EIO;
+		}
+
+#ifdef DEBUG
+		uint64_t off;
+		printf("\nMTD device %s bad blocks list:\n", mtd->name);
+		for (off = 0; off < mtd->size; off += mtd->erasesize) {
+			if (mtd_block_isbad(mtd, off))
+				printf("\t0x%08llx\n", off);
+		}
+		printf("\n");
+#endif
 	}
 
 	return 0;
