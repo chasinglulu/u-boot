@@ -1,12 +1,18 @@
 #ifndef ASM_LAGUNA_BOOTPARAM_H_
 #define ASM_LAGUNA_BOOTPARAM_H_
 
+#include <linux/types.h>
 #include <membuff.h>
+
 typedef struct boot_params {
+	uint64_t magic;  /* Magic number */
 	void *fdt_addr;
 	unsigned short bootdevice;
 	struct membuff spl_console_out;
 } boot_params_t;
+
+/* Magic number indicating that the U-Boot image has been loaded into memory */
+#define LUA_SOC_MAGIC     0x4c55412020534f43ULL  /* ASCII for "LUA  SOC" */
 
 static inline boot_params_t *boot_params_get_base(void)
 {

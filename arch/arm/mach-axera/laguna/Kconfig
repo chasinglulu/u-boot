@@ -452,6 +452,18 @@ config LUA_MAIN_UART2
 
 endchoice
 
+endmenu
+
+menu "Booting Debugging"
+
+config LUA_WAIT_UBOOT_LOAD
+	bool "Wait for U-Boot to load"
+	help
+	  This option enables us to wait for U-Boot to load.
+	  DDR initialization is done in SPL. U-Boot can only be loaded
+	  into DDR after DDR is working properly.
+	  It is used for debugging purposes.
+
 config LUA_CUSTOM_BOOTSTRAP
 	bool "Customize Bootstrap Register Value"
 	help

@@ -100,6 +100,25 @@ void spl_board_prepare(void)
 	boot_params_t *bp = boot_params_get_base();
 
 	remove_mtd_device(bp->bootdevice);
+
+#if defined(CONFIG_LUA_WAIT_UBOOT_LOAD)
+	uint64_t magic = bp->magic;
+	ulong timeout = 0;
+	ulong elapsed = 0, start;
+
+	/* Wait for U-Boot to load */
+	do {
+		if (elapsed >= timeout) {
+			printf("Waiting for U-Boot image to load into DDR...\n");
+			timeout += 5000;
+		}
+
+		start = get_timer(0);
+		udelay(1000);
+		magic = bp->magic;
+		elapsed += get_timer(start);
+	} while (magic != LUA_SOC_MAGIC);
+#endif
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,
