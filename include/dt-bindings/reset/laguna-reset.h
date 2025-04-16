@@ -190,6 +190,15 @@
 #define DEB_GPIO_SW_RST                     28
 #define COMM_TLB_SW_RST                     29
 #define COMM_CLK_MNR_SW_RST                 30
+#define MBIST_24M_SW_RST                    31
+
+/* cpu subsystem sw_rst_0 register */
+#define DSU_SW_RST                          0
+#define ATGICCLK_SW_RST                     1
+#define DSU_PERIPH_SW_RST                   2
+#define PCLK_CPU_SW_RST                     3
+#define CPU_DBG_SW_RST                      4
+#define CPU_ROSC_SW_RST                     5
 
 /* Flash subsystem sw_rst_0 register */
 #define FLASH_SPIFLASH_SW_HRST              0

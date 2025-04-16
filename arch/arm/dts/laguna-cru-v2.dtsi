@@ -22,7 +22,7 @@
 				regmap = <&common_cru>;
 				#clock-cells = <1>;
 				offset = <LAGUNA_COMM_CLK_MUX_0>;
-				mask = <0x3F>;
+				mask = <0x1FFF>;
 				clock-parent-nums = <ACLK_TOP0_PARENT_NUM>, <ACLK_TOP1_PARENT_NUM>,
 				                    <ACLK_TOP2_PARENT_NUM>, <PCLK_TOP_PARENT_NUM>,
 				                    <CLK_COMM_TMR_PARENT_NUM>, <CLK_COMM_WWDT_PARENT_NUM>;
@@ -51,7 +51,7 @@
 				regmap = <&common_cru>;
 				#clock-cells = <1>;
 				offset = <LAGUNA_COMM_CLK_M_EB_0>;
-				mask = <0x7>;
+				mask = <0x3>;
 				clocks = <&common_clk_mux CLK_COMM_TMR>, <&common_clk_mux CLK_COMM_WWDT>;
 				clock-names = "clk_comm_tmr_eb", "clk_comm_wwdt_eb";
 				clock-output-names = "clk_comm_tmr", "clk_comm_wwdt";
@@ -62,7 +62,7 @@
 				regmap = <&common_cru>;
 				#clock-cells = <1>;
 				offset = <LAGUNA_COMM_CLK_G_EB_0>;
-				mask = <0x3FFFFF>;
+				mask = <0xFFFFFFFF>;
 				clocks = <&clk_comm_24m>, <&clk_comm_24m>,
 				         <&clk_comm_24m>, <&clk_comm_24m>,
 				         <&common_clk_mux_gate CLK_COMM_TMR_EB>, <&common_clk_mux_gate CLK_COMM_TMR_EB>,
@@ -77,7 +77,7 @@
 				         <&common_clk_mux ACLK_TOP0>, <&clk_comm_24m>,
 				         <&clk_comm_24m>, <&clk_comm_24m>,
 				         <&common_clk_mux ACLK_TOP0>, <&common_clk_mux ACLK_TOP0>,
-				         <&clk_comm_24m>, <&common_clk_mux PCLK_TOP>,
+				         <&clk_comm_24m>, <&clk_comm_24m>,
 				         <&clk_comm_24m>, <&clk_comm_24m>;
 				clock-names = "pclk_tmr32_0_eb", "pclk_tmr32_1_eb",
 				              "pclk_tmr32_2_eb", "pclk_tmr32_3_eb",
@@ -94,7 +94,7 @@
 				              "pclk_a55_dbg_mnr_eb", "pclk_ocm_dbg_mnr_eb",
 				              "aclk_ocm_dbg_mnr_eb", "aclk_a55_dbg_mnr_eb",
 				              "clk_deb_gpio_eb", "clk_comm_tlb_eb",
-				              "pclk_comm_clk_mnr_eb";
+				              "pclk_comm_clk_mnr_eb", "pclk_mbist_24m_eb";
 				clock-clock-names = "pclk_tmr32_0", "pclk_tmr32_1",
 				                    "pclk_tmr32_2", "pclk_tmr32_3",
 				                    "tclk_tmr32_0", "tclk_tmr32_1",
@@ -110,7 +110,7 @@
 				                    "pclk_a55_dbg_mnr", "pclk_ocm_dbg_mnr",
 				                    "aclk_ocm_dbg_mnr", "aclk_a55_dbg_mnr",
 				                    "clk_deb_gpio", "clk_comm_tlb",
-				                    "pclk_comm_clk_mnr";
+				                    "pclk_comm_clk_mnr", "pclk_mbist_24m";
 			};
 
 			common_sysrst: common-reset {
@@ -118,16 +118,25 @@
 				#reset-cells = <1>;
 				regmap = <&common_cru>;
 				offset = <LAGUNA_COMM_SW_RST_0>;
-				mask = <0x7FFFFFFF>;
+				mask = <0xFFFFFFFF>;
 				assert-high = <1>;
 			};
 		};
 
-		ddr_cru: ddr-cru@0A000000 {
+		cpu_cru: cpu-cru@08011000 {
 			compatible = "syscon", "simple-mfd";
-			reg = <0x00 0x0A000000 0x00 0x1000>;
+			reg = <0x00 0x08011000 0x00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			cpu_sysrst: cpu-reset {
+				compatible = "axera,laguna-rst", "syscon-reset";
+				#reset-cells = <1>;
+				regmap = <&cpu_cru>;
+				offset = <LAGUNA_CPU_SW_RST_0>;
+				mask = <0x3F>;
+				assert-high = <1>;
+			};
 		};
 
 		flash_cru: flash-cru@0C001000 {
@@ -186,7 +195,7 @@
 				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux_gate CLK_FLASH_SDM_EB>,
 				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux CLK_FLASH_GLB>,
 				         <&flash_clk_mux_gate CLK_FLASH_SER_EB>, <&flash_clk_mux CLK_FLASH_GLB>,
-				         <&flash_clk_mux CLK_FLASH_GLB>, <&flash_clk_mux_gate CLK_FLASH_SER_EB>,
+				         <&flash_clk_mux_gate CLK_FLASH_SER_EB>, <&flash_clk_mux CLK_FLASH_GLB>,
 				         <&clk_flash_24m>, <&flash_clk_mux CLK_FLASH_GLB>,
 				         <&clk_flash_24m>, <&flash_clk_mux CLK_FLASH_GLB>,
 				         <&clk_flash_24m>, <&clk_flash_24m>,
@@ -293,7 +302,7 @@
 				clocks = <&periph_clk_div SCLK_I2S_M_DIVN>,
 				         <&periph_clk_mux CLK_PERIPH_GPIO>,
 				         <&periph_clk_mux CLK_PERIPH_SER>,
-				         <&fab_pll_60m>,
+				         <&fab_pll_24m>,
 				         <&periph_clk_main_rgmii_tx_div2>,
 				         <&epll_50m>,
 				         <&periph_clk_mux CLK_MAIN_CAN_PE>,
@@ -328,7 +337,7 @@
 				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
 				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux CLK_PERIPH_GLB>,
 				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
-				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux CLK_PERIPH_GLB>,
+				         <&periph_clk_mux CLK_PERIPH_GLB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
 				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux_gate CLK_PERIPH_SER_EB>,
 				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux CLK_PERIPH_GLB>,
 				         <&periph_clk_mux_gate CLK_PERIPH_SER_EB>, <&periph_clk_mux PCLK_USB_PHY_BUS>,
@@ -349,7 +358,7 @@
 				              "clk_periph_i2c8_eb", "pclk_periph_spi_m5_eb",
 				              "clk_periph_spi_m5_eb", "pclk_usb_phy_eb",
 				              "aclk_usb_ctrl_eb", "pclk_periph_crc_engine_eb";
-				clock-output-name = "pclk_periph_spi_s", "clk_periph_spi_s",
+				clock-output-names = "pclk_periph_spi_s", "clk_periph_spi_s",
 				                    "pclk_periph_gpio4", "pclk_periph_gpio5",
 				                    "clk_periph_gpio4", "clk_periph_gpio5",
 				                    "pclk_i2s_m", "pclk_i2s_s",
@@ -395,7 +404,7 @@
 				              "pclk_periph_dma_per_dbgmnr_eb", "aclk_periph_dma_per_dbgmnr_eb",
 				              "clk_periph_tlb_eb", "pclk_periph_iso_eb",
 				              "clk_periph_iso_24m_eb";
-				clock-output-name = "clk_periph_crc_engine", "pclk_periph_ax_dma_per",
+				clock-output-names = "clk_periph_crc_engine", "pclk_periph_ax_dma_per",
 				                    "clk_periph_ax_dma_per", "pclk_periph_ax_dma",
 				                    "clk_periph_ax_dma", "pclk_can0",
 				                    "pclk_can1", "clk_can0_core",

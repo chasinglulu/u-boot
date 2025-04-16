@@ -139,7 +139,7 @@
 				compatible = "axera,lua-gate-clocks";
 				regmap = <&common_cru>;
 				offset = <LAGUNA_COMM_CLK_G_EB_0>;
-				mask = <0x7FFFFFFF>;
+				mask = <0xFFFFFFFF>;
 
 				pclk_tmr32_0: pclk_tmr32_0 {
 					compatible = "clk_gate";
@@ -356,6 +356,78 @@
 					bit-shift = <PCLK_PLL_CTRL2>;
 					#clock-cells = <0>;
 				};
+
+				pclk_a55_dbg_mnr: pclk_a55_dbg_mnr {
+					compatible = "clk_gate";
+					clocks = <&clk_comm_24m>;
+					clock-names = "clk_comm_24m";
+					clock-output-names = "pclk_a55_dbg_mnr";
+					bit-shift = <PCLK_A55_DBG_MNR>;
+					#clock-cells = <0>;
+				};
+
+				pclk_ocm_dbg_mnr: pclk_ocm_dbg_mnr {
+					compatible = "clk_gate";
+					clocks = <&clk_comm_24m>;
+					clock-names = "clk_comm_24m";
+					clock-output-names = "pclk_ocm_dbg_mnr";
+					bit-shift = <PCLK_OCM_DBG_MNR>;
+					#clock-cells = <0>;
+				};
+
+				aclk_ocm_dbg_mnr: aclk_ocm_dbg_mnr {
+					compatible = "clk_gate";
+					clocks = <&aclk_top0_sel>;
+					clock-names = "aclk_top0_sel";
+					clock-output-names = "aclk_ocm_dbg_mnr";
+					bit-shift = <ACLK_OCM_DBG_MNR>;
+					#clock-cells = <0>;
+				};
+
+				aclk_a55_dbg_mnr: aclk_a55_dbg_mnr {
+					compatible = "clk_gate";
+					clocks = <&aclk_top0_sel>;
+					clock-names = "aclk_top0_sel";
+					clock-output-names = "aclk_a55_dbg_mnr";
+					bit-shift = <ACLK_A55_DBG_MNR>;
+					#clock-cells = <0>;
+				};
+
+				clk_deb_gpio: clk_deb_gpio {
+					compatible = "clk_gate";
+					clocks = <&clk_comm_24m>;
+					clock-names = "clk_comm_24m";
+					clock-output-names = "clk_deb_gpio";
+					bit-shift = <CLK_DEB_GPIO>;
+					#clock-cells = <0>;
+				};
+
+				clk_comm_tlb: clk_comm_tlb {
+					compatible = "clk_gate";
+					clocks = <&clk_comm_24m>;
+					clock-names = "clk_comm_24m";
+					clock-output-names = "clk_comm_tlb";
+					bit-shift = <CLK_COMM_TLB>;
+					#clock-cells = <0>;
+				};
+
+				pclk_comm_clk_mnr: pclk_comm_clk_mnr {
+					compatible = "clk_gate";
+					clocks = <&clk_comm_24m>;
+					clock-names = "clk_comm_24m";
+					clock-output-names = "pclk_comm_clk_mnr";
+					bit-shift = <PCLK_COMM_CLK_MNR>;
+					#clock-cells = <0>;
+				};
+
+				pclk_mbist_24m: pclk_mbist_24m {
+					compatible = "clk_gate";
+					clocks = <&clk_comm_24m>;
+					clock-names = "clk_comm_24m";
+					clock-output-names = "pclk_mbist_24m";
+					bit-shift = <PCLK_MBIST_24M>;
+					#clock-cells = <0>;
+				};
 			};
 
 			common_sysrst: common_reset {
@@ -363,7 +435,7 @@
 				#reset-cells = <1>;
 				regmap = <&common_cru>;
 				offset = <LAGUNA_COMM_SW_RST_0>;
-				mask = <0x7FFFFFFF>;
+				mask = <0xFFFFFFFF>;
 				assert-high = <1>;
 			};
 		};
@@ -866,7 +938,7 @@
 				#reset-cells = <1>;
 				regmap = <&flash_cru>;
 				offset = <LAGUNA_FLASH_SW_RST_0>;
-				mask = <0x3FFFFF>;
+				mask = <0x7FFFFF>;
 				assert-high = <1>;
 			};
 		};

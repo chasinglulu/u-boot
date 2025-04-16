@@ -511,5 +511,53 @@
 			clock-div = <1>;
 			clock-output-names = "clk_cpu_24m";
 		};
+
+		cpu_clk_mux: cpu_clk_mux {
+			compatible = "axera,laguna-clock-mux";
+			regmap = <&cpu_cru>;
+			#clock-cells = <1>;
+			offset = <LAGUNA_CPU_CLK_MUX_0>;
+			mask = <0x7FF>;
+			bit-map = <CLK_CPU0_OFFSET CLK_CPU0_WIDTH>,
+			          <CLK_CPU1_OFFSET CLK_CPU1_WIDTH>,
+			          <CLK_CPU2_OFFSET CLK_CPU2_WIDTH>,
+			          <CLK_CPU3_OFFSET CLK_CPU3_WIDTH>,
+			          <CLK_DSU_OFFSET CLK_DSU_WIDTH>,
+			          <CLK_DSU_PERIPH_OFFSET CLK_DSU_PERIPH_WIDTH>;
+			clock-parent-nums = <CLK_CPU0_PARENT_NUM>, <CLK_CPU1_PARENT_NUM>,
+			                    <CLK_CPU2_PARENT_NUM>, <CLK_CPU3_PARENT_NUM>,
+			                    <CLK_DSU_PARENT_NUM>, <CLK_DSU_PERIPH_PARENT_NUM>;
+			clocks = <&fab_pll_24m &fab_pll_800m &main_pll CPU_PLL>,
+			         <&fab_pll_24m &fab_pll_800m &main_pll CPU_PLL>,
+			         <&fab_pll_24m &fab_pll_800m &main_pll CPU_PLL>,
+			         <&fab_pll_24m &fab_pll_800m &main_pll CPU_PLL>,
+			         <&fab_pll_24m &fab_pll_800m &apll_900m &main_pll NPU_PLL>,
+			         <&fab_pll_24m &fab_pll_400m>;
+			clock-names = "clk_cpu0_sel", "clk_cpu1_sel",
+			              "clk_cpu2_sel", "clk_cpu3_sel",
+			              "clk_dsu_sel", "clk_dsu_periph_sel";
+			clock-output-names = "clk_cpu0_mux", "clk_cpu1_mux",
+			                     "clk_cpu2_mux", "clk_cpu3_mux",
+			                     "clk_dsu_mux", "clk_dsu_periph_mux";
+		};
+		cpu_clk_gate: cpu_clk_gate {
+			compatible = "axera,laguna-clock-gate";
+			regmap = <&cpu_cru>;
+			#clock-cells = <1>;
+			offset = <LAGUNA_CPU_CLK_G_EB_0>;
+			mask = <0xFF>;
+			clocks = <&cpu_clk_mux CLK_CPU0>, <&cpu_clk_mux CLK_CPU1>,
+			         <&cpu_clk_mux CLK_CPU2>, <&cpu_clk_mux CLK_CPU3>,
+			         <&cpu_clk_mux CLK_DSU>, <&clk_cpu_24m>,
+			         <&clk_cpu_24m>, <&clk_cpu_24m>;
+			clock-names = "clk_cpu_core0_eb", "clk_cpu_core1_eb",
+			              "clk_cpu_core2_eb", "clk_cpu_core3_eb",
+			              "sclk_dsu_eb", "clk_cpu_dbg_eb",
+			              "atgicclk_cpu_eb", "clk_cpu_rosc_eb";
+			clock-output-names = "clk_cpu_core0", "clk_cpu_core1",
+			                     "clk_cpu_core2", "clk_cpu_core3",
+			                     "sclk_dsu", "clk_cpu_dbg",
+			                     "atgicclk_cpu", "clk_cpu_rosc";
+		};
 	};
 };

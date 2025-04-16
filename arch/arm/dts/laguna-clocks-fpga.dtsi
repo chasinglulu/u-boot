@@ -200,6 +200,13 @@
 			clock-output-names = "epll_5m";
 		};
 
+		apll_996m: apll_996m {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <10000000>;
+			clock-output-names = "apll_996m";
+		};
+
 		apll_54m: apll_54m {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
