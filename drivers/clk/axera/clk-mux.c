@@ -285,7 +285,7 @@ static ulong clk_mux_get_rate_v2(struct clk *clk)
 
 	map = priv->array + clk->id;
 	reg = readl(priv->base + priv->offset);
-	index += (reg >> map->offset) & BIT(map->width);
+	index += (reg >> map->offset) & (BIT(map->width) - 1);
 	dev_dbg(dev, "index %u\n", index);
 
 	ret = clk_get_by_index(dev, index, &parent);
