@@ -295,6 +295,9 @@
 #if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
 #elif defined(CONFIG_CLK_AXERA_V2)
+	assigned-clocks = <&periph_clk_mux CLK_PERIPH_SER &periph_clk_mux CLK_PERIPH_GLB>;
+	assigned-clock-parents = <&fab_pll_200m &fab_pll_400m>;
+
 	clocks = <&periph_clk_gate_0 PCLK_PERIPH_UART1>,
 	         <&periph_clk_gate_0 CLK_PERIPH_UART1>;
 #endif
