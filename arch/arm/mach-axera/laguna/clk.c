@@ -4,13 +4,6 @@
  *
  */
 
-/**
- * soc_clk_dump() - Print clock frequencies
- * Returns zero on success
- *
- * Implementation for the clk dump command.
- */
-
 #include <clk.h>
 #include <common.h>
 #include <dm.h>
@@ -21,6 +14,12 @@
 #include <dm/device_compat.h>
 
 #if defined(CONFIG_CLK_AXERA_V2)
+/**
+ * soc_clk_dump() - Print clock frequencies
+ * Returns zero on success
+ *
+ * Implementation for the clk dump command.
+ */
 int soc_clk_dump(void)
 {
 	struct udevice *dev;
@@ -32,13 +31,15 @@ int soc_clk_dump(void)
 	if (ret)
 		return ret;
 
-	printf("      Rate            Name\n");
-	printf("-----------------------------------------\n");
-
+	printf("      Rate            Name                       Index\n");
 	uclass_foreach_dev(dev, uc) {
-		if (device_probe(dev))
+		if (device_probe(dev)) {
+			pr_err("Failed to probe device %s\n", dev->name);
 			return -ENXIO;
+		}
 		count = dev_read_string_count(dev, "clock-output-names");
+		printf("---------------------------------------------------------\n");
+		printf("'%s' output clocks information:\n\n", dev->name);
 		for (i = 0; i < count; i++) {
 			struct clk clk;
 			unsigned long rate;
@@ -71,7 +72,8 @@ int soc_clk_dump(void)
 			else
 				printf(" %6lu %s        ", rate, unit);
 
-			printf("%s\n", name);
+			printf("%s", name);
+			printf("%*d\n", (int)(32 - strlen(name)), i);
 		}
 	}
 
