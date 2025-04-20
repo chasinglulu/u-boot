@@ -42,6 +42,7 @@ static void block_display_line(struct udevice *dev)
 static int do_block(struct cmd_tbl *cmdtp, int flag, int argc,
                         char *const argv[])
 {
+	struct blk_desc *desc;
 	struct udevice *blk, *parent;
 	struct udevice *dev;
 	struct uclass *uc;
@@ -85,13 +86,23 @@ static int do_block(struct cmd_tbl *cmdtp, int flag, int argc,
 				ret = CMD_RET_FAILURE;
 				goto failed;
 			}
+
+			desc = dev_get_uclass_plat(blk);
+			if (desc->if_type == IF_TYPE_UNKNOWN ||
+			    desc->if_type >= IF_TYPE_COUNT) {
+				debug("Not supported if_type (%d)\n",
+				                          desc->if_type);
+				ret = CMD_RET_FAILURE;
+				goto failed;
+			}
+
 			id = device_get_uclass_id(parent);
 			switch (id) {
 			case UCLASS_MMC:
 				if_type = IF_TYPE_MMC;
 				break;
 			case UCLASS_MTD:
-				if_type = IF_TYPE_MTD;
+				if_type = desc->if_type;
 				break;
 			default:
 				debug("Not supported uclass_id (%d)\n", id);
@@ -121,6 +132,7 @@ static int do_block(struct cmd_tbl *cmdtp, int flag, int argc,
 	}
 
 	switch ((int)if_type) {
+	case IF_TYPE_UBI:
 	case IF_TYPE_MTD:
 #if defined(CONFIG_DM_MTD)
 		mtd_probe_devices();
