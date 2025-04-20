@@ -91,7 +91,10 @@ int mtd_bind(struct udevice *dev, struct mtd_info **mtdp)
 
 	if (mtd) {
 		bdesc->lba = lldiv(mtd->size, bdesc->blksz);
-		snprintf(bdesc->product, sizeof(bdesc->product), "%s", mtd->name);
+		if (mtd_type_is_nand(mtd))
+			snprintf(bdesc->product, BLK_PRD_SIZE, "Nand");
+		else
+			snprintf(bdesc->product, BLK_PRD_SIZE, "Nor");
 	}
 
 	return 0;
