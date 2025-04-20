@@ -141,7 +141,6 @@ static ulong mtd_blk_read(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 static int mtd_erase_write(struct mtd_info *mtd, uint64_t start, const void *src)
 {
 	int ret;
-	size_t retlen;
 	struct erase_info erase = { 0 };
 
 	erase.mtd = mtd;
@@ -152,18 +151,45 @@ static int mtd_erase_write(struct mtd_info *mtd, uint64_t start, const void *src
 	if (ret)
 		return ret;
 
-	ret = mtd_write(mtd, start, mtd->erasesize, &retlen, src);
-	if (ret)
-		return ret;
+#if defined(CONFIG_MTD_BLOCK_WRITE_OOB)
+	struct mtd_oob_ops io_op = { 0 };
+	io_op.mode = MTD_OPS_AUTO_OOB;
+	io_op.len = mtd->erasesize;
+	io_op.ooblen = 0;
+	io_op.datbuf = (void *)src;
+	io_op.oobbuf = NULL;
 
-	if (retlen != mtd->erasesize) {
-		pr_err("mtd_erase_write: failed to write block at 0x%llx\n", start);
+	ret = mtd_write_oob(mtd, start, &io_op);
+	if (ret) {
+		pr_err("mtd_write_oob(0x%llx\n) error %d", start, ret);
+		return ret;
+	}
+
+	if (io_op.retlen != mtd->erasesize) {
+		pr_err("Wrong mtd write length at 0x%llx (expected %u, written %zu)\n",
+		       start, mtd->erasesize, io_op.retlen);
 		return -EIO;
 	}
+#else
+	size_t retlen;
+
+	ret = mtd_write(mtd, start, mtd->erasesize, &retlen, src);
+	if (ret) {
+		pr_err("mtd_write(0x%llx\n) error %d", start, ret);
+		return ret;
+	}
+
+	if (retlen != mtd->erasesize) {
+		pr_err("Wrong mtd write length at 0x%llx (expected %u, written %zu)\n",
+		       start, mtd->erasesize, retlen);
+		return -EIO;
+	}
+#endif
 
 	return 0;
 }
 
+#if defined(CONFIG_MTD_BLOCK_NAND_QUIRKS)
 static ulong mtd_nand_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
                                   const void *src)
 {
@@ -196,9 +222,14 @@ static ulong mtd_nand_blk_write(struct udevice *dev, lbaint_t start, lbaint_t bl
 
 		debug("%s: writing %u bytes to 0x%llx\n", __func__, sect_size, sect_start);
 		ret = mtd_write_oob(mtd, sect_start, &io_op);
+		if (ret) {
+			pr_err("mtd_write_oob(0x%llx\n) error %d", sect_start, ret);
+			return ret;
+		}
 
 		if (io_op.retlen != sect_size) {
-			pr_err("mtdblock: failed to write block 0x" LBAF "\n", cur);
+			pr_err("Wrong mtd write length at 0x%lx (expected %u, written %zu)\n",
+			              start, sect_size, io_op.retlen);
 			return -EIO;
 		}
 
@@ -209,8 +240,10 @@ static ulong mtd_nand_blk_write(struct udevice *dev, lbaint_t start, lbaint_t bl
 
 	return write_cnt;
 }
+#endif
 
-static ulong mtd_nor_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
+/* Core write function using read-modify-write for erase blocks */
+static ulong mtd_blk_write_rmw(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
                                  const void *src)
 {
 	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
@@ -234,12 +267,20 @@ static ulong mtd_nor_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blk
 		size_t retlen;
 		lbaint_t written;
 
+		while (mtd_block_isbad(mtd, erase_start)) {
+			pr_warn("mtd_blk_write_rmw: skipping bad block at 0x%llx\n",
+			              erase_start);
+			erase_start += mtd->erasesize;
+			debug("%s: new eraseblock start: 0x%llx\n", __func__, erase_start);
+		}
+
 		ret = mtd_read(mtd, erase_start, mtd->erasesize, &retlen, buf);
 		if (ret)
 			goto out;
 
 		if (retlen != mtd->erasesize) {
-			pr_err("mtdblock: failed to read block 0x" LBAF "\n", cur);
+			pr_err("Wrong mtd read length at 0x" LBAF "(expected %llu, got %zu)\n",
+			           cur, erase_start, retlen);
 			ret = -EIO;
 			goto out;
 		}
@@ -270,13 +311,18 @@ out:
 static ulong mtd_blk_write(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 	const void *src)
 {
+#if defined(CONFIG_MTD_BLOCK_NAND_QUIRKS)
 	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
 	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
 
-	if (mtd_type_is_nand(mtd))
+	if (mtd_type_is_nand(mtd)) {
+		/* Use NAND-specific write function if enabled and applicable */
 		return mtd_nand_blk_write(dev, start, blkcnt, src);
-	else
-		return mtd_nor_blk_write(dev, start, blkcnt, src);
+	} else
+#endif
+	{
+		return mtd_blk_write_rmw(dev, start, blkcnt, src);
+	}
 }
 
 static unsigned long mtd_blk_erase(struct udevice *dev, lbaint_t start, lbaint_t blkcnt)
