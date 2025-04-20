@@ -14,9 +14,7 @@ mtd-$(CONFIG_FLASH_CFI_LEGACY) += jedec_flash.o
 mtd-$(CONFIG_STM32_FLASH) += stm32_flash.o
 mtd-$(CONFIG_RENESAS_RPC_HF) += renesas_rpc_hf.o
 mtd-$(CONFIG_HBMC_AM654) += hbmc-am654.o
-ifdef CONFIG_MTD
-mtd-$(CONFIG_$(SPL_)BLK) += mtdblock.o
-endif
+mtd-$(CONFIG_MTD_BLOCK) += mtdblock.o
 
 # U-Boot build
 ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)

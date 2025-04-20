@@ -31,6 +31,35 @@ config MTD_CONCAT
 	  into a single logical device. The larger logical device can then
 	  be partitioned.
 
+config MTD_BLOCK
+	bool "Enable block device access to MTD devices"
+	select BLK
+	help
+	  Enable support for block device access to MTD devices
+	  using blk_ops abstraction.
+
+config MTD_BLOCK_WRITE_OOB
+	bool "Use mtd_write_oob() within MTD block RMW"
+	depends on MTD_BLOCK
+	help
+	  Use `mtd_write_oob()` instead of `mtd_write()` for the write step
+	  within the MTD block driver's read-modify-write (RMW) logic. This
+	  option is primarily relevant for NAND flash, where `mtd_write_oob()`
+	  might be necessary or preferred by the underlying driver, even when
+	  OOB data isn't explicitly handled at the block level by this driver.
+
+config MTD_BLOCK_NAND_QUIRKS
+	bool "Use direct MTD write method for NAND (avoids RMW)"
+	depends on MTD_BLOCK
+	help
+	  Enable a specific write method for NAND devices via the block layer.
+	  Instead of the default read-modify-write approach (reading an erase
+	  block, modifying it, erasing, then writing), this option directly
+	  writes data in block-sized chunks (`blksz`) using `mtd_write_oob()`.
+	  This is useful for NAND devices where the standard RMW is problematic
+	  or inefficient, assuming the target area is pre-erased or the
+	  controller handles partial page writes correctly.
+
 config SYS_MTDPARTS_RUNTIME
 	bool "Allow MTDPARTS to be configured at runtime"
 	depends on MTD

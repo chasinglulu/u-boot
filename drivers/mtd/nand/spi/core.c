@@ -1197,9 +1197,11 @@ static int spinand_probe(struct udevice *dev)
 	plat->mtd = mtd;
 
 	if (blk_enabled()) {
+#if defined(CONFIG_MTD_BLOCK)
 		ret = mtd_bind(dev, &plat->mtd);
 		if (ret)
 			goto err_spinand_cleanup;
+#endif
 
 #if CONFIG_IS_ENABLED(UBI_BLOCK)
 		ret = ubi_bind(dev);
