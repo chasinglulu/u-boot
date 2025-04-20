@@ -549,18 +549,40 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 int fdl_blk_erase(const char *part_name, size_t size)
 {
 	struct blk_desc *blk_desc = NULL;
-	ulong main_mtd;
-	int bootdev, ret;
+	struct disk_partition part_info = { 0 };
 	struct udevice *dev;
 	struct uclass *uc;
 	struct mtd_info *mtd;
+	ulong main_mtd;
+	int bootdev, ret;
+	size_t erase_size;
+	lbaint_t erase_lba;
 
 	if (likely(!part_name) && likely(size == ~0ULL))
 		goto eraseall;
 
 	debug("Erasing partition: '%s' size: 0x%lx\n", part_name, size);
-	/* FIXME: TODO */
-	printf("TODO: Not Implemented yet\n");
+	ret = fdl_blk_get_dev_and_part(part_name, &blk_desc, &part_info);
+	if (ret) {
+		pr_err("%s: Failed to get device descriptor and partition information\n", __func__);
+		return ret;
+	}
+
+	erase_size = min_t(size_t, size, part_info.size * blk_desc->blksz);
+	if (unlikely(erase_size == 0)) {
+		pr_err("Invalid erase size\n");
+		return -EINVAL;
+	}
+	erase_lba = DIV_ROUND_UP_ULL(erase_size, blk_desc->blksz);
+	debug("'%s' partition: sector: 0x%lx, size: 0x%lx, erase_blkcnt: 0x%zx\n",
+	      part_info.name, part_info.start, part_info.size, erase_lba);
+
+	ret = blk_derase(blk_desc, part_info.start, erase_lba);
+	if (ret != erase_lba) {
+		pr_err("Failed to erase the partition '%s' (size 0x%zx, blkcnt 0x%lx) (ret = %d)\n",
+		              part_name, erase_size, erase_lba, ret);
+		return -EIO;
+	}
 
 	return 0;
 
