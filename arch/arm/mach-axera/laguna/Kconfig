@@ -412,6 +412,28 @@ config LUA_SERVERIP
 	help
 	  Specify sever IP address used for tftpboot.
 
+config SPL_LUA_NPU_OCM_CLOCK_BOOST
+	bool "Boost NPU OCM clock frequency in SPL"
+	depends on SPL
+	help
+	  This enables boosting the NPU OCM clock frequency in SPL.
+
+config LUA_NPU_OCM_CLK_MUX_REGADDR
+	hex "NPU OCM Clock Mux Register Address"
+	depends on SPL_LUA_NPU_OCM_CLOCK_BOOST
+	default 0x14310000
+	help
+	  This option enables us to specify the NPU OCM clock mux
+	  register address.
+
+config LUA_NPU_OCM_CLK_MUX_REGVAL
+	hex "NPU OCM Clock Mux Register Value"
+	depends on SPL_LUA_NPU_OCM_CLOCK_BOOST
+	default 0x8
+	help
+	  This option enables us to specify the NPU OCM clock mux
+	  register value (default: NPU OCM 800MHz).
+
 config SPL_LUA_CPU_CLOCK_BOOST
 	bool "Boost CPU clock frequency in SPL"
 	depends on SPL
