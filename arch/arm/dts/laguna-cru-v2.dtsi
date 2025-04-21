@@ -139,6 +139,13 @@
 			};
 		};
 
+		npu_cru: npu-cru@14310000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x14310000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
 		flash_cru: flash-cru@0C001000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x0C001000 0x00 0x1000>;

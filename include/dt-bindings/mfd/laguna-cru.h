@@ -71,6 +71,11 @@
 #define LAGUNA_CPU_CLK_G_EB_0            CLK_GATE0_EB_OFFSET
 #define LAGUNA_CPU_SW_RST_0              SW_RST0_OFFSET
 
+/* npu clock & rst */
+#define LAGUNA_NPU_CLK_MUX_0             0x00
+#define LAGUNA_NPU_CLK_G_EB_0            0x40
+#define LAGUNA_NPU_SW_RST_0              0x120
+
 /* DDR clock & rst */
 #define LAGUNA_DDR_CLK_MUX_0             CLK_MUX_OFFSET
 #define LAGUNA_DDR_CLK_G_EB_0            CLK_GATE0_EB_OFFSET

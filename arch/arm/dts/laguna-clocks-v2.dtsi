@@ -559,5 +559,26 @@
 			                     "sclk_dsu", "clk_cpu_dbg",
 			                     "atgicclk_cpu", "clk_cpu_rosc";
 		};
+
+
+		npu_clk_mux: npu_clk_mux {
+			compatible = "axera,laguna-clock-mux";
+			regmap = <&npu_cru>;
+			#clock-cells = <1>;
+			offset = <LAGUNA_NPU_CLK_MUX_0>;
+			mask = <0x1F>;
+			bit-map = <CLK_NN_FAB_OFFSET CLK_NN_FAB_WIDTH>,
+			          <CLK_NN_OCM_OFFSET CLK_NN_OCM_WIDTH>,
+			          <CLK_NN_GLB_OFFSET CLK_NN_GLB_WIDTH>;
+			clock-parent-nums = <CLK_NN_FAB_PARENT_NUM>, <CLK_NN_OCM_PARENT_NUM>,
+			                    <CLK_NN_GLB_PARENT_NUM>;
+			clocks = <&fab_pll_24m &fab_pll_600m &fab_pll_800m &main_pll NPU_PLL>,
+			         <&fab_pll_24m &fab_pll_600m &fab_pll_800m>,
+			         <&fab_pll_24m &fab_pll_200m>;
+			clock-names = "clk_nn_fab_sel", "clk_nn_ocm_sel",
+			              "clk_nn_glb_sel";
+			clock-output-names = "clk_nn_fab_mux", "clk_nn_ocm_mux",
+			                     "clk_nn_glb_mux";
+		};
 	};
 };

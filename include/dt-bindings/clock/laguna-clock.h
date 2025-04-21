@@ -335,6 +335,23 @@
 #define ATGICCLK_CPU                    6
 #define CLK_CPU_ROSC                    7
 
+/* NPU subsystem clk_mux_0 register */
+
+#define CLK_NN_FAB                      0
+#define CLK_NN_OCM                      1
+#define CLK_NN_GLB                      2
+
+#define CLK_NN_FAB_PARENT_NUM           4
+#define CLK_NN_OCM_PARENT_NUM           3
+#define CLK_NN_GLB_PARENT_NUM           2
+
+#define CLK_NN_FAB_OFFSET               0
+#define CLK_NN_OCM_OFFSET               2
+#define CLK_NN_GLB_OFFSET               4
+#define CLK_NN_FAB_WIDTH                2
+#define CLK_NN_OCM_WIDTH                2
+#define CLK_NN_GLB_WIDTH                1
+
 /* flash subsystem clk_mux_0 register */
 #define CLK_FLASH_GLB                   0
 #define CLK_FLASH_OSPI                  1
