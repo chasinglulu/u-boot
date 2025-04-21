@@ -150,6 +150,10 @@ static inline void setup_caches(void)
 #if CONFIG_IS_ENABLED(SOC_INIT)
 void spl_soc_init(void)
 {
+#if CONFIG_IS_ENABLED(LUA_CPU_CLOCK_BOOST)
+	writel(CONFIG_LUA_CPU_CLK_MUX_REGVAL, CONFIG_LUA_CPU_CLK_MUX_REGADDR);
+#endif
+
 #if defined (CONFIG_LUA_CUSTOM_BOOTSTRAP)
 	/* unlock bootstrap register write permission */
 	writel(BIT(0), CONFIG_LUA_BOOTSTRAP_REGADDR);

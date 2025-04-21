@@ -412,6 +412,30 @@ config LUA_SERVERIP
 	help
 	  Specify sever IP address used for tftpboot.
 
+config SPL_LUA_CPU_CLOCK_BOOST
+	bool "Boost CPU clock frequency in SPL"
+	depends on SPL
+	help
+	  This enables boosting the CPU clock frequency in SPL.
+	  It can significantly improve SPL running speed, especially
+	  when CPU cache is disabled for debugging or other reasons.
+
+config LUA_CPU_CLK_MUX_REGADDR
+	hex "CPU Clock Mux Register Address"
+	depends on SPL_LUA_CPU_CLOCK_BOOST
+	default 0x08011000
+	help
+	  This option enables us to specify the CPU clock mux
+	  register address.
+
+config LUA_CPU_CLK_MUX_REGVAL
+	hex "CPU Clock Mux Register Value"
+	depends on SPL_LUA_CPU_CLOCK_BOOST
+	default 0x555
+	help
+	  This option enables us to specify the CPU clock mux
+	  register value (default: CPU 800MHz).
+
 config SPL_LUA_CPU_CACHE
 	bool "Enable CPU L1/L2 Cache in SPL"
 	depends on SPL
