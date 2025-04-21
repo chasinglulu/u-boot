@@ -412,6 +412,15 @@ config LUA_SERVERIP
 	help
 	  Specify sever IP address used for tftpboot.
 
+config SPL_LUA_CPU_CACHE
+	bool "Enable CPU L1/L2 Cache in SPL"
+	depends on SPL
+	help
+	  This enables CPU L1/L2 cache in SPL. It is used for
+	  improving SPL running speed.
+
+	  It is strongly recommended to enable.
+
 config SPL_LUA_TEST
 	bool "Enable Laguna testcases in SPL"
 	depends on SPL_UNIT_TEST

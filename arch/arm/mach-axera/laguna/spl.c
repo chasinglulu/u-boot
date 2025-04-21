@@ -162,6 +162,10 @@ void spl_soc_init(void)
 	/* Customize download interface register value */
 	writel(CONFIG_LUA_DOWNLOAD_IF_REGVAL, CONFIG_LUA_DOWNLOAD_IF_REGADDR);
 #endif
+
+#if CONFIG_IS_ENABLED(LUA_CPU_CACHE)
+	setup_caches();
+#endif
 }
 #endif
 
