@@ -331,6 +331,30 @@ static int abc_prepare_slot(int argc, char * const argv[])
 	return slot;
 }
 
+static int do_abc_dump(struct cmd_tbl *cmdtp, int flag, int argc,
+	char * const argv[])
+{
+	struct bootloader_control *metadata = &abc_metadata;
+	struct slot_metadata *slotp;
+	int i;
+
+	if (abc_dev == -1 || abc_part == -1) {
+		pr_err("\n ** No loaded A/B metadata **\n\n");
+		return -ENODATA;
+	}
+
+	printf("Slot Info:\n");
+	for (i = 0; i < abc_metadata.nb_slot; i++) {
+		slotp = &metadata->slot_info[i];
+		printf("  Slot %c:\n", 'A' + i);
+		printf("    Priority: %d\n", slotp->priority);
+		printf("    Tries Remaining: %d\n", slotp->tries_remaining);
+		printf("    Successful Boot: %d\n", slotp->successful_boot);
+	}
+
+	return 0;
+}
+
 static int do_abc_mark_successful(struct cmd_tbl *cmdtp, int flag, int argc,
                        char * const argv[])
 {
@@ -484,6 +508,7 @@ static int do_abc_get_suffix(struct cmd_tbl *cmdtp, int flag, int argc,
 static struct cmd_tbl abc_commands[] = {
 	U_BOOT_CMD_MKENT(load, CONFIG_SYS_MAXARGS, 1, do_abc_load, "", ""),
 	U_BOOT_CMD_MKENT(save, CONFIG_SYS_MAXARGS, 1, do_abc_save, "", ""),
+	U_BOOT_CMD_MKENT(dump, 1, 1, do_abc_dump, "", ""),
 	U_BOOT_CMD_MKENT(get-number-slots, 1, 1, do_abc_get_slots, "", ""),
 	U_BOOT_CMD_MKENT(get-current-slot, 1, 1, do_abc_get_cur_slot, "", ""),
 	U_BOOT_CMD_MKENT(mark-boot-successful, 1, 1, do_abc_mark_successful, "", ""),
@@ -528,6 +553,8 @@ U_BOOT_CMD(
 	"    - load A/B metadata from 'part' on device type 'interface' instance 'dev'\n"
 	"save <interface> <dev[:part|#part_name]>\n"
 	"    - save A/B metadata to 'part' on device type 'interface' instance 'dev'\n"
+	"abc dump\n"
+	"    - dump A/B metadata\n"
 	"abc get-number-slots\n"
 	"    - print number of slots\n"
 	"abc get-current-slot\n"
