@@ -361,3 +361,56 @@ int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
 
 	return slot;
 }
+
+int ab_mark_successful(struct blk_desc *dev_desc,
+                    struct disk_partition *part_info, int slot)
+{
+	struct bootloader_control *abc = NULL;
+	int ret;
+
+	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
+	if (ret < 0) {
+		log_err("ANDROID: Failed to load A/B metadata\n");
+		return ret;
+	}
+
+	abc->slot_info[slot].successful_boot = 1;
+	abc->slot_info[slot].tries_remaining = 7;
+
+	ret = ab_control_store(dev_desc, part_info, abc);
+	if (ret < 0) {
+		log_err("ANDROID: Failed to store A/B metadata\n");
+		free(abc);
+		return ret;
+	}
+
+	free(abc);
+	return 0;
+}
+
+int ab_mark_unbootable(struct blk_desc *dev_desc,
+					struct disk_partition *part_info, int slot)
+{
+	struct bootloader_control *abc = NULL;
+	int ret;
+
+	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
+	if (ret < 0) {
+		log_err("ANDROID: Failed to load A/B metadata\n");
+		return ret;
+	}
+
+	abc->slot_info[slot].tries_remaining = 0;
+	abc->slot_info[slot].successful_boot = 0;
+	abc->slot_info[slot].priority = 0;
+
+	ret = ab_control_store(dev_desc, part_info, abc);
+	if (ret < 0) {
+		log_err("ANDROID: Failed to store A/B metadata\n");
+		free(abc);
+		return ret;
+	}
+
+	free(abc);
+	return 0;
+}

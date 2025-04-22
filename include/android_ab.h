@@ -32,4 +32,24 @@ struct disk_partition;
  */
 int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info);
 
+/**
+ * Mark the slot as successfully booted.
+ *
+ * @param[in] dev_desc Place to store the device description pointer
+ * @param[in] part_info Place to store the partition information
+ * @param[in] slot The slot number to mark as successfully booted
+ * Return: 0 on success, or a negative on error
+ */
+int ab_mark_successful(struct blk_desc *dev_desc, struct disk_partition *part_info, int slot);
+
+/**
+ * Mark the slot as unbootable.
+ *
+ * @param[in] dev_desc Place to store the device description pointer
+ * @param[in] part_info Place to store the partition information
+ * @param[in] slot The slot number to mark as unbootable
+ * Return: 0 on success, or a negative on error
+ */
+int ab_mark_unbootable(struct blk_desc *dev_desc, struct disk_partition *part_info, int slot);
+
 #endif /* __ANDROID_AB_H */
