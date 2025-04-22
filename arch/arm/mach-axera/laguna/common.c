@@ -281,7 +281,7 @@ retry:
 	                    false);
 	if (ret < 0) {
 		if (fallback) {
-			debug("Not Found 'misc' partition on '%s' device\n", devtype);
+			pr_err("Not Found 'misc_bak' partition on '%s' device\n", devtype);
 			return -ENODEV;
 		} else {
 			fallback = true;
@@ -292,7 +292,7 @@ retry:
 	ret = ab_select_slot(dev_desc, &part_info);
 	if (ret < 0) {
 		if (fallback) {
-			debug("Invaild AB control in 'misc' partition on '%s' device\n", devtype);
+			pr_err("Invaild AB control in 'misc_bak' partition on '%s' device\n", devtype);
 			return -EINVAL;
 		} else {
 			fallback = true;
@@ -300,7 +300,6 @@ retry:
 		}
 	}
 	slot = ret;
-	printf("Using booting slot: %c\n", toupper(BOOT_SLOT_NAME(slot)));
 
 	/* Lookup the "bootable falg" partition */
 	int part_count = 0;
@@ -329,7 +328,9 @@ retry:
 	ret = fs_set_blk_dev_with_part(dev_desc, part_map[slot]);
 	if (ret < 0) {
 		if (fallback) {
-			debug("No filesystem exist in %d partition on '%s' device\n", part_map[slot], devtype);
+			part_get_info(dev_desc, part_map[slot], &part_info);
+			pr_err("No filesystem exist in '%s (%d)' partition on '%s' device\n",
+				part_info.name, part_map[slot], devtype);
 			return -EBADSLT;
 		} else {
 			fallback = true;
@@ -338,8 +339,10 @@ retry:
 	}
 	fs_close();
 
+	printf("Using booting slot: %c\n", toupper(BOOT_SLOT_NAME(slot)));
 	env_set_hex("distro_bootpart", part_map[slot]);
 	env_set("prefix", "/");
+
 	return 0;
 }
 #else
