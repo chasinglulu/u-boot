@@ -340,6 +340,7 @@ retry:
 	fs_close();
 
 	printf("Using booting slot: %c\n", toupper(BOOT_SLOT_NAME(slot)));
+	env_set_ulong("bootslot", slot);
 	env_set_hex("distro_bootpart", part_map[slot]);
 	env_set("prefix", "/");
 
@@ -613,16 +614,122 @@ void board_nand_init(void)
 	}
 }
 #endif
-#endif /* !CONFIG_SPI_BUILD */
 
-void board_prep_linux(bootm_headers_t *images)
+void board_cleanup_before_linux(void)
 {
-	ulong bootdev = env_get_ulong(env_get_name(ENV_BOOTDEVICE), 10, ~0ULL);
+	const char *var_name;
+	ulong bootdev;
 
+#if defined(CONFIG_LUA_AB)
+	/*
+	 * FIXME:
+	 * Mark Slot A/B successful
+	 *
+	 * This call is temporary. It should be moved to the rootfs init script
+	 * to mark the slot as successful after the kernel boots.
+	 */
+	abc_mark_bootable(true);
+#endif
+
+	var_name = env_get_name(ENV_BOOTDEVICE);
+	bootdev = env_get_ulong(var_name, 10, ~0ULL);
 	if (bootdev == ~0ULL) {
-		debug("Not found 'bootdevice' environment variable\n");
+		debug("Not found '%s' environment variable\n", var_name);
 		return;
 	}
-
 	remove_mtd_device(bootdev);
+}
+#endif /* !CONFIG_SPI_BUILD */
+
+static int find_misc_part(const char *devtype, unsigned int devnum,
+            struct blk_desc **blk_desc, struct disk_partition *info)
+{
+	struct blk_desc *dev_desc;
+	struct disk_partition part_info;
+	char dev_part_str[32];
+	bool fallback = false;
+	int ret;
+
+	if (!blk_desc || !info) {
+		debug("Invalid parameter\n");
+		return -EINVAL;
+	}
+
+retry:
+	if (fallback) {
+		/* Lookup the "misc_bak" partition */
+		snprintf(dev_part_str, sizeof(dev_part_str), "%d#misc_bak", devnum);
+		debug("Using backup 'misc' partition\n");
+	} else {
+		/* Lookup the "misc" partition */
+		snprintf(dev_part_str, sizeof(dev_part_str), "%d#misc", devnum);
+		debug("Using 'misc' partition\n");
+	}
+	ret = part_get_info_by_dev_and_name_or_num(devtype, dev_part_str,
+	      &dev_desc, &part_info,
+	      false);
+	if (ret < 0) {
+		if (fallback) {
+			debug("Not Found 'misc_bak' partition on '%s' device\n", devtype);
+			return -ENODEV;
+		} else {
+			debug("Not Found 'misc' partition on '%s' device\n", devtype);
+			fallback = true;
+			goto retry;
+		}
+	}
+
+	*blk_desc = dev_desc;
+	memcpy(info, &part_info, sizeof(part_info));
+	return 0;
+}
+
+int abc_mark_bootable(bool okay)
+{
+	struct blk_desc *dev_desc;
+	struct disk_partition part_info;
+	char *devtype = NULL;
+	ulong devnum = 0, slot;
+	int ret;
+
+	slot = env_get_ulong("bootslot", 10, ~0ULL);
+	if (slot == ~0ULL) {
+		debug("Not found 'bootslot' environment variable\n");
+		return -EINVAL;
+	}
+	debug("boot slot: %lu\n", slot);
+
+	devnum = env_get_ulong(env_get_name(ENV_DEVNUM), 10, ~0UL);
+	if (devnum == ~0UL) {
+		debug("Not found '%s' environment variable\n", env_get_name(ENV_DEVNUM));
+		return -EINVAL;
+	}
+	debug("devnum: %lu\n", devnum);
+
+	devtype = env_get(env_get_name(ENV_DEVTYPE));
+	if (unlikely(!devtype)) {
+		debug("Not Found '%s' environment variable\n", env_get_name(ENV_DEVTYPE));
+		return -EINVAL;
+	}
+	debug("devtype: %s\n", devtype);
+
+	ret = find_misc_part(devtype, devnum, &dev_desc, &part_info);
+	if (ret < 0) {
+		debug("Failed to get misc partition information\n");
+		return ret;
+	}
+
+	if (okay)
+		ret = ab_mark_successful(dev_desc, &part_info, slot);
+	else
+		ret = ab_mark_unbootable(dev_desc, &part_info, slot);
+	if (ret < 0) {
+		debug("Failed to mark slot %c %sbootable\n",
+		    toupper(BOOT_SLOT_NAME(slot)), okay ? "successful" : "unbootable");
+		return ret;
+	}
+	printf("Mark slot %c %s\n",
+	    toupper(BOOT_SLOT_NAME(slot)), okay ? "successful" : "unbootable");
+
+	return 0;
 }
