@@ -240,8 +240,7 @@ void reset_cpu(void)
  */
 ulong board_get_usable_ram_top(ulong total_size)
 {
-	/* TODO: detect size dynamically */
-	return CONFIG_LUA_DRAM_BASE + SZ_4G - 1;
+	return gd->ram_base + gd->ram_size - 1;
 }
 
 #ifdef CONFIG_LUA_AB
