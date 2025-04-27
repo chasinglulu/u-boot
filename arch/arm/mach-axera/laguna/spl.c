@@ -139,6 +139,7 @@ int spl_parse_board_header(struct spl_image_info *spl_image,
 	return -EINVAL;
 }
 
+#if !(CONFIG_IS_ENABLED(SYS_ICACHE_OFF) && CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
 static inline void setup_caches(void)
 {
 	gd->arch.tlb_size = PGTABLE_SIZE;
@@ -146,6 +147,9 @@ static inline void setup_caches(void)
 	gd->arch.tlb_addr = (uint64_t)memalign(SZ_16K, gd->arch.tlb_size);
 	enable_caches();
 }
+#else
+static inline void setup_caches(void) { }
+#endif
 
 #if CONFIG_IS_ENABLED(SOC_INIT)
 void spl_soc_init(void)
