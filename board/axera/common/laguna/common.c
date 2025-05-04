@@ -483,17 +483,17 @@ static int get_bootstrap(const char **name)
 
 int get_bootstate(void)
 {
-#if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
-	int bootstrap;
+#if CONFIG_IS_ENABLED(SYSINFO)
+	int downif = get_downif();
 
-	bootstrap = get_bootstrap(NULL);
-	if (bootstrap < 0)
-		return bootstrap;
+	debug("%s: downif: %d\n", __func__, downif);
+	if (downif < 0)
+		return -ENODEV;
 
-	if (bootstrap & BIT(4))
+	if (downif > 0)
 		return BOOTSTATE_DOWNLOAD;
-
-	return BOOTSTATE_POWERUP;
+	else
+		return BOOTSTATE_POWERUP;
 #endif
 
 	return -EINVAL;
@@ -703,8 +703,9 @@ int get_downif(void)
 	struct udevice *dev;
 	int downif, ret;
 
-	uclass_get_device_by_name(UCLASS_SYSINFO,
+	ret = uclass_get_device_by_name(UCLASS_SYSINFO,
 	                        dev_name, &dev);
+	debug("get_downif: %s (ret = %d)\n", dev_name, ret);
 	if (IS_ERR_OR_NULL(dev)) {
 		pr_err("Not found '%s' node\n", dev_name);
 		return -ENODEV;
@@ -763,6 +764,7 @@ void remove_mtd_device(int bootdev)
 	struct udevice *dev = NULL;
 	int ret, i;
 
+	debug("%s: bootdev: %d\n", __func__, bootdev);
 	switch (bootdev) {
 	case BOOTDEVICE_ONLY_NAND:
 		devseq[0] = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);

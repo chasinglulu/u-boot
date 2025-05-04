@@ -5,14 +5,14 @@
 #include <membuff.h>
 
 typedef struct boot_params {
-	uint64_t magic;  /* Magic number */
+	uint32_t magic;  /* Magic number */
 	void *fdt_addr;
 	unsigned short bootdevice;
 	struct membuff spl_console_out;
 } boot_params_t;
 
 /* Magic number indicating that the U-Boot image has been loaded into memory */
-#define LUA_SOC_MAGIC     0x4c55412020534f43ULL  /* ASCII for "LUA  SOC" */
+#define M57H_SOC_MAGIC     0x5a5a5a5aU
 
 static inline boot_params_t *boot_params_get_base(void)
 {

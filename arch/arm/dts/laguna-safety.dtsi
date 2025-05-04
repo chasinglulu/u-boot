@@ -44,7 +44,7 @@
 			reg = <0x0 0x00602000 0x0 0x1000>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			clock-frequency = <10000000>;
+			clock-frequency = <24000000>;
 			resets = <&safety_sysrst_1 SAFE_UART0_SW_PRST>,
 			         <&safety_sysrst_1 SAFE_UART0_SW_RST>;
 			reset-names = "prst", "rst";

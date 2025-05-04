@@ -96,6 +96,8 @@
 			regmap = <&safe_aon_glb 0x184>;
 			syscon-shift = <1>;
 			syscon-mask = <7>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 			status = "okay";
 		};
 

@@ -21,6 +21,7 @@
 #include <test/ut.h>
 #include <asm/arch/bootparams.h>
 #include <dm/device-internal.h>
+#include <linux/delay.h>
 
 u32 spl_boot_device(void)
 {
@@ -100,25 +101,6 @@ void spl_board_prepare(void)
 	boot_params_t *bp = boot_params_get_base();
 
 	remove_mtd_device(bp->bootdevice);
-
-#if defined(CONFIG_LUA_WAIT_UBOOT_LOAD)
-	uint64_t magic = bp->magic;
-	ulong timeout = 0;
-	ulong elapsed = 0, start;
-
-	/* Wait for U-Boot to load */
-	do {
-		if (elapsed >= timeout) {
-			printf("Waiting for U-Boot image to load into DDR...\n");
-			timeout += 5000;
-		}
-
-		start = get_timer(0);
-		udelay(1000);
-		magic = bp->magic;
-		elapsed += get_timer(start);
-	} while (magic != LUA_SOC_MAGIC);
-#endif
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,
@@ -220,6 +202,32 @@ static inline void spl_lua_test(void) { }
 #endif
 
 #ifdef CONFIG_SPL_BOARD_INIT
+static inline void wait_for_uboot(void)
+{
+#if defined(CONFIG_LUA_WAIT_UBOOT_LOAD)
+	boot_params_t *bp = boot_params_get_base();
+	uint32_t magic = bp->magic;
+	ulong timeout = 0;
+	ulong elapsed = 0, start;
+
+	/* Wait for U-Boot to load */
+	do {
+		if (elapsed >= timeout) {
+			printf("Waiting for U-Boot image to load into DDR...\n");
+			timeout += 5000;
+			magic = bp->magic;
+			debug("magic = 0x%x\n", magic);
+		}
+
+		start = get_timer(0);
+		udelay(1000);
+		invalidate_dcache_range((ulong)bp, sizeof(boot_params_t));
+		magic = bp->magic;
+		elapsed += get_timer(start);
+	} while (magic != M57H_SOC_MAGIC);
+#endif
+}
+
 void spl_board_init(void)
 {
 	boot_params_t *bp = boot_params_get_base();
@@ -257,6 +265,8 @@ void spl_board_init(void)
 #endif
 
 	spl_lua_test();
+
+	wait_for_uboot();
 }
 #endif
 

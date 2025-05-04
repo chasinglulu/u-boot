@@ -13,7 +13,7 @@
 #include <linux/string.h>
 #include <linux/mtd/mtdparts.h>
 
-#define MTDPARTS_LEN    256
+#define MTDPARTS_LEN    512
 #define MTDIDS_LEN      128
 
 #if defined(CONFIG_LUA_MTDPARTS_READ)
