@@ -27,31 +27,39 @@ struct clk_gate_priv {
 static void clk_gate_endisable(struct clk *clk, int enable)
 {
 	struct clk_gate_priv *priv = dev_get_priv(clk->dev);
-	int set = clk->flags & CLK_GATE_SET_TO_DISABLE ? 1 : 0;
 	uint32_t val;
 
 	if (priv->mask < BIT(clk->id)) {
-		dev_err(clk->dev, "wrong ID [%lu]\n", clk->id);
+		dev_err(clk->dev, "%s: wrong ID [%lu]\n", __func__, clk->id);
 		return;
 	}
-	set ^= enable;
 
-	if (clk->flags & CLK_GATE_HIWORD_MASK) {
-		val = BIT(clk->id + 16);
-		if (set)
-			val |= BIT(clk->id);
-	} else {
-		val = readl(priv->base + priv->offset);
+	if (priv->invert_enable)
+		enable = !enable;
 
-		if (set)
-			val |= BIT(clk->id);
-		else
-			val &= ~BIT(clk->id);
-	}
+	val = readl(priv->base + priv->offset);
 
-	dev_dbg(clk->dev, "base: 0x%llx offset: 0x%x val: 0x%x\n",
-	               priv->base, priv->offset, val);
+	if (enable)
+		val |= BIT(clk->id);
+	else
+		val &= ~BIT(clk->id);
+
+	dev_dbg(clk->dev, "%s clk %lu: base=0x%llx, offset=0x%x, val=0x%x\n",
+		enable ? "Enable" : "Disable", clk->id, priv->base, priv->offset, val);
 	writel(val, priv->base + priv->offset);
+}
+
+static int clk_gate_is_enabled(struct clk *clk)
+{
+	struct clk_gate_priv *priv = dev_get_priv(clk->dev);
+	uint32_t val;
+
+	val = readl(priv->base + priv->offset);
+
+	dev_dbg(clk->dev, "Check clk %lu: base=0x%llx, offset=0x%x, read_val=0x%x\n",
+		clk->id, priv->base, priv->offset, val);
+
+	return !!(val & BIT(clk->id));
 }
 
 static int clk_gate_of_xlate_v2(struct clk *clk,
@@ -68,11 +76,22 @@ static int clk_gate_of_xlate_v2(struct clk *clk,
 
 static ulong clk_gate_get_rate_v2(struct clk *clk)
 {
+	struct clk_gate_priv *priv = dev_get_priv(clk->dev);
 	struct udevice *dev = clk->dev;
 	ulong id = clk->id;
 	struct clk parent;
 	ulong rate;
 	int ret;
+
+	if (priv->mask < BIT(clk->id)) {
+		dev_err(clk->dev, "%s: wrong ID [%lu]\n", __func__, clk->id);
+		return -EINVAL;
+	}
+
+	if(clk_gate_is_enabled(clk) == 0) {
+		dev_dbg(clk->dev, "%s: clk %ld is disabled\n", __func__, id);
+		return 0;
+	}
 
 	ret = clk_get_by_index(dev, id, &parent);
 	if (ret) {
@@ -90,11 +109,17 @@ static ulong clk_gate_get_rate_v2(struct clk *clk)
 
 static ulong clk_gate_set_rate_v2(struct clk *clk, ulong rate)
 {
+	struct clk_gate_priv *priv = dev_get_priv(clk->dev);
 	struct udevice *dev = clk->dev;
 	ulong id = clk->id;
 	struct clk parent;
 	ulong freq;
 	int ret;
+
+	if (priv->mask < BIT(clk->id)) {
+		dev_err(clk->dev, "%s: wrong ID [%lu]\n", __func__, clk->id);
+		return -EINVAL;
+	}
 
 	ret = clk_get_by_index(dev, id, &parent);
 	if (ret) {
@@ -113,11 +138,17 @@ static ulong clk_gate_set_rate_v2(struct clk *clk, ulong rate)
 
 static int clk_gate_set_parent_v2(struct clk *clk, struct clk *parent)
 {
+	struct clk_gate_priv *priv = dev_get_priv(clk->dev);
 	struct udevice *dev = clk->dev;
 	ulong id = clk->id;
 	struct clk self_parent;
 	const char *parent_name;
 	int ret;
+
+	if (priv->mask < BIT(clk->id)) {
+		dev_err(clk->dev, "%s: wrong ID [%lu]\n", __func__, clk->id);
+		return -EINVAL;
+	}
 
 	parent_name = parent->data ? (const char *)parent->data : parent->dev->name;
 	ret = clk_get_by_index(dev, id, &self_parent);
@@ -192,6 +223,41 @@ static ulong clk_gate_set_rate(struct clk *clk, ulong rate)
 
 static int clk_gate_enable(struct clk *clk)
 {
+#if defined(CONFIG_CLK_AXERA_V1)
+	struct clk *parent;
+	int ret;
+
+	parent = clk_get_parent(clk);
+	if (IS_ERR_OR_NULL(parent)) {
+		dev_err(clk->dev, "failed to get '%s' parent clock (ret = %ld)\n",
+			clk->dev->name, PTR_ERR(parent));
+		return PTR_ERR(parent);
+	}
+
+	ret = clk_enable(parent);
+	if (ret < 0 && ret != -ENOSYS) {
+		dev_err(clk->dev, "failed to enable '%s' clock (ret = %d)\n",
+			parent->dev->name, ret);
+		return ret;
+	}
+#elif defined(CONFIG_CLK_AXERA_V2)
+	ulong id = clk->id;
+	struct clk parent;
+	int ret;
+
+	ret = clk_get_by_index(clk->dev, id, &parent);
+	if (ret) {
+		dev_err(clk->dev, "failed to get '%ld' clock (ret = %d)\n", id, ret);
+		return 0;
+	}
+
+	ret = clk_enable(&parent);
+	if (ret < 0 && ret != -ENOSYS) {
+		dev_err(clk->dev, "failed to enable '%ld' clock (ret = %d)\n", id, ret);
+		return ret;
+	}
+#endif
+
 	clk_gate_endisable(clk, 1);
 
 	return 0;
@@ -200,6 +266,41 @@ static int clk_gate_enable(struct clk *clk)
 static int clk_gate_disable(struct clk *clk)
 {
 	clk_gate_endisable(clk, 0);
+
+#if defined(CONFIG_CLK_AXERA_V1)
+	struct clk *parent;
+	int ret;
+
+	parent = clk_get_parent(clk);
+	if (IS_ERR(parent)) {
+		dev_err(clk->dev, "failed to get '%s' parent clock (ret = %ld)\n",
+			clk->dev->name, PTR_ERR(parent));
+		return PTR_ERR(parent);
+	}
+
+	ret = clk_disable(parent);
+	if (ret < 0 && ret != -ENOSYS) {
+		dev_err(clk->dev, "failed to disable '%s' clock (ret = %d)\n",
+			parent->dev->name, ret);
+		return ret;
+	}
+#elif defined(CONFIG_CLK_AXERA_V2)
+	ulong id = clk->id;
+	struct clk parent;
+	int ret;
+
+	ret = clk_get_by_index(clk->dev, id, &parent);
+	if (ret) {
+		dev_err(clk->dev, "failed to get '%ld' clock (ret = %d)\n", id, ret);
+		return 0;
+	}
+
+	ret = clk_disable(&parent);
+	if (ret < 0 && ret != -ENOSYS) {
+		dev_err(clk->dev, "failed to disable '%ld' clock (ret = %d)\n", id, ret);
+		return ret;
+	}
+#endif
 
 	return 0;
 }
