@@ -366,6 +366,7 @@ int ab_mark_successful(struct blk_desc *dev_desc,
                     struct disk_partition *part_info, int slot)
 {
 	struct bootloader_control *abc = NULL;
+	u32 crc32_le;
 	int ret;
 
 	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
@@ -373,10 +374,17 @@ int ab_mark_successful(struct blk_desc *dev_desc,
 		log_err("ANDROID: Failed to load A/B metadata\n");
 		return ret;
 	}
+	crc32_le = ab_control_compute_crc(abc);
+	if (abc->crc32_le != crc32_le) {
+		log_debug("%s: nvalid CRC-32 (expected %.8x, found %.8x),",
+				__func__, crc32_le, abc->crc32_le);
+			return -ENODATA;
+	}
 
 	abc->slot_info[slot].successful_boot = 1;
 	abc->slot_info[slot].tries_remaining = 7;
 
+	abc->crc32_le = ab_control_compute_crc(abc);
 	ret = ab_control_store(dev_desc, part_info, abc);
 	if (ret < 0) {
 		log_err("ANDROID: Failed to store A/B metadata\n");
@@ -392,6 +400,7 @@ int ab_mark_unbootable(struct blk_desc *dev_desc,
 					struct disk_partition *part_info, int slot)
 {
 	struct bootloader_control *abc = NULL;
+	u32 crc32_le;
 	int ret;
 
 	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
@@ -399,11 +408,18 @@ int ab_mark_unbootable(struct blk_desc *dev_desc,
 		log_err("ANDROID: Failed to load A/B metadata\n");
 		return ret;
 	}
+	crc32_le = ab_control_compute_crc(abc);
+	if (abc->crc32_le != crc32_le) {
+		log_debug("%s: nvalid CRC-32 (expected %.8x, found %.8x),",
+				__func__, crc32_le, abc->crc32_le);
+			return -ENODATA;
+	}
 
 	abc->slot_info[slot].tries_remaining = 0;
 	abc->slot_info[slot].successful_boot = 0;
 	abc->slot_info[slot].priority = 0;
 
+	abc->crc32_le = ab_control_compute_crc(abc);
 	ret = ab_control_store(dev_desc, part_info, abc);
 	if (ret < 0) {
 		log_err("ANDROID: Failed to store A/B metadata\n");
