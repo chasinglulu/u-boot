@@ -64,11 +64,19 @@ static int spi_nor_mtd_probe(struct udevice *dev)
 	return 0;
 }
 
+static int spi_nor_mtd_remove(struct udevice *dev)
+{
+	dev_set_uclass_priv(dev, NULL);
+
+	return 0;
+}
+
 U_BOOT_DRIVER(spiflash) = {
 	.name = "spi_nor",
 	.id = UCLASS_MTD,
 	.probe		= spi_nor_mtd_probe,
 	.bind		= spi_nor_mtd_bind,
+	.remove		= spi_nor_mtd_remove,
 	.plat_auto	= sizeof(struct spinor_plat),
 };
 #endif /* CONFIG_IS_ENABLED(DM_MTD_SPI_NOR) */
