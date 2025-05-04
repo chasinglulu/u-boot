@@ -6,17 +6,28 @@
 #include <common.h>
 #include <dm.h>
 #include <init.h>
-#include "jffs2/load_kernel.h"
-#include "fdt_support.h"
-#include "mtd_node.h"
-#include "env.h"
+#include <jffs2/load_kernel.h>
+#include <fdt_support.h>
+#include <mtd_node.h>
+#include <env.h>
+
+#include <asm/arch/bootparams.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 #if CONFIG_IS_ENABLED(BOARD_EARLY_INIT_R)
 int board_early_init_f(void)
 {
+	soc_init_f();
+
 	return 0;
+}
+#endif
+
+#ifdef CONFIG_DEBUG_UART_BOARD_INIT
+void board_debug_uart_init(void)
+{
+	soc_init_f();
 }
 #endif
 

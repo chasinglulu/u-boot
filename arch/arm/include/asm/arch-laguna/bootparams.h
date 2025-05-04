@@ -124,6 +124,7 @@ void set_secureboot_env(bool secure);
 void remove_mtd_device(int bootdev);
 const char *env_get_name(int index);
 int abc_mark_bootable(bool okay);
+int soc_init_f(void);
 
 #include <blk.h>
 #include <part.h>

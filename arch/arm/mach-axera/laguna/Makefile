@@ -4,6 +4,7 @@
 #
 
 obj-y += common.o lowlevel.o memmap.o
+oby-y += soc_init.o
 
 ifdef CONFIG_SPL_BUILD
 obj-y += spl.o

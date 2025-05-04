@@ -150,6 +150,8 @@ config LUA_SWITCH_TO_EL2
 	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
 	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
 
+menu "SoC Early Initialization Register Address"
+
 config LUA_GICV2_LOWLEVEL_INIT
 	bool "Enable GICv2"
 	select GICV2
@@ -188,26 +190,76 @@ config LUA_CPU_GTMR_CNT_BASE
 	depends on LUA_GTMR_LOWLEVEL_INIT
 	default 0x08012000
 
-config LUA_PERIPH_CRU
-	bool "Enable Periph Subsystem Clock Gate & Reset"
+config LUA_COMMON_CRU
+	bool "Initialize Common Subsystem Clock Gate & Reset"
 	help
-	  This option enables periph subsystem clock gate and
-	  reset sysctl register.
+	  This option allow us to initialize common subsystem clock
+	  gate and reset sysctl register.
+
+config LUA_COMMON_CRU_BASE
+	hex "Common Clock & Reset Base Address"
+	depends on LUA_COMMON_CRU
+	default 0x06101000
+
+config LUA_COMMON_CLK_GATE_REG0
+	hex "Common Global Clock Gate Enable Register0 Offset"
+	depends on LUA_COMMON_CRU
+	default 0x40
+
+config LUA_COMMON_SWRST_REG0
+	hex "Common Software Control Reset Register0 Offset"
+	depends on LUA_COMMON_CRU
+	default 0x120
+
+config LUA_PERIPH_CRU
+	bool "Initialize Periph Subsystem Clock Gate & Reset"
+	help
+	  This option allow us to initialize periph subsystem clock
+	  gate and reset sysctl register.
 
 config LUA_PERIPH_CRU_BASE
-	hex "Periph Clock & Reset Base"
+	hex "Periph Clock & Reset Base Address"
 	depends on LUA_PERIPH_CRU
 	default 0x0E001000
 
+config LUA_PERIPH_CLK_MUX_ENABLE_REG0
+	hex "Periph Global Clock Mux Enable Register0 Offset"
+	depends on LUA_PERIPH_CRU
+	default 0x20
+
 config LUA_PERIPH_CLK_GATE_REG0
-	hex "Periph Global Clock Gate Enable Register 0"
+	hex "Periph Global Clock Gate Enable Register0 Offset"
 	depends on LUA_PERIPH_CRU
 	default 0x40
 
 config LUA_PERIPH_SWRST_REG0
-	hex "Periph Software Control Reset Register 0"
+	hex "Periph Software Control Reset Register0 Offset"
 	depends on LUA_PERIPH_CRU
 	default 0x120
+
+config LUA_SAFETY_TOP_CRU
+	bool "Initialize Safety Top Subsystem Clock Gate & Reset"
+	depends on LUA_SAFETY_INIT
+	help
+	  This option allows us to initialize safety top subsystem clock
+	  gate and reset sysctl register.
+
+config LUA_SAFETY_TOP_CRU_BASE
+	hex "Safety Top Clock & Reset Base Address"
+	depends on LUA_SAFETY_TOP_CRU
+	default 0x006D2000
+
+config LUA_SAFETY_TOP_CLK_GATE_REG0
+	hex "Safety Top Global Clock Gate Enable Register0 Offset"
+	depends on LUA_SAFETY_TOP_CRU
+	default 0x40
+
+config LUA_SAFETY_TOP_SWRST_REG0
+	hex "Safety Top Software Control Reset Register0 Offset"
+	depends on LUA_SAFETY_TOP_CRU
+	default 0x120
+
+endmenu
 
 config LUA_SAFETY_INIT
 	bool "Initialize Safety Peripherals"
