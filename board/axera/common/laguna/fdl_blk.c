@@ -682,13 +682,25 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 {
 	struct blk_desc *dev_desc = NULL;
 	struct disk_partition part_info = { 0 };
-	ulong sector, blkcnt, written;
+	ulong sector, blkcnt, written, erase_blk;
 	int ret;
 
 	ret = fdl_blk_get_dev_and_part(part_name, &dev_desc, &part_info);
 	if (ret) {
 		pr_err("%s: Failed to get device descriptor and partition information\n", __func__);
 		return ret;
+	}
+
+	if (dev_desc->part_type == PART_TYPE_MTD &&
+	     !strncmp(part_info.name, "rootfs", 6)) {
+		erase_blk = blk_derase(dev_desc, part_info.start, part_info.size);
+		if (erase_blk != part_info.size) {
+			pr_err("Failed to erase the partition '%s' (size 0x%lx, blkcnt 0x%lx) (ret = %d)\n",
+			              part_name, part_info.size, erase_blk, ret);
+			return -EIO;
+		}
+		debug("Erased partition '%s': %lu blocks (total %llu bytes) starting at LBA 0x%lx (block size: 0x%lx)\n",
+			part_info.name, erase_blk, (u64)erase_blk * dev_desc->blksz, part_info.start, dev_desc->blksz);
 	}
 
 	blkcnt = DIV_ROUND_UP_ULL(image_size, dev_desc->blksz);
