@@ -479,6 +479,27 @@ static int get_bootstrap(const char **name)
 
 	return bootstrap >= 0 ? bootstrap : -ENXIO;
 }
+
+int set_bootstrap(uint32_t bootstrap)
+{
+	const char *dev_name = "syscon-bootdev";
+	struct udevice *dev;
+	int ret;
+
+	uclass_get_device_by_name(UCLASS_BOOT_DEVICE,
+	                        dev_name, &dev);
+	if (dev)
+		ret = boot_device_set(dev, bootstrap);
+	else
+		return -ENODEV;
+
+	return ret;
+}
+#else
+static inline int set_bootstrap(uint32_t bootstrap)
+{
+	return -ENXIO;
+}
 #endif /* BOOT_DEVICE_SYSCON */
 
 int get_bootstate(void)

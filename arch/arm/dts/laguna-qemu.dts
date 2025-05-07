@@ -104,6 +104,7 @@
 		syscon-bootdev {
 			compatible = "boot-device-syscon";
 			regmap = <&safe_top_glb 0xC>;
+			wp-enable = <&safety_top_glb 0x0 0x1>;
 			syscon-shift = <0>;
 			syscon-mask = <0x1F>;
 			u-boot,env-variable = "bootdevice";

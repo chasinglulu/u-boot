@@ -228,9 +228,9 @@ int fdtdec_board_setup(const void *blob)
 	return fdt_blob_setup_console((void *)blob);
 }
 
-void reset_cpu(void)
+void fdl_reset_misc(void)
 {
-	return;
+	set_bootstrap(0x10);
 }
 
 #ifndef CONFIG_SPL_BUILD

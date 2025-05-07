@@ -63,4 +63,13 @@ int boot_device_update(struct udevice *dev);
  */
 int boot_device_get(struct udevice *dev, const char **name);
 
+/**
+ * dm_boot_device_set() - Set the boot device ID.
+ *
+ * @dev:	Device to read from
+ * @dev_id:	boot device ID to set
+ * Return: 0 if OK, -ve on error
+ */
+int boot_device_set(struct udevice *dev, uint32_t dev_id);
+
 #endif /* BOOT_DEVICE_H_ */

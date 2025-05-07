@@ -50,6 +50,27 @@ int boot_device_get(struct udevice *dev, const char **name)
 	return -ENODEV;
 }
 
+int boot_device_set(struct udevice *dev, uint32_t dev_id)
+{
+	struct boot_device_ops *ops = NULL;
+	int ret;
+
+	if (unlikely(!dev))
+		return -EINVAL;
+
+	ops = boot_device_get_ops(dev);
+	if (!ops || !ops->set)
+		return -ENOSYS;
+
+	ret = ops->set(dev, dev_id);
+	if (ret < 0) {
+		dev_err(dev, "Failed to configure the boot device ID\n");
+		return ret;
+	}
+
+	return 0;
+}
+
 int boot_device_update(struct udevice *dev)
 {
 	const struct boot_device_uc_plat *plat = NULL;

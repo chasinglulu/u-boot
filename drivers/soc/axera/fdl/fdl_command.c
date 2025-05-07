@@ -11,6 +11,7 @@
 #include <linux/err.h>
 #include <linux/sizes.h>
 #include <linux/delay.h>
+#include <sysreset.h>
 
 /**
  * fdl_image_size - the size of FDL image received/transmitted in bytes
@@ -152,7 +153,7 @@ int fdl_data_download(const void *fdl_data,
                 unsigned int fdl_data_len,
                 char *response)
 {
-#define BYTES_PER_DOT	0x1000
+#define BYTES_PER_DOT	0x8000
 	u32 pre_dot_num, now_dot_num;
 
 	if (fdl_data_len == 0 ||
@@ -171,9 +172,11 @@ int fdl_data_download(const void *fdl_data,
 	fdl_bytes_received += fdl_data_len;
 	now_dot_num = fdl_bytes_received / BYTES_PER_DOT;
 
-	if (pre_dot_num != now_dot_num) {
+	while (pre_dot_num != now_dot_num) {
 		fdl_crit(".");
-		if (!(now_dot_num % 74))
+		pre_dot_num++;
+
+		if (unlikely(pre_dot_num % 79 == 0))
 			fdl_crit("\n");
 	}
 
@@ -464,6 +467,12 @@ static int setbrg(struct fdl_info *fdl, char *response)
 	return 0;
 }
 
+
+__weak void fdl_reset_misc(void)
+{
+	/* Do nothing */
+}
+
 static int reboot(struct fdl_info *fdl, char *response)
 {
 	const char *str = "okay";
@@ -475,6 +484,11 @@ static int reboot(struct fdl_info *fdl, char *response)
 		return -EINVAL;
 
 	fdl_okay(FDL_RESPONSE_ACK, str, response);
+
+	fdl_crit("\n\nRebooting ...\n\n");
+	mdelay(50);
+	fdl_reset_misc();
+	reset_cpu();
 
 	return 0;
 }
