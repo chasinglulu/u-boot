@@ -1134,6 +1134,9 @@ static int part_test_mtd(struct blk_desc *dev_desc)
 	if (!master)
 		return -1;
 
+	if (mtd_type_is_nand(master))
+		return 0;
+
 	if (blk_dread(dev_desc, 0, 1, (ulong *)buffer) != 1)
 		return -1;
 
@@ -1153,6 +1156,12 @@ loff_t __weak board_mtdparts_offset(uint8_t mtdtype, bool backup)
 {
 	/* Return -ENODATA if not implemented */
 	return -ENODATA;
+}
+
+void __weak board_mtdparts_part_info(struct blk_desc *dev_desc, bool backup,
+                    lbaint_t *part_start, lbaint_t *part_size)
+{
+	/* Nothing */
 }
 
 static void prepare_backup_mtdparts(mtdparts_t *mpr)
@@ -1274,6 +1283,79 @@ static int do_mtdparts(struct blk_desc *dev_desc, char *str_mtdparts,
 	return 0;
 }
 
+#ifdef CONFIG_MTD_BLOCK_BBS
+static int write_mtdparts_bbs(struct blk_desc *dev_desc, mtdparts_t *mpr, char *buf)
+{
+	lbaint_t part_start, part_size;
+	lbaint_t blkcnt;
+	int ret = -EIO;
+
+	blkcnt = DIV_ROUND_UP_ULL(mpr->total_size, dev_desc->blksz);
+	board_mtdparts_part_info(dev_desc, false, &part_start, &part_size);
+
+	if (mtd_blk_read_bbs(dev_desc, part_start, part_size,
+	       le64_to_cpu(mpr->my_lba), blkcnt, buf) != blkcnt)
+		return ret;
+
+	memcpy(buf + mpr->my_offset, mpr, mpr->total_size);
+
+	debug("my lba: %llx\n", le64_to_cpu(mpr->my_lba));
+	if (mtd_blk_write_bbs(dev_desc, part_start, part_size,
+	      le64_to_cpu(mpr->my_lba), blkcnt, buf) != blkcnt)
+		return ret;
+
+	prepare_backup_mtdparts(mpr);
+	board_mtdparts_part_info(dev_desc, true, &part_start, &part_size);
+
+	if (mtd_blk_read_bbs(dev_desc, part_start, part_size,
+	       le64_to_cpu(mpr->my_lba), blkcnt, buf) != blkcnt)
+		return ret;
+
+	memcpy(buf + mpr->alternate_offset, mpr, mpr->total_size);
+
+	debug("my alternate lba: %llx\n", le64_to_cpu(mpr->my_lba));
+	if (mtd_blk_write_bbs(dev_desc, part_start, part_size,
+	       le64_to_cpu(mpr->my_lba), blkcnt, buf) != blkcnt)
+		return ret;
+
+	return 0;
+}
+#else
+static inline int write_mtdparts_bbs(struct blk_desc *dev_desc, mtdparts_t *mpr, char *buf)
+{
+	lbaint_t blkcnt;
+	int ret = -EIO;
+
+	blkcnt = DIV_ROUND_UP_ULL(mpr->total_size, dev_desc->blksz);
+
+	if (blk_dread(dev_desc, le64_to_cpu(mpr->my_lba),
+	                blkcnt, buf) != blkcnt)
+		return ret;
+
+	memcpy(buf + mpr->my_offset, mpr, mpr->total_size);
+
+	debug("my lba: %llx\n", le64_to_cpu(mpr->my_lba));
+	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
+	                blkcnt, buf) != blkcnt)
+		return ret;
+
+	prepare_backup_mtdparts(mpr);
+
+	if (blk_dread(dev_desc, le64_to_cpu(mpr->my_lba),
+	                blkcnt, buf) != blkcnt)
+		return ret;
+
+	memcpy(buf + mpr->alternate_offset, mpr, mpr->total_size);
+
+	debug("my alternate lba: %llx\n", le64_to_cpu(mpr->my_lba));
+	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
+	                blkcnt, buf) != blkcnt)
+		return ret;
+
+	return 0;
+}
+#endif
+
 int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 {
 	u32 calc_crc32;
@@ -1299,26 +1381,8 @@ int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 	                le32_to_cpu(mpr->header_size));
 	mpr->header_crc32 = cpu_to_le32(calc_crc32);
 
-	if (blk_dread(dev_desc, le64_to_cpu(mpr->my_lba),
-	                blkcnt, buf) != blkcnt)
-		goto err;
-	memcpy(buf + mpr->my_offset, mpr, mpr->total_size);
-
-	debug("my lba: %llx\n", le64_to_cpu(mpr->my_lba));
-	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
-	                blkcnt, buf) != blkcnt)
-		goto err;
-
-	prepare_backup_mtdparts(mpr);
-
-	if (blk_dread(dev_desc, le64_to_cpu(mpr->my_lba),
-	                blkcnt, buf) != blkcnt)
-		goto err;
-	memcpy(buf + mpr->alternate_offset, mpr, mpr->total_size);
-
-	debug("my alternate lba: %llx\n", le64_to_cpu(mpr->my_lba));
-	if (blk_dwrite(dev_desc, le64_to_cpu(mpr->my_lba),
-	                blkcnt, buf) != blkcnt)
+	ret = write_mtdparts_bbs(dev_desc, mpr, buf);
+	if (ret < 0)
 		goto err;
 
 	debug("MTDPARTS successfully written to block device!\n");
@@ -1328,7 +1392,7 @@ err:
 	if (buf)
 		free(buf);
 	if (ret < 0)
-		printf("** Can't write to device %d **\n", dev_desc->devnum);
+		printf("** Could not write mtdparts to device %d **\n", dev_desc->devnum);
 
 	return ret;
 }
@@ -1433,7 +1497,7 @@ static int validate_mtdparts(mtdparts_t *mpr, lbaint_t lba)
 static int
 is_mtdparts_valid(struct blk_desc *dev_desc,
                    lbaint_t lba, lbaint_t blkcnt,
-                   char *buf, size_t offset)
+                   char *buf, size_t offset, bool backup)
 {
 	/* Confirm valid arguments prior to allocation. */
 	if (!dev_desc || !buf) {
@@ -1442,11 +1506,22 @@ is_mtdparts_valid(struct blk_desc *dev_desc,
 	}
 
 	/* Read mtdparts from device */
+#ifdef CONFIG_MTD_BLOCK_BBS
+	lbaint_t part_start, part_size;
+
+	board_mtdparts_part_info(dev_desc, backup, &part_start, &part_size);
+	if (mtd_blk_read_bbs(dev_desc, part_start, part_size,
+	       lba, blkcnt, buf) != blkcnt) {
+		printf("*** ERROR: Can't read mtdparts ***\n");
+		return -EIO;
+	}
+#else
 	if (blk_dread(dev_desc, lba,
 	           blkcnt, buf) != blkcnt) {
 		printf("*** ERROR: Can't read mtdparts ***\n");
 		return -EIO;
 	}
+#endif
 
 	if (validate_mtdparts((void *)buf + offset, lba))
 		return -EINVAL;
@@ -1479,14 +1554,14 @@ static int find_valid_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr)
 
 	offset = mpr->my_offset;
 	r = is_mtdparts_valid(dev_desc, le64_to_cpu(mpr->my_lba),
-	              blkcnt, buf, offset);
+	              blkcnt, buf, offset, false);
 
 	if (r < 0) {
 		pr_err("%s: *** ERROR: Invalid mtdparts ***\n", __func__);
 
 		offset = mpr->alternate_offset;
 		if (is_mtdparts_valid(dev_desc, le64_to_cpu(mpr->alternate_lba),
-		          blkcnt, buf, offset) < 0) {
+		          blkcnt, buf, offset, true) < 0) {
 			pr_err("%s: *** ERROR: Invalid Backup mtdparts ***\n",
 			            __func__);
 			return -EINVAL;

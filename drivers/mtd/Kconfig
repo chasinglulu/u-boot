@@ -60,6 +60,14 @@ config MTD_BLOCK_NAND_QUIRKS
 	  or inefficient, assuming the target area is pre-erased or the
 	  controller handles partial page writes correctly.
 
+config MTD_BLOCK_BBS
+	bool "Enable Skipping Bad Block Support"
+	depends on MTD_BLOCK
+	help
+	  Enable support for skipping bad block in the MTD block driver.
+	  This allows the driver to handle bad blocks in NAND flash devices
+	  and ensure that they are not used for data storage.
+
 config SYS_MTDPARTS_RUNTIME
 	bool "Allow MTDPARTS to be configured at runtime"
 	depends on MTD

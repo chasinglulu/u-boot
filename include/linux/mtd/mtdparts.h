@@ -43,4 +43,25 @@ int mtdparts_restore(struct blk_desc *dev_desc, const char *str_disk_guid,
                        struct disk_partition *parts, int part_count);
 int mtdparts_verify(struct blk_desc *dev_desc, mtdparts_t *mpr);
 
+#ifdef CONFIG_MTD_BLOCK_BBS
+ulong mtd_blk_read_bbs(struct blk_desc *dev_desc, lbaint_t part_start, lbaint_t part_size,
+                       lbaint_t from, lbaint_t blkcnt, void *dst);
+ulong mtd_blk_write_bbs(struct blk_desc *dev_desc, lbaint_t part_start, lbaint_t part_size,
+                         lbaint_t from, lbaint_t blkcnt, const void *src);
+#else
+static inline ulong
+mtd_blk_read_bbs(struct blk_desc *dev_desc, lbaint_t part_start, lbaint_t part_size,
+                     lbaint_t from, lbaint_t blkcnt, void *dst)
+{
+	return -ENOTSUPP;
+}
+
+static inline ulong
+mtd_blk_write_bbs(struct blk_desc *dev_desc, lbaint_t part_start, lbaint_t part_size,
+                     lbaint_t from, lbaint_t blkcnt, const void *src)
+{
+	return -ENOTSUPP;
+}
 #endif
+
+#endif /* DISK_MTDPARTS_H_ */

@@ -47,6 +47,33 @@ loff_t board_mtdparts_offset(uint8_t mtdtype, bool backup)
 
 	return offset;
 }
+
+void board_mtdparts_part_info(struct blk_desc *dev_desc, bool backup, lbaint_t *part_start, lbaint_t *part_size)
+{
+	struct mtd_info *mtd = blk_desc_to_mtd(dev_desc);
+	size_t metadata_size;
+
+	if (!part_start || !part_size || !mtd) {
+		pr_err("Invalid parameter\n");
+		return;
+	}
+
+	switch (mtd->type) {
+	case MTD_NORFLASH:
+		metadata_size = CONFIG_LUA_METADATA_SIZE_IN_NORFLASH;
+		break;
+	case MTD_NANDFLASH:
+	case MTD_MLCNANDFLASH:
+		metadata_size = CONFIG_LUA_METADATA_SIZE_IN_NANDFLASH;
+		break;
+	default:
+		pr_err("Not supported MTD type\n");
+		return;
+	}
+
+	*part_start = board_mtdparts_offset(mtd->type, backup) / dev_desc->blksz;
+	*part_size = metadata_size / dev_desc->blksz;
+}
 #endif
 
 static __maybe_unused

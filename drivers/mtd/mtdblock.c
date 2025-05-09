@@ -56,6 +56,8 @@
 #include <dm/device.h>
 #include <dm/device-internal.h>
 #include <linux/mtd/mtd.h>
+#include <linux/mtd/partitions.h>
+#include <linux/mtd/mtdparts.h>
 #include <linux/sizes.h>
 
 int mtd_bind(struct udevice *dev, struct mtd_info **mtdp)
@@ -100,6 +102,108 @@ int mtd_bind(struct udevice *dev, struct mtd_info **mtdp)
 	return 0;
 }
 
+#ifdef CONFIG_MTD_BLOCK_BBS
+/*
+ * Skip bad blocks in the range [offset, offset + length)
+ *
+ * reference: mtd-utils/nand-utils/nanddump.c
+ * nanddump --skip_bad_blocks_to_start --bb skipbad -s part_start -l part_size
+ */
+static int skip_bad_blocks(struct mtd_info *mtd, loff_t offset, size_t length,
+                            loff_t from, loff_t *new_start)
+{
+	loff_t bbs_offset = offset;
+	loff_t start, end;
+
+	while (bbs_offset < from) {
+		if (mtd_block_isbad(mtd, bbs_offset)) {
+			pr_warn("skip_bad_blocks: bad block at 0x%llx\n",
+				ALIGN_DOWN(bbs_offset, mtd->erasesize));
+			from += mtd->erasesize;
+		}
+		bbs_offset += mtd->erasesize;
+	}
+
+	end = offset + length;
+	for (start = from; start < end; start += mtd->writesize) {
+		if (mtd_block_isbad(mtd, start)) {
+			pr_warn("skip_bad_blocks: skipping bad block at 0x%llx\n",
+				ALIGN_DOWN(start, mtd->erasesize));
+			start += mtd->erasesize - mtd->writesize;
+			continue;
+		}
+		break;
+	}
+
+	if (start >= end) {
+		pr_err("skip_bad_blocks: no valid blocks found\n");
+		return -EIO;
+	}
+
+	*new_start = start;
+	return 0;
+}
+
+static int find_part_info(struct mtd_info *mtd, loff_t from, struct mtd_info **mtdp)
+{
+	struct mtd_info *part;
+
+	if (!mtd_type_is_nand(mtd) ||
+	    !(dev_get_flags(mtd->dev) & DM_FLAG_ACTIVATED))
+		return -ENOTSUPP;
+
+	if (list_empty(&mtd->partitions))
+		return -ENOMEDIUM;
+
+	list_for_each_entry(part, &mtd->partitions, node) {
+		if (from >= part->offset &&
+			from < part->offset + part->size) {
+			*mtdp = part;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static int virt_to_phys(struct mtd_info *mtd, loff_t from, loff_t *new_start)
+{
+	struct mtd_info *part;
+	int ret;
+
+	debug("%s: mtd name: %s\n", __func__, mtd->name);
+	ret = find_part_info(mtd, from, &part);
+	if (ret < 0) {
+		if (ret == -ENOTSUPP) {
+			*new_start = from;
+			debug("find_part_info: orignal from: 0x%llx new from: 0x%llx (ret = %d)\n",
+			            from, *new_start, ret);
+			return 0;
+		}
+		return ret;
+	}
+
+	debug("part name: %s offset: 0x%llx size: 0x%llx\n",
+	                   part->name, part->offset, part->size);
+	ret = skip_bad_blocks(mtd, part->offset, part->size,
+		 from, new_start);
+	if (ret < 0) {
+		pr_err("virt_to_phys: exceed partition size\n");
+		return ret;
+	}
+	debug("skip_bad_blocks: orignal from: 0x%llx new from: 0x%llx\n",
+	                           from, *new_start);
+
+	return 0;
+}
+#else
+static inline int virt_to_phys(struct mtd_info *mtd, loff_t from, loff_t *new_start)
+{
+	*new_start = from;
+	return 0;
+}
+#endif /* CONFIG_MTD_BLOCK_BBS */
+
 static ulong mtd_blk_read(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 			  void *dst)
 {
@@ -110,15 +214,16 @@ static ulong mtd_blk_read(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
 	ulong read_cnt = 0;
 
 	while (read_cnt < blkcnt) {
-		int ret;
-		loff_t sect_start = cur * sect_size;
+		loff_t sect_start;
 		size_t retlen;
+		int ret;
 
-		while (mtd_block_isbad(mtd, sect_start)) {
-			pr_warn("mtd_blk_read: skipping bad block at 0x%llx\n",
-			          ALIGN_DOWN(sect_start, mtd->erasesize));
-			sect_start += mtd->erasesize;
-			debug("%s: new sector start: 0x%llx\n", __func__, sect_start);
+		ret = virt_to_phys(mtd, cur * sect_size, &sect_start);
+		if (ret < 0) {
+			if (ret != -ENOMEDIUM)
+				pr_err("mtd_blk_read: failed to convert logical address 0x%llx\n",
+				       (loff_t)cur * sect_size);
+			return ret;
 		}
 
 		ret = mtd_read(mtd, sect_start, sect_size, &retlen, dst);
@@ -259,20 +364,23 @@ static ulong mtd_blk_write_rmw(struct udevice *dev, lbaint_t start, lbaint_t blk
 		return -ENOMEM;
 
 	while (blocks_todo > 0) {
-		loff_t sect_start = cur * sect_size;
-		loff_t erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
-		u32 offset = sect_start - erase_start;
-		size_t cur_size = min_t(size_t, mtd->erasesize - offset,
-					blocks_todo * sect_size);
-		size_t retlen;
+		loff_t sect_start, erase_start;
+		u32 offset;
+		size_t cur_size, retlen;
 		lbaint_t written;
 
-		while (mtd_block_isbad(mtd, erase_start)) {
-			pr_warn("mtd_blk_write_rmw: skipping bad block at 0x%llx\n",
-			              erase_start);
-			erase_start += mtd->erasesize;
-			debug("%s: new eraseblock start: 0x%llx\n", __func__, erase_start);
+		ret = virt_to_phys(mtd, cur * sect_size, &sect_start);
+		if (ret < 0) {
+			if (ret != -ENOMEDIUM)
+				pr_err("mtd_blk_write_rmw: failed to convert logical address 0x%llx\n",
+				       (loff_t)cur * sect_size);
+			goto out;
 		}
+
+		erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
+		offset = sect_start - erase_start;
+		cur_size = min_t(size_t, mtd->erasesize - offset,
+		                                      blocks_todo * sect_size);
 
 		ret = mtd_read(mtd, erase_start, mtd->erasesize, &retlen, buf);
 		if (ret)
@@ -396,3 +504,121 @@ U_BOOT_DRIVER(mtd_blk) = {
 	.ops = &mtd_blk_ops,
 	.probe = mtd_blk_probe,
 };
+
+#ifdef CONFIG_MTD_BLOCK_BBS
+ulong mtd_blk_read_bbs(struct blk_desc *dev_desc, lbaint_t part_start, lbaint_t part_size,
+                       lbaint_t from, lbaint_t blkcnt, void *dst)
+{
+	struct mtd_info *mtd = blk_desc_to_mtd(dev_desc);
+	unsigned int sect_size = dev_desc->blksz;
+	lbaint_t cur = from;
+	ulong read_cnt = 0;
+
+	if (unlikely(!mtd))
+		return -ENODEV;
+
+	if (!mtd_type_is_nand(mtd)) {
+		return blk_dread(dev_desc, from, blkcnt, dst);
+	}
+
+	while (read_cnt < blkcnt) {
+		loff_t sect_start;
+		size_t retlen;
+		int ret;
+
+		ret = skip_bad_blocks(mtd, part_start * sect_size, part_size * sect_size,
+		                        cur * sect_size, &sect_start);
+		if (ret < 0) {
+			pr_err("mtd_blk_read_bb: exception while skipping bad blocks\n");
+			return ret;
+		}
+
+		ret = mtd_read(mtd, sect_start, sect_size, &retlen, dst);
+		if (ret)
+			return ret;
+
+		if (retlen != sect_size) {
+			pr_err("mtd_blk_read_bbs: failed to read block 0x" LBAF "\n", cur);
+			return -EIO;
+		}
+
+		cur++;
+		dst += sect_size;
+		read_cnt++;
+	}
+
+	return read_cnt;
+}
+
+ulong mtd_blk_write_bbs(struct blk_desc *dev_desc, lbaint_t part_start, lbaint_t part_size,
+                         lbaint_t from, lbaint_t blkcnt, const void *src)
+{
+	struct mtd_info *mtd = blk_desc_to_mtd(dev_desc);
+	unsigned int sect_size = dev_desc->blksz;
+	lbaint_t cur = from, blocks_todo = blkcnt;
+	ulong write_cnt = 0;
+	u8 *buf;
+	int ret = 0;
+
+	if (unlikely(!mtd))
+		return -ENODEV;
+
+	if (!mtd_type_is_nand(mtd))
+		return blk_dwrite(dev_desc, from, blkcnt, src);
+
+	buf = malloc(mtd->erasesize);
+	if (!buf)
+		return -ENOMEM;
+
+	while (blocks_todo > 0) {
+		loff_t sect_start, erase_start;
+		u32 offset;
+		size_t cur_size, retlen;
+		lbaint_t written;
+
+		ret = skip_bad_blocks(mtd, part_start * sect_size, part_size * sect_size,
+		                cur * sect_size, &sect_start);
+		if (ret < 0) {
+			pr_err("mtd_blk_write_bbs: exception while skipping bad blocks\n");
+			goto out;
+		}
+
+		erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
+		offset = sect_start - erase_start;
+		cur_size = min_t(size_t, mtd->erasesize - offset,
+		                                      blocks_todo * sect_size);
+
+		ret = mtd_read(mtd, erase_start, mtd->erasesize, &retlen, buf);
+		if (ret)
+			goto out;
+
+		if (retlen != mtd->erasesize) {
+			pr_err("mtd_blk_write_bbs: wrong mtd read length at 0x" LBAF "(expected %llu, got %zu)\n",
+			           cur, erase_start, retlen);
+			ret = -EIO;
+			goto out;
+		}
+
+		memcpy(buf + offset, src, cur_size);
+
+		ret = mtd_erase_write(mtd, erase_start, buf);
+		if (ret)
+			goto out;
+
+		written = cur_size / sect_size;
+
+		blocks_todo -= written;
+		cur += written;
+		src += cur_size;
+		write_cnt += written;
+	}
+
+out:
+	free(buf);
+
+	if (ret)
+		return ret;
+
+	return write_cnt;
+}
+#endif /* CONFIG_MTD_BLOCK_BBS */
