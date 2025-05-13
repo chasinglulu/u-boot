@@ -18,7 +18,7 @@
 		u-boot,dm-spl;
 		ranges;
 
-		safety_glb: safety-glb@00601000 {
+		safety_glb: safety_glb@00601000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x00601000 0x00 0x1000>;
 			#address-cells = <1>;
@@ -37,6 +37,26 @@
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
 			};
+		};
+
+		safety_glb_aon: safety_glb_aon@006CF000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x006CF000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "disabled";
+		};
+
+		safety_top_glb: safety_top_glb@006D9000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x006D9000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "disabled";
 		};
 
 		serial0: uart@00602000 {

@@ -54,36 +54,6 @@
 		device_type = "memory";
 	};
 
-	safe_glb: safe_glb@00601000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x00601000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		u-boot,dm-pre-reloc;
-		u-boot,dm-spl;
-		status = "okay";
-	};
-
-	safe_aon_glb: safe_aon_glb@006CF000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x006CF000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		u-boot,dm-pre-reloc;
-		u-boot,dm-spl;
-		status = "okay";
-	};
-
-	safe_top_glb: safe_top_glb@006D9000 {
-		compatible = "syscon", "simple-mfd";
-		reg = <0x00 0x006D9000 0x00 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		u-boot,dm-pre-reloc;
-		u-boot,dm-spl;
-		status = "okay";
-	};
-
 	bootdevices {
 		compatible = "simple-bus";
 		#address-cells = <2>;
@@ -93,7 +63,7 @@
 
 		download_if {
 			compatible = "syscon-sysinfo";
-			regmap = <&safe_aon_glb 0x184>;
+			regmap = <&safety_glb_aon 0x184>;
 			syscon-shift = <1>;
 			syscon-mask = <7>;
 			u-boot,dm-pre-reloc;
@@ -103,7 +73,7 @@
 
 		syscon-bootdev {
 			compatible = "boot-device-syscon";
-			regmap = <&safe_top_glb 0xC>;
+			regmap = <&safety_top_glb 0xC>;
 			wp-enable = <&safety_top_glb 0x0 0x1>;
 			syscon-shift = <0>;
 			syscon-mask = <0x1F>;
@@ -391,3 +361,31 @@
 		};
 	};
 };
+
+#if defined(CONFIG_LUA_SAFETY_INIT)
+&serial0 {
+#if defined(CONFIG_CLK_AXERA_V1)
+	clocks = <&pclk_safe_uart0>, <&clk_safe_uart0>;
+#elif defined(CONFIG_CLK_AXERA_V2)
+	assigned-clocks = <&safety_clk_mux CLK_SAFE_SER>;
+	assigned-clock-parents = <&safe_fab_pll_200m>;
+
+	clocks = <&safety_clk_gate_1 PCLK_SAFE_UART0>,
+	         <&safety_clk_gate_1 CLK_SAFE_UART0>;
+#endif
+	clock-names = "apb_pclk", "baudclk";
+	status = "okay";
+};
+
+&safety_glb {
+	status = "okay";
+};
+
+&safety_glb_aon {
+	status = "okay";
+};
+
+&safety_top_glb {
+	status = "okay";
+};
+#endif
