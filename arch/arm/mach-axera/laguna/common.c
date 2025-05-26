@@ -575,6 +575,13 @@ int dram_init_banksize(void)
 	return 0;
 }
 
+#if !defined(CONFIG_ARCH_FIXUP_FDT)
+int arch_fixup_fdt(void *blob)
+{
+	return 0;
+}
+#endif
+
 int board_init(void)
 {
 #if IS_ENABLED(CONFIG_DM_SPI_FLASH) && IS_ENABLED(CONFIG_SPI_FLASH_MTD)
