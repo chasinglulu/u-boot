@@ -44,17 +44,250 @@ config SYS_MALLOC_F_LEN
 menu "Laguna SoC features"
 	depends on LUA_SOC
 
+menu "SoC Hardware Specific Address Information"
+
+menu "Main Domain Specific Information"
+
 config LUA_DRAM_BASE
-	hex "Laguna DRAM Base Address"
+	hex "DRAM Base Address"
 	default 0x100000000
 
+config LUA_OCM_BASE
+	hex "NPU OCM Base Address"
+	default 0x14000000
+
+config LUA_GICD_BASE
+	hex "GIC Distributor Base Address"
+	depends on LUA_GICV2_LOWLEVEL_INIT
+	default 0x08001000
+
+config LUA_GICC_BASE
+	hex "GIC CPU Interfaces Base Address"
+	depends on LUA_GICV2_LOWLEVEL_INIT
+	default 0x08002000
+
+config LUA_MAIN_SEC_GLB_BASE
+	hex "Top Secure Global Base Address"
+	depends on LUA_GTMR_LOWLEVEL_INIT
+	default 0x18000000
+
+config LUA_GTMR_CNT_OFFSET
+	hex "GTMR_CNT Control Register Offset"
+	depends on LUA_GTMR_LOWLEVEL_INIT
+	default 0x1D4
+
+config LUA_CPU_GTMR_CNT_BASE
+	hex "Generic Timer System Counter Control Base Address"
+	depends on LUA_GTMR_LOWLEVEL_INIT
+	default 0x08012000
+
+config LUA_COMMON_CRU_BASE
+	hex "Common Clock & Reset Base Address"
+	depends on LUA_COMMON_CRU
+	default 0x06101000
+
+config LUA_COMMON_CLK_GATE_REG0
+	hex "Common Global Clock Gate Enable Register0 Offset"
+	depends on LUA_COMMON_CRU
+	default 0x40
+
+config LUA_COMMON_SWRST_REG0
+	hex "Common Software Control Reset Register0 Offset"
+	depends on LUA_COMMON_CRU
+	default 0x120
+
+config LUA_CPU_CRU_BASE
+	hex "CPU Clock & Reset Base Address"
+	depends on LUA_CPU_CRU
+	default 0x08011000
+
+config LUA_CPU_CLK_GATE_REG0
+	hex "CPU Global Clock Gate Enable Register0 Offset"
+	depends on LUA_CPU_CRU
+	default 0x40
+
+config LUA_PERIPH_CRU_BASE
+	hex "Periph Clock & Reset Base Address"
+	depends on LUA_PERIPH_CRU
+	default 0x0E001000
+
+config LUA_PERIPH_CLK_MUX_ENABLE_REG0
+	hex "Periph Global Clock Mux Enable Register0 Offset"
+	depends on LUA_PERIPH_CRU
+	default 0x20
+
+config LUA_PERIPH_CLK_GATE_REG0
+	hex "Periph Global Clock Gate Enable Register0 Offset"
+	depends on LUA_PERIPH_CRU
+	default 0x40
+
+config LUA_PERIPH_SWRST_REG0
+	hex "Periph Software Control Reset Register0 Offset"
+	depends on LUA_PERIPH_CRU
+	default 0x120
+
+config LUA_NPU_CRU_BASE
+	hex "NPU Clock & Reset Base Address"
+	depends on LUA_NPU_CRU
+	default 0x14310000
+
+config LUA_NPU_CLK_GATE_REG0
+	hex "NPU Global Clock Gate Enable Register0 Offset"
+	depends on LUA_NPU_CRU
+	default 0x40
+
+endmenu
+
+menu "Safety Domain Specific Information"
+	depends on LUA_SAFETY_INIT
+
 config LUA_IRAM_BASE
-	hex "Laguna IRAM Base Address"
+	hex "Safety IRAM Base Address"
 	default 0x00400000
 
-config LUA_OCM_BASE
-	hex "Laguna NPU OCM Base Address"
-	default 0x14000000
+config LUA_SAFETY_TOP_CRU_BASE
+	hex "Safety Top Clock & Reset Base Address"
+	depends on LUA_SAFETY_TOP_CRU
+	default 0x006D2000
+
+config LUA_SAFETY_TOP_CLK_GATE_REG0
+	hex "Safety Top Global Clock Gate Enable Register0 Offset"
+	depends on LUA_SAFETY_TOP_CRU
+	default 0x40
+
+config LUA_SAFETY_TOP_SWRST_REG0
+	hex "Safety Top Software Control Reset Register0 Offset"
+	depends on LUA_SAFETY_TOP_CRU
+	default 0x120
+
+endmenu
+
+endmenu
+
+menu "Processor Specific Lowlevel Initialization"
+
+config LUA_COMMON_CRU
+	bool "Initialize Common Subsystem Clock Gate & Reset"
+	help
+	  This option allow us to initialize common subsystem clock
+	  gate and reset syscon register.
+
+config LUA_CPU_CRU
+	bool "Initialize CPU Subsystem Clock Gate & Reset"
+	help
+	  This option allow us to initialize CPU subsystem clock
+	  gate and reset syscon register.
+
+config LUA_PERIPH_CRU
+	bool "Initialize Periph Subsystem Clock Gate & Reset"
+	help
+	  This option allow us to initialize periph subsystem clock
+	  gate and reset syscon register.
+
+config LUA_NPU_CRU
+	bool "Initialize NPU Subsystem Clock Gate & Reset"
+	help
+	  This option allow us to initialize NPU subsystem clock
+	  gate and reset syscon register.
+
+config LUA_SAFETY_TOP_CRU
+	bool "Initialize Safety Top Subsystem Clock Gate & Reset"
+	depends on LUA_SAFETY_INIT
+	help
+	  This option allows us to initialize safety top subsystem clock
+	  gate and reset syscon register.
+
+config LUA_GTMR_LOWLEVEL_INIT
+	bool "Enable Generic Timer Counter"
+	help
+	  This option enables GTMR_CNT initialization.
+
+config LUA_GICV2_LOWLEVEL_INIT
+	bool "Enable GICv2"
+	select GICV2
+	help
+	  This option enables GIC-400. When running on an FPGA alone,
+	  we can initialize GIC without BL31, configure security related settings,
+	  and complete the same initialization configuration of GIC as BL31.
+
+config LUA_CLOCK_LOWLEVEL_INIT
+	bool "Enable Clock initialization in SPL"
+	depends on SPL
+	select LUA_COMMON_CRU
+	select LUA_CPU_CRU
+	select LUA_NPU_CRU
+	help
+	  This option enables SoC clock initialization in SPL lowlevel_init().
+
+config SPL_LUA_COMMON_CLOCK_BOOST
+	bool "Boost Common Subsystem clock frequency in SPL"
+	depends on LUA_CLOCK_LOWLEVEL_INIT
+	help
+	  This enables boosting the common subsystem clock frequency in SPL.
+
+config LUA_COMMON_CLK_MUX_REGVAL
+	hex "Common Subsystem Clock Mux Register Value"
+	depends on SPL_LUA_COMMON_CLOCK_BOOST
+	default 0x1CAC
+	help
+	  This option enables us to specify the common subsystem clock mux
+	  register value (default: aclk_top0/1/2 600/800/400MHz).
+
+config SPL_LUA_NPU_CLOCK_BOOST
+	bool "Boost NPU Subsystem clock frequency in SPL"
+	depends on LUA_CLOCK_LOWLEVEL_INIT
+	help
+	  This enables boosting the NPU subsystem clock frequency in SPL.
+
+config LUA_NPU_CLK_MUX_REGVAL
+	hex "NPU Subsystem Clock Mux Register Value"
+	depends on SPL_LUA_NPU_CLOCK_BOOST
+	default 0x8
+	help
+	  This option enables us to specify the NPU subsystem clock mux
+	  register value (default: NPU OCM 800MHz).
+
+config SPL_LUA_CPU_CLOCK_BOOST
+	bool "Boost CPU clock frequency in SPL"
+	depends on LUA_CLOCK_LOWLEVEL_INIT
+	help
+	  This enables boosting the CPU clock frequency in SPL.
+	  It can significantly improve SPL running speed, especially
+	  when CPU cache is disabled for debugging or other reasons.
+
+config LUA_CPU_CLK_MUX_REGVAL
+	hex "CPU Clock Mux Register Value"
+	depends on SPL_LUA_CPU_CLOCK_BOOST
+	default 0x555
+	help
+	  This option enables us to specify the CPU clock mux
+	  register value (default: CPU 800MHz).
+
+config LUA_SWITCH_TO_EL2
+	bool "Force Switch to EL2"
+	help
+	  This option is used to switch CPU into EL2 state. When verifying on the FPGA,
+	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
+	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
+
+config LUA_SAFETY_INIT
+	bool "Initialize Safety Peripherals"
+	help
+	  This option enables initialization of safety domain peripherals,
+	  like UART, Ethernet...
+
+config LUA_DSU_PMU_INIT
+	bool "Enable DSU PMU Register Access"
+	help
+	  This option enable DSU PMU registers write-accessible from EL1 non-secure.
+
+config LUA_RAS_INIT
+	bool "Enable Error Record Registers Access"
+	help
+	  This option enable RAS error record registers write-accessible
+	  from non-secure or secure EL1 and EL2.
+
+endmenu
 
 menu "Bootflow Settings"
 
@@ -139,144 +372,6 @@ config LUA_RAMDISK_LOAD_NAME
 config LUA_RAMDISK_LOAD_ADDR
 	hex "initramfs image loaded address"
 	default 0x119000000
-
-endmenu
-
-menu "Processor Specific Low-level Init"
-config LUA_SWITCH_TO_EL2
-	bool "Force Switch to EL2"
-	help
-	  This option is used to switch CPU into EL2 state. When verifying on the FPGA,
-	  there is no BL31 environment, and the CPU cannot directly enter the EL2 state,
-	  so it is necessary to switch the CPU to the EL2 state when U-boot starts executing.
-
-menu "SoC Early Initialization Register Address"
-
-config LUA_GICV2_LOWLEVEL_INIT
-	bool "Enable GICv2"
-	select GICV2
-	help
-	  This option enables GIC-400. When running on an FPGA alone,
-	  we can initialize GIC without BL31, configure security related settings,
-	  and complete the same initialization configuration of GIC as BL31.
-
-config LUA_GICD_BASE
-	hex "GIC Distributor Base"
-	depends on LUA_GICV2_LOWLEVEL_INIT
-	default 0x08001000
-
-config LUA_GICC_BASE
-	hex "GIC CPU Interfaces Base"
-	depends on LUA_GICV2_LOWLEVEL_INIT
-	default 0x08002000
-
-config LUA_GTMR_LOWLEVEL_INIT
-	bool "Enable Generic Timer Counter"
-	help
-	  This option enables GTMR_CNT.
-
-config LUA_MAIN_SEC_GLB_BASE
-	hex "Main Domain Secure Global Base (sec_glb)"
-	depends on LUA_GTMR_LOWLEVEL_INIT
-	default 0x18000000
-
-config LUA_GTMR_CNT_OFFSET
-	hex "GTMR_CNT Control Offset from sec_glb"
-	depends on LUA_GTMR_LOWLEVEL_INIT
-	default 0x1D4
-
-config LUA_CPU_GTMR_CNT_BASE
-	hex "Generic Timer System Counter Control Base"
-	depends on LUA_GTMR_LOWLEVEL_INIT
-	default 0x08012000
-
-config LUA_COMMON_CRU
-	bool "Initialize Common Subsystem Clock Gate & Reset"
-	help
-	  This option allow us to initialize common subsystem clock
-	  gate and reset sysctl register.
-
-config LUA_COMMON_CRU_BASE
-	hex "Common Clock & Reset Base Address"
-	depends on LUA_COMMON_CRU
-	default 0x06101000
-
-config LUA_COMMON_CLK_GATE_REG0
-	hex "Common Global Clock Gate Enable Register0 Offset"
-	depends on LUA_COMMON_CRU
-	default 0x40
-
-config LUA_COMMON_SWRST_REG0
-	hex "Common Software Control Reset Register0 Offset"
-	depends on LUA_COMMON_CRU
-	default 0x120
-
-config LUA_PERIPH_CRU
-	bool "Initialize Periph Subsystem Clock Gate & Reset"
-	help
-	  This option allow us to initialize periph subsystem clock
-	  gate and reset sysctl register.
-
-config LUA_PERIPH_CRU_BASE
-	hex "Periph Clock & Reset Base Address"
-	depends on LUA_PERIPH_CRU
-	default 0x0E001000
-
-config LUA_PERIPH_CLK_MUX_ENABLE_REG0
-	hex "Periph Global Clock Mux Enable Register0 Offset"
-	depends on LUA_PERIPH_CRU
-	default 0x20
-
-config LUA_PERIPH_CLK_GATE_REG0
-	hex "Periph Global Clock Gate Enable Register0 Offset"
-	depends on LUA_PERIPH_CRU
-	default 0x40
-
-config LUA_PERIPH_SWRST_REG0
-	hex "Periph Software Control Reset Register0 Offset"
-	depends on LUA_PERIPH_CRU
-	default 0x120
-
-config LUA_SAFETY_TOP_CRU
-	bool "Initialize Safety Top Subsystem Clock Gate & Reset"
-	depends on LUA_SAFETY_INIT
-	help
-	  This option allows us to initialize safety top subsystem clock
-	  gate and reset sysctl register.
-
-config LUA_SAFETY_TOP_CRU_BASE
-	hex "Safety Top Clock & Reset Base Address"
-	depends on LUA_SAFETY_TOP_CRU
-	default 0x006D2000
-
-config LUA_SAFETY_TOP_CLK_GATE_REG0
-	hex "Safety Top Global Clock Gate Enable Register0 Offset"
-	depends on LUA_SAFETY_TOP_CRU
-	default 0x40
-
-config LUA_SAFETY_TOP_SWRST_REG0
-	hex "Safety Top Software Control Reset Register0 Offset"
-	depends on LUA_SAFETY_TOP_CRU
-	default 0x120
-
-endmenu
-
-config LUA_SAFETY_INIT
-	bool "Initialize Safety Peripherals"
-	help
-	  This option enables initialization of safety domain peripherals,
-	  like UART, Ethernet...
-
-config LUA_DSU_PMU_INIT
-	bool "Enable DSU PMU Register Access"
-	help
-	  This option enable DSU PMU registers write-accessible from EL1 non-secure.
-
-config LUA_RAS_INIT
-	bool "Enable Error Record Registers Access"
-	help
-	  This option enable RAS error record registers write-accessible
-	  from non-secure or secure EL1 and EL2.
 
 endmenu
 
@@ -438,19 +533,6 @@ config LUA_AB
 	  the A/B suffix is never used in any partition names stored
 	  in descriptors.
 
-config LUA_R5F_DEMO_CV
-	bool "Load R5F Demo for CV"
-	help
-	  This option is used to enable function that load R5F
-	  demo for CV verification.
-
-config LUA_R5F_CPU_RELEASE_ADDR
-	hex "R5F cpu release address"
-	default 0x6C4054
-	depends on LUA_R5F_DEMO_CV
-	help
-	  This enable r5f cpu to exit loop and start the demo.
-
 config LUA_CUSTOM_SERVERIP
 	bool "Custom severip"
 	help
@@ -464,52 +546,6 @@ config LUA_SERVERIP
 	help
 	  Specify sever IP address used for tftpboot.
 
-config SPL_LUA_NPU_OCM_CLOCK_BOOST
-	bool "Boost NPU OCM clock frequency in SPL"
-	depends on SPL
-	help
-	  This enables boosting the NPU OCM clock frequency in SPL.
-
-config LUA_NPU_OCM_CLK_MUX_REGADDR
-	hex "NPU OCM Clock Mux Register Address"
-	depends on SPL_LUA_NPU_OCM_CLOCK_BOOST
-	default 0x14310000
-	help
-	  This option enables us to specify the NPU OCM clock mux
-	  register address.
-
-config LUA_NPU_OCM_CLK_MUX_REGVAL
-	hex "NPU OCM Clock Mux Register Value"
-	depends on SPL_LUA_NPU_OCM_CLOCK_BOOST
-	default 0x8
-	help
-	  This option enables us to specify the NPU OCM clock mux
-	  register value (default: NPU OCM 800MHz).
-
-config SPL_LUA_CPU_CLOCK_BOOST
-	bool "Boost CPU clock frequency in SPL"
-	depends on SPL
-	help
-	  This enables boosting the CPU clock frequency in SPL.
-	  It can significantly improve SPL running speed, especially
-	  when CPU cache is disabled for debugging or other reasons.
-
-config LUA_CPU_CLK_MUX_REGADDR
-	hex "CPU Clock Mux Register Address"
-	depends on SPL_LUA_CPU_CLOCK_BOOST
-	default 0x08011000
-	help
-	  This option enables us to specify the CPU clock mux
-	  register address.
-
-config LUA_CPU_CLK_MUX_REGVAL
-	hex "CPU Clock Mux Register Value"
-	depends on SPL_LUA_CPU_CLOCK_BOOST
-	default 0x555
-	help
-	  This option enables us to specify the CPU clock mux
-	  register value (default: CPU 800MHz).
-
 config SPL_LUA_CPU_CACHE
 	bool "Enable CPU L1/L2 Cache in SPL"
 	depends on SPL
@@ -518,24 +554,6 @@ config SPL_LUA_CPU_CACHE
 	  improving SPL running speed.
 
 	  It is strongly recommended to enable.
-
-config SPL_LUA_TEST
-	bool "Enable Laguna testcases in SPL"
-	depends on SPL_UNIT_TEST
-	help
-	  This enable all laguna testcases in SPL, such as NPU OCM, safety IRAM.
-
-config SPL_LUA_OCM_TEST
-	bool "Enable OCM Stress testcase in SPL"
-	depends on SPL_LUA_TEST
-	help
-	  This enables NPU subsystem OCM testcase in SPL.
-
-config SPL_LUA_IRAM_TEST
-	bool "Enable Safety IRAM testcase in SPL"
-	depends on SPL_LUA_TEST
-	help
-	  This enables Safety IRAM testcase in SPL.
 
 config LUA_SELECT_UART_FOR_CONSOLE
 	bool "Select which UART will use for console"
@@ -559,9 +577,43 @@ config LUA_MAIN_UART2
 
 endchoice
 
+menu "Unit TestCases Settings"
+
+config SPL_LUA_TEST
+	bool "Enable Laguna testcases in SPL"
+	depends on SPL_UNIT_TEST
+	help
+	  This enable all laguna testcases in SPL, such as NPU OCM, safety IRAM.
+
+config SPL_LUA_OCM_TEST
+	bool "Enable OCM Stress testcase in SPL"
+	depends on SPL_LUA_TEST
+	help
+	  This enables NPU subsystem OCM testcase in SPL.
+
+config SPL_LUA_IRAM_TEST
+	bool "Enable Safety IRAM testcase in SPL"
+	depends on SPL_LUA_TEST
+	help
+	  This enables Safety IRAM testcase in SPL.
+endmenu
+
 endmenu
 
 menu "Booting Debugging"
+
+config LUA_R5F_DEMO_CV
+	bool "Load R5F Demo for CV"
+	help
+	  This option is used to enable function that load R5F
+	  demo for CV verification.
+
+config LUA_R5F_CPU_RELEASE_ADDR
+	hex "R5F cpu release address"
+	default 0x6C4054
+	depends on LUA_R5F_DEMO_CV
+	help
+	  This enable r5f cpu to exit loop and start the demo.
 
 config LUA_WAIT_UBOOT_LOAD
 	bool "Wait for U-Boot to load"

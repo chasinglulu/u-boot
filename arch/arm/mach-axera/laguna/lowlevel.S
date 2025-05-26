@@ -60,6 +60,29 @@ ENTRY(lowlevel_init)
 	stur x1, [x0]
 #endif
 
+#if defined(CONFIG_LUA_CLOCK_LOWLEVEL_INIT)
+#if CONFIG_IS_ENABLED(LUA_COMMON_CLOCK_BOOST)
+	ldr	x0, =CONFIG_LUA_COMMON_CRU_BASE
+	ldr	x1, =CONFIG_LUA_COMMON_CLK_MUX_REGVAL
+	str	x1, [x0]
+	dmb	sy
+#endif
+
+#if CONFIG_IS_ENABLED(LUA_CPU_CLOCK_BOOST)
+	ldr	x0, =CONFIG_LUA_CPU_CRU_BASE
+	ldr	x1, =CONFIG_LUA_CPU_CLK_MUX_REGVAL
+	str	x1, [x0]
+	dmb	sy
+#endif
+
+#if CONFIG_IS_ENABLED(LUA_NPU_CLOCK_BOOST)
+	ldr	x0, =CONFIG_LUA_NPU_CRU_BASE
+	ldr	x1, =CONFIG_LUA_NPU_CLK_MUX_REGVAL
+	str	x1, [x0]
+	dmb	sy
+#endif
+#endif
+
 #if defined(CONFIG_LUA_GICV2_LOWLEVEL_INIT)
 	ldr	x0, =CONFIG_LUA_GICD_BASE
 	bl	gic_init_secure
