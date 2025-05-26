@@ -500,7 +500,7 @@ static int ft_system_hwinfo_bootlog(void *blob, int nodeoffset)
 {
 #if IS_ENABLED(CONFIG_CONSOLE_RECORD_FIXED)
 	uint64_t addr = CONFIG_CONSOLE_RECORD_FIXED_ADDR;
-	uint64_t size = CONFIG_CONSOLE_RECORD_FIXED_SIZE;
+	uint64_t size = console_record_avail() + 22;
 	fdt32_t cells[2] = {}, *ptr = cells;
 
 	*ptr++ = cpu_to_fdt32(upper_32_bits(addr));

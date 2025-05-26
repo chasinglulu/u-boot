@@ -89,18 +89,19 @@ struct image_header *spl_get_load_buffer(ssize_t offset, size_t size)
 
 void spl_board_prepare_for_boot(void)
 {
-#if defined(CONFIG_CONSOLE_RECORD)
-	boot_params_t *bp = boot_params_get_base();
-
-	/* Copy console output settings */
-	memcpy((void *)&bp->spl_console_out,
-	          (void *)&gd->console_out, sizeof(gd->console_out));
-#endif
+	/* Nothing to do */
 }
 
 void spl_board_prepare(void)
 {
 	boot_params_t *bp = boot_params_get_base();
+
+#if defined(CONFIG_CONSOLE_RECORD) && defined(CONFIG_CONSOLE_RECORD_FIXED)
+
+	/* Copy console output settings */
+	memcpy((void *)&bp->spl_console_out,
+	          (void *)&gd->console_out, sizeof(gd->console_out));
+#endif
 
 	remove_mtd_device(bp->bootdevice);
 }
