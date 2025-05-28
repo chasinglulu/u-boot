@@ -438,22 +438,49 @@ static unsigned long mtd_blk_erase(struct udevice *dev, lbaint_t start, lbaint_t
 	struct blk_desc *block_dev = dev_get_uclass_plat(dev);
 	struct mtd_info *mtd = blk_desc_to_mtd(block_dev);
 	unsigned int sect_size = block_dev->blksz;
+	lbaint_t cur = start, blocks_todo = blkcnt;
 	ulong erased_total = 0;
 	struct erase_info erase_op = { 0 };
-	u64 offset, len;
+	char *buffer = NULL;
 	int ret;
 
-	offset = start * sect_size;
-	len = blkcnt * sect_size;
+	debug("%s: sector start: 0x%lx, blkcnt: %ld (blsz 0x%lx)\n",
+	             __func__, start, blkcnt, block_dev->blksz);
+
+	buffer = malloc(mtd->erasesize);
+	if (!buffer) {
+		pr_err("Out of memory\n");
+		return -ENOMEM;
+	}
 
 	erase_op.mtd = mtd;
-	erase_op.addr = offset;
-	erase_op.len = mtd->erasesize;
 	erase_op.scrub = 0;
 
-	while (len) {
-		ret = mtd_erase(mtd, &erase_op);
+	while (blocks_todo) {
+		loff_t sect_start = cur * sect_size;
+		loff_t erase_start = ALIGN_DOWN(sect_start, mtd->erasesize);
+		uint32_t offset = sect_start - erase_start;;
+		size_t cur_size = min_t(size_t, mtd->erasesize - offset,
+		                          blocks_todo * sect_size);
+		lbaint_t erased;
 
+		debug("%s: sect_start: 0x%llx, erase_start: 0x%llx, offset: %u, cur_size: %zu\n",
+		           __func__, sect_start, erase_start, offset, cur_size);
+		if (offset != 0 || cur_size < mtd->erasesize) {
+			memset(buffer, 0xFF, cur_size);
+			erased = mtd_blk_write_rmw(dev, cur, cur_size / sect_size, buffer);
+			if (erased != cur_size / sect_size) {
+				pr_err("mtd_blk_erase: failed to erase %zu bytes at 0x%llx\n",
+				                   cur_size, sect_start);
+				free(buffer);
+				return -EIO;
+			}
+			goto done;
+		}
+
+		erase_op.addr = sect_start;
+		erase_op.len = cur_size;
+		ret = mtd_erase(mtd, &erase_op);
 		if (ret) {
 			/* Abort if its not a bad block error */
 			if (ret != -EIO)
@@ -461,13 +488,19 @@ static unsigned long mtd_blk_erase(struct udevice *dev, lbaint_t start, lbaint_t
 			printf("mtd_blk_erase: Skipping bad block at 0x%08llx\n",
 			       erase_op.addr);
 		}
+		erased = erase_op.len / sect_size;
 
-		len -= mtd->erasesize;
-		erase_op.addr += mtd->erasesize;
-		erased_total++;
+done:
+		blocks_todo -= erased;
+		cur += erased;
+		erased_total += erased;
 	}
 
-	return erased_total * (mtd->erasesize / sect_size);
+	if (buffer)
+		free(buffer);
+
+	debug("%s: erased total: 0x%lx\n", __func__, erased_total);
+	return erased_total;
 }
 
 static int mtd_blk_probe(struct udevice *dev)
