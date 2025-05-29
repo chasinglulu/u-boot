@@ -438,6 +438,129 @@ config ENV_IS_IN_UBI
 	  the environment in.  This will enable redundant environments in UBI.
 	  It is assumed that both volumes are in the same MTD partition.
 
+config ENV_IS_IN_BLK
+	bool "Environment in a block device"
+	depends on !CHAIN_OF_TRUST
+	help
+	  Define this if you have an block device which you want to use for the
+	  environment.
+
+	  CONFIG_ENV_BLK_INTERFACE:
+
+	  Specifies which block device interface the environment is stored in. if not
+	  set, defaults to "mmc". This is used to determine the block device
+
+	  CONFIG_ENV_BLK_DEVICE:
+
+	  Specifies which block device the environment is stored in. if not
+	  set, defaults to device 0.
+
+	  CONFIG_ENV_BLK_DEVICE_AND_PART:
+
+	  Specifies which block device and partition the environment is stored in. If not
+	  set, defaults to 0:1.
+
+	  CONFIG_ENV_OFFSET:
+	  CONFIG_ENV_SIZE:
+
+	  These two #defines specify the offset and size of the environment
+	  area within the specified block device.
+
+	  These two values are in units of bytes, but must be aligned to an
+	  block sector boundary.
+
+	  CONFIG_ENV_OFFSET_REDUND (optional):
+
+	  Specifies a second storage area, of CONFIG_ENV_SIZE size, used to
+	  hold a redundant copy of the environment data. This provides a
+	  valid backup copy in case the other copy is corrupted, e.g. due
+	  to a power failure during a "saveenv" operation.
+
+	  This value is also in units of bytes, but must also be aligned to
+	  an Block sector boundary.
+
+	  CONFIG_ENV_BLK_DEVICE_AND_PART_REDUND (optional):
+
+	  Specifies a second block device and partition for the redundant
+	  environment. If not set, defaults to 0:2.
+
+choice
+	prompt "Block Device Redundant Type Select"
+	depends on ENV_IS_IN_BLK && SYS_REDUNDAND_ENVIRONMENT
+	default ENV_BLK_PARTITION_REDUND
+
+config ENV_BLK_PARTITION_REDUND
+	bool "Each environment in a separate block device partition"
+	help
+	  Use this if you want to store the redundant environment in a
+	  separate partition of the block device.
+
+config ENV_BLK_PARTITION_SAME
+	bool "All environment in a same block device partition"
+	help
+	  Use this if you want to store the redundant environment in the same
+	  block device partition as the main environment, but at a different offset.
+
+endchoice
+
+config ENV_BLK_INTERFACE
+	string "Name of the block device for the environment"
+	depends on ENV_IS_IN_BLK
+	default "mmc"
+	help
+	  Define this to a string that is the name of the block device.
+
+config ENV_BLK_DEVICE
+	string "Device for where to store the environemt"
+	depends on ENV_IS_IN_BLK
+	default "0"
+	help
+	  Define this to a string to specify the device.
+
+config ENV_BLK_DEVICE_AND_PART
+	string "Device and partition for where to store the environemt"
+	depends on ENV_IS_IN_BLK
+	default "0:1"
+	help
+	  Define this to a string to specify the partition of the device. It can
+	  be as following:
+
+	    "D:P", "D:0", "D", "D:" or "D:auto" (D, P are integers. And P >= 1)
+	       - "D:P": device D partition P. Error occurs if device D has no
+	                partition table.
+	       - "D:0": device D.
+	       - "D" or "D:": device D partition 1 if device D has partition
+	                      table, or the whole device D if has no partition
+	                      table.
+	       - "D:auto": first partition in device D with bootable flag set.
+	                   If none, first valid partition in device D. If no
+	                   partition table then means device D.
+	    "D#N" (D is an integer, N is a string):
+	       - "D#N": device D partition name N. Error occurs if device D has
+	                   no partition table.
+
+config ENV_BLK_DEVICE_AND_PART_REDUND
+	string "Reundant device and partition for where to store the environemt"
+	depends on ENV_IS_IN_BLK && SYS_REDUNDAND_ENVIRONMENT
+	default "0:2"
+	help
+	  Define this to a string to specify the partition of the device for
+	  the redundant environment. It can be as following:
+
+	    "D:P", "D:0", "D", "D:" or "D:auto" (D, P are integers. And P >= 1)
+	       - "D:P": device D partition P. Error occurs if device D has no
+	                partition table.
+	       - "D:0": device D.
+	       - "D" or "D:": device D partition 1 if device D has partition
+	                      table, or the whole device D if has no partition
+	                      table.
+	       - "D:auto": first partition in device D with bootable flag set.
+	                   If none, first valid partition in device D. If no
+	                   partition table then means device D.
+	    "D#N" (D is an integer, N is a string):
+	       - "D#N": device D partition name N. Error occurs if device D has
+	                   no partition table.
+
 config SYS_REDUNDAND_ENVIRONMENT
 	bool "Enable redundant environment support"
 	help
@@ -552,7 +675,7 @@ config ENV_ADDR_REDUND
 config ENV_OFFSET
 	hex "Environment offset"
 	depends on ENV_IS_IN_EEPROM || ENV_IS_IN_MMC || ENV_IS_IN_NAND || \
-		    ENV_IS_IN_SPI_FLASH
+		    ENV_IS_IN_SPI_FLASH || ENV_IS_IN_BLK
 	default 0x3f8000 if ARCH_ROCKCHIP && ENV_IS_IN_MMC
 	default 0x140000 if ARCH_ROCKCHIP && ENV_IS_IN_SPI_FLASH
 	default 0xF0000 if ARCH_SUNXI
@@ -563,14 +686,15 @@ config ENV_OFFSET
 	default 0x140000 if ARCH_AT91
 	default 0x260000 if ARCH_OMAP2PLUS
 	default 0x1080000 if MICROBLAZE && ENV_IS_IN_SPI_FLASH
+	default 0x0 if ENV_IS_IN_BLK
 	help
 	  Offset from the start of the device (or partition)
 
 config ENV_OFFSET_REDUND
 	hex "Redundant environment offset"
 	depends on (ENV_IS_IN_EEPROM || ENV_IS_IN_MMC || ENV_IS_IN_NAND || \
-		    ENV_IS_IN_SPI_FLASH) && SYS_REDUNDAND_ENVIRONMENT
-	default 0
+		    ENV_IS_IN_SPI_FLASH || ENV_IS_IN_BLK) && SYS_REDUNDAND_ENVIRONMENT
+	default 0x0
 	help
 	  Offset from the start of the device (or partition) of the redundant
 	  environment location.
@@ -584,6 +708,7 @@ config ENV_SIZE
 	default 0x2000 if ARCH_ROCKCHIP && ENV_IS_IN_SPI_FLASH
 	default 0x8000 if ARCH_ZYNQMP || ARCH_VERSAL
 	default 0x4000 if ARC
+	default 0x20000 if ENV_IS_IN_BLK
 	default 0x1f000
 	help
 	  Size of the environment storage area
@@ -779,6 +904,14 @@ config SPL_ENV_IS_IN_FLASH
 	default y
 	help
 	  Similar to ENV_IS_IN_FLASH, used for SPL environment.
+
+config SPL_ENV_IS_IN_BLK
+	bool "SPL Environment in a block device"
+	depends on !SPL_ENV_IS_NOWHERE
+	depends on ENV_IS_IN_BLK
+	default y
+	help
+	  Similar to ENV_IS_IN_BLK, used for SPL environment.
 
 endif
 
