@@ -249,8 +249,10 @@ static int fdl_usb_drv_recv(uint8_t* buf, uint32_t len, uint32_t timeout_ms)
 	}
 
 failed:
-	free(dev->out_ep->ep.dma_desc);
-	free(dev->in_ep->ep.dma_desc);
+#ifdef DMA_ALLOC_COHERENT
+	dma_free_coherent(dev->out_ep->ep.dma_desc);
+	dma_free_coherent(dev->in_ep->ep.dma_desc);
+#endif
 	return ret;
 }
 
@@ -308,8 +310,10 @@ static int fdl_usb_drv_send(uint8_t *buf, uint32_t len, uint32_t timeout_ms)
 	}
 
 failed:
-	free(dev->out_ep->ep.dma_desc);
-	free(dev->in_ep->ep.dma_desc);
+#ifdef DMA_ALLOC_COHERENT
+	dma_free_coherent(dev->out_ep->ep.dma_desc);
+	dma_free_coherent(dev->in_ep->ep.dma_desc);
+#endif
 	return ret;
 }
 
