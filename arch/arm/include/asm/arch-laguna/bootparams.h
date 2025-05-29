@@ -126,6 +126,8 @@ void remove_mtd_device(int bootdev);
 const char *env_get_name(int index);
 int abc_mark_bootable(bool okay);
 int soc_init_f(void);
+bool is_bootdev_env_ready(void);
+void set_bootdev_env_ready(bool okay);
 
 #include <blk.h>
 #include <part.h>

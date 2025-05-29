@@ -369,6 +369,9 @@ int board_late_init(void)
 	int bootstate = get_bootstate();
 	int bootdev = get_bootdevice(NULL);
 
+	if (is_bootdev_env_ready())
+		set_bootdev_env_ready(false);
+
 	set_bootdevice_env(bootdev);
 	switch (bootdev) {
 	case BOOTDEVICE_ONLY_NAND:
@@ -584,6 +587,8 @@ int arch_fixup_fdt(void *blob)
 
 int board_init(void)
 {
+	int bootdev = get_bootdevice(NULL);
+
 #if IS_ENABLED(CONFIG_DM_SPI_FLASH) && IS_ENABLED(CONFIG_SPI_FLASH_MTD)
 	struct udevice *dev;
 
@@ -591,6 +596,9 @@ int board_init(void)
 	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
 		;
 #endif
+
+	env_set_default(NULL, 0);
+	set_bootdevice_env(bootdev);
 
 	return 0;
 }
@@ -645,6 +653,38 @@ void board_cleanup_before_linux(void)
 	}
 	remove_mtd_device(bootdev);
 }
+
+#if defined(CONFIG_ENV_IS_IN_BLK)
+const char *env_blk_get_intf(void)
+{
+	debug("%s: env: %s = %s\n", __func__,
+	       env_get_name(ENV_DEVTYPE),
+	       env_get(env_get_name(ENV_DEVTYPE)));
+	return env_get(env_get_name(ENV_DEVTYPE));
+}
+
+const char *env_blk_get_dev_part(int copy, bool only_dev)
+{
+	const char *devtype = env_get(env_get_name(ENV_DEVTYPE));
+
+	if (!strcmp(devtype, "mtd")) {
+		mtd_probe_devices();
+	}
+
+	if (only_dev) {
+		return env_get(env_get_name(ENV_DEVNUM));
+	}
+
+	static char dev_part_str[32];
+	snprintf(dev_part_str, sizeof(dev_part_str), "%s#%s",
+				env_get(env_get_name(ENV_DEVNUM)),
+				copy == 1 ? "ubootenv_bak" : "ubootenv");
+
+	debug("%s: dev_part_str = %s\n", __func__, dev_part_str);
+	return dev_part_str;
+}
+#endif /* CONFIG_ENV_IS_IN_BLK */
+
 #endif /* !CONFIG_SPI_BUILD */
 
 static int find_misc_part(const char *devtype, unsigned int devnum,

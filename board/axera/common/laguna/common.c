@@ -68,7 +68,7 @@ const char *main_part_id[] = {
 	"kernel",
 	"rootfs",
 	"misc_bak",
-	"uboot_bak",
+	"ubootenv_bak",
 	"atf_a",
 	"atf_b",
 	"optee_a",
@@ -82,6 +82,18 @@ const char *main_part_id[] = {
 	"rootfs_a",
 	"rootfs_b",
 };
+
+static bool bootdev_env_ready = false;
+
+inline bool is_bootdev_env_ready(void)
+{
+	return bootdev_env_ready;
+}
+
+inline void set_bootdev_env_ready(bool okay)
+{
+	bootdev_env_ready = okay;
+}
 
 inline int get_safe_part_id_count(void)
 {
@@ -268,12 +280,11 @@ int get_part_by_name(struct blk_desc *dev_desc,
 
 int set_bootdevice_env(int bootdev)
 {
-	static bool bootdev_inited= false;
 	struct uclass *uc;
 	struct udevice *dev;
 	int ret;
 
-	if (likely(bootdev_inited))
+	if (likely(bootdev_env_ready))
 		return 0;
 
 	switch (bootdev) {
@@ -401,7 +412,7 @@ int set_bootdevice_env(int bootdev)
 	}
 
 	env_set_ulong(env_get_name(ENV_BOOTDEVICE), bootdev);
-	bootdev_inited = true;
+	bootdev_env_ready = true;
 	return 0;
 }
 
