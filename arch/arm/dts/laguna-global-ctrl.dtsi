@@ -78,9 +78,19 @@
 		top_glb: top-glb@18008000 {
 			compatible = "syscon", "simple-mfd";
 			reg = <0x00 0x18008000 0x00 0x1000>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
+
+			abort_alarm: abort_alarm {
+				compatible = "axera,laguna-abort-alarm";
+				regmap = <&top_glb>;
+				offset = <LAGUNA_SYSCON_TOP_ABORT_ALARM>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
 		};
 	};
 };

@@ -47,6 +47,14 @@
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "disabled";
+
+			safety_abort_alarm: safety_abort_alarm {
+				compatible = "axera,laguna-abort-alarm";
+				regmap = <&safety_glb_aon>;
+				offset = <LAGUNA_SYSCON_SAFETY_RST_ALARM>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
 		};
 
 		safety_top_glb: safety_top_glb@006D9000 {

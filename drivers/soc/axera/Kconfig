@@ -26,4 +26,16 @@ config SPL_FDL_USB_DRV
 	help
 	  Enable USB raw read/write function in SPL.
 
+config ABORT_ALARM
+	bool "Enable Abort Alarm Support"
+	depends on DM
+	help
+	  This option support abort alarm in U-Boot
+
+config SPL_ABORT_ALARM
+	bool "Enable Abort Alarm Support in SPL"
+	depends on SPL_DM
+	help
+	  This option support abort alarm in SPL
+
 endif
