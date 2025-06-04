@@ -110,6 +110,33 @@ enum {
 	ENV_DOWNIF,
 };
 
+enum {
+	SAFETY_ABORT_UNKNOWN = 0x00,
+	SAFETY_ABORT_SWRST_ALARM,
+	SAFETY_ABORT_FOSU_ALARM,
+	SAFETY_ABORT_FCU_ALARM,
+	SAFETY_ABORT_WTD4_ALARM,
+	SAFETY_ABORT_WTD5_ALARM,
+	SAFETY_ABORT_THM_ALARM,
+	SAFETY_ABORT_LBIST_ALARM,
+
+	SAFETY_ABORT_COUNT,
+};
+
+enum {
+	ABORT_UNKNOWN = 0x00,
+	ABORT_WDT0_ALARM,
+	ABORT_WDT1_ALARM,
+	ABORT_WDT2_ALARM,
+	ABORT_WDT3_ALARM,
+	ABORT_SAFETY_HW_ALARM,
+	ABORT_SAFETY_SW_ALARM,
+	ABORT_MAIN_SW_ALARM,
+	ABORT_ALARM_REQ,
+
+	ABORT_COUNT,
+};
+
 extern const char *safe_part_id[];
 extern const char *main_part_id[];
 int get_safe_part_id_count(void);
@@ -128,6 +155,7 @@ int abc_mark_bootable(bool okay);
 int soc_init_f(void);
 bool is_bootdev_env_ready(void);
 void set_bootdev_env_ready(bool okay);
+int get_abort(bool safety, const char **name);
 
 #include <blk.h>
 #include <part.h>

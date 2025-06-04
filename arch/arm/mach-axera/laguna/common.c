@@ -525,6 +525,9 @@ static int ft_system_hwinfo(void *blob)
 	fdt32_t boardid, bootdev;
 	const char *chipname;
 	const char *bootdev_name = NULL;
+	int safety_abort, main_abort;
+	const char *safety_abort_str = NULL;
+	const char *main_abort_str = NULL;
 
 	parent = fdt_path_offset(blob, "/hw_info_display");
 	if (parent < 0) {
@@ -549,6 +552,21 @@ static int ft_system_hwinfo(void *blob)
 	if (bootdev_name) {
 		fdt_setprop_string(blob, parent, "axera,boot-device", bootdev_name);
 		fdt_setprop(blob, parent, "axera,boot-device-id", &bootdev, sizeof(bootdev));
+	}
+
+	safety_abort = get_abort(true, &safety_abort_str);
+	main_abort = get_abort(false, &main_abort_str);
+	if (safety_abort > 0) {
+		fdt_setprop(blob, parent, "axera,safety-abort",
+		         &safety_abort, sizeof(safety_abort));
+		if (safety_abort_str)
+			fdt_setprop_string(blob, parent, "axera,safety-abort-name", safety_abort_str);
+	}
+	if (main_abort > 0) {
+		fdt_setprop(blob, parent, "axera,main-abort",
+		         &main_abort, sizeof(main_abort));
+		if (main_abort_str)
+			fdt_setprop_string(blob, parent, "axera,main-abort-name", main_abort_str);
 	}
 
 	return 0;
