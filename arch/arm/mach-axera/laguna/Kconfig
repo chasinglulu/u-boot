@@ -533,6 +533,12 @@ config LUA_AB
 	  the A/B suffix is never used in any partition names stored
 	  in descriptors.
 
+config LUA_BOOTPARAMS_VERIFY
+	bool "Enable Boot Parameters Verification"
+	help
+	  This option enables verification of boot parameters with crc32.
+	  It is used to ensure the integrity and authenticity of boot parameters.
+
 config LUA_CUSTOM_SERVERIP
 	bool "Custom severip"
 	help

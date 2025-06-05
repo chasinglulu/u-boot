@@ -104,6 +104,8 @@ void spl_board_prepare(void)
 #endif
 
 	remove_mtd_device(bp->bootdevice);
+
+	calc_bootparams_crc32(false);
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,
@@ -229,7 +231,11 @@ void spl_board_init(void)
 	const char *name = NULL;
 	int bootdev, bootstate;
 
-	memset(bp, 0, sizeof(boot_params_t));
+	if (check_bootparams(true)) {
+		pr_err("Boot params check failed, handup...\n");
+		hang();
+	}
+	memset(&bp->fdt_addr, 0, sizeof(*bp) - offsetof(boot_params_t, fdt_addr));
 
 	bootstate = get_bootstate();
 	if (bootstate > 0) {

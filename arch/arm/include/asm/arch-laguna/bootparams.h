@@ -5,7 +5,21 @@
 #include <membuff.h>
 
 typedef struct boot_params {
-	uint32_t magic;  /* Magic number */
+	union {
+		uint8_t reserved[64];
+		uint32_t crc32;
+		struct {
+			uint32_t magic;  /* Magic number */
+			uint32_t board_id;  /* Board ID from MCU */
+			/**
+			 * @brief The MCU slot information passed from MCU to U-Boot.
+			 * BIT0:    0 for slot A, 1 for slot B.
+			 * BIT1~31: Reserved for future use.
+			 */
+			uint32_t mcu_slot;
+		};
+	};
+
 	void *fdt_addr;
 	unsigned short bootdevice;
 	struct membuff spl_console_out;
@@ -156,6 +170,8 @@ int soc_init_f(void);
 bool is_bootdev_env_ready(void);
 void set_bootdev_env_ready(bool okay);
 int get_abort(bool safety, const char **name);
+int check_bootparams(bool is_sbl);
+void calc_bootparams_crc32(bool is_sbl);
 
 #include <blk.h>
 #include <part.h>

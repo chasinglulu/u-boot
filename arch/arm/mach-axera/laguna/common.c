@@ -28,6 +28,7 @@
 #include <linux/ctype.h>
 #include <hang.h>
 #include <image.h>
+#include <u-boot/crc.h>
 
 #include <asm/arch/bootparams.h>
 #include <asm/arch/cpu.h>
@@ -217,6 +218,13 @@ static inline int fdt_blob_setup_console(void *fdt) { return 0; }
 
 int fdtdec_board_setup(const void *blob)
 {
+#if CONFIG_IS_ENABLED(LUA_BOOTPARAMS_VERIFY)
+	if (check_bootparams(false)) {
+		pr_err("Invalid boot parameters\n");
+		return -EINVAL;
+	}
+#endif
+
 #if CONFIG_IS_ENABLED(CONSOLE_RECORD_OUT_REUSE)
 	boot_params_t *bp = boot_params_get_base();
 
@@ -232,6 +240,52 @@ void fdl_reset_misc(void)
 {
 	set_bootstrap(0x10);
 }
+
+#if defined(CONFIG_LUA_BOOTPARAMS_VERIFY)
+int check_bootparams(bool is_sbl)
+{
+	boot_params_t *bp = boot_params_get_base();
+	uint32_t crc32_backup = 0;
+	uint32_t calc_crc32;
+	size_t size;
+
+	size = is_sbl ? sizeof(bp->reserved) : sizeof(boot_params_t);
+	crc32_backup = le32_to_cpu(bp->crc32);
+	bp->crc32 = 0;
+
+	calc_crc32 = crc32(0, (const unsigned char *)bp,
+	                      size);
+
+	debug("CRC: expected=%.8x, found=%.8x\n",
+	         calc_crc32, le32_to_cpu(crc32_backup));
+	if (calc_crc32 != le32_to_cpu(crc32_backup)) {
+		pr_err("Invalid CRC-32 (expected %.8x, found %.8x)\n",
+		       calc_crc32, le32_to_cpu(crc32_backup));
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+void calc_bootparams_crc32(bool is_sbl)
+{
+	boot_params_t *bp = boot_params_get_base();
+	uint32_t calc_crc32;
+	size_t size;
+
+	bp->crc32 = 0;
+
+	size = is_sbl ? sizeof(bp->reserved) : sizeof(boot_params_t);
+
+	calc_crc32 = crc32(0, (const unsigned char *)bp,
+	              size);
+	bp->crc32 = cpu_to_le32(calc_crc32);
+	debug("%s: CRC32: %.8x\n", __func__, le32_to_cpu(bp->crc32));
+}
+#else
+inline int check_bootparams(bool is_sbl) { return 0; }
+inline void calc_bootparams_crc32(bool is_sbl) { }
+#endif /* CONFIG_LUA_BOOTPARAMS_VERIFY */
 
 #ifndef CONFIG_SPL_BUILD
 /*
