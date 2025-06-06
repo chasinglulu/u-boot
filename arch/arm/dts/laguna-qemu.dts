@@ -264,6 +264,10 @@
 	status = "okay";
 };
 
+&top_glb {
+	status = "okay";
+};
+
 &serial1 {
 #if defined(CONFIG_CLK_AXERA_V1)
 	clocks = <&clk_periph_uart1>, <&pclk_periph_uart1>;
