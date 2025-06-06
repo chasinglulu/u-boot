@@ -403,6 +403,25 @@ retry:
 static inline int scan_dev_for_extlinux_ab(void) { return 0; }
 #endif
 
+#ifndef BUILD_DATE
+#define BUILD_DATE NULL
+#endif
+
+#ifdef CONFIG_LUA_SDK_VERSION
+static char axera_version[32];
+static inline void create_axera_version(const char *build_date)
+{
+	if (build_date)
+		snprintf(axera_version, sizeof(axera_version), "%s_%s",
+		                CONFIG_VAL(LUA_SDK_VERSION), build_date);
+	else
+		snprintf(axera_version, sizeof(axera_version), "%s",
+		                           CONFIG_VAL(LUA_SDK_VERSION));
+
+	axera_version[strlen(axera_version)] = '\0';
+}
+#endif
+
 #ifdef CONFIG_BOARD_LATE_INIT
 #ifdef CONFIG_LUA_R5F_DEMO_CV
 #include "demo_cv.h"
@@ -451,6 +470,11 @@ int board_late_init(void)
 		set_secureboot_env(true);
 		env_set("verify", "Yes");
 	}
+
+#ifdef CONFIG_LUA_SDK_VERSION
+	create_axera_version(BUILD_DATE);
+	env_set("sdk_version", axera_version);
+#endif
 
 	load_r5f_demo_into_ocm();
 	return 0;
@@ -592,6 +616,11 @@ static int ft_system_hwinfo(void *blob)
 	boardid = cpu_to_fdt32(env_get_ulong("boardid", 10, -1));
 	if (boardid == -1U)
 		boardid = 0;
+
+#ifdef CONFIG_LUA_SDK_VERSION
+	fdt_setprop_string(blob, parent, "axera,version",
+	                                      axera_version);
+#endif
 
 	chipname = env_get("chipname");
 	if (!chipname)
