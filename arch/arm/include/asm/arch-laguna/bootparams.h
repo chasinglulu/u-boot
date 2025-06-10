@@ -6,17 +6,49 @@
 
 typedef struct boot_params {
 	union {
-		uint8_t reserved[64];
+		uint8_t reserved[3072];
 		uint32_t crc32;
+
 		struct {
-			uint32_t magic;  /* Magic number */
-			uint32_t board_id;  /* Board ID from MCU */
-			/**
-			 * @brief The MCU slot information passed from MCU to U-Boot.
-			 * BIT0:    0 for slot A, 1 for slot B.
-			 * BIT1~31: Reserved for future use.
-			 */
-			uint32_t mcu_slot;
+			union {
+				struct {
+					uint32_t magic;
+					uint32_t board_id;
+					/**
+					* @brief The mcu slot information passed from MCU to Acore
+					*        BIT 0: 0 for slot A, 1 for slot B.
+					*        BIT 1~31: Reserved for future use.
+					*/
+					uint32_t mcu_slot;
+					/**
+					* @brief baudrate passed from MCU to Acore.
+					*        During UART download, AXDL dynamically switches the baudrate.
+					*        This variable stores the baudrate after the switch.
+					*        This field is valid when fdl_chg_baud != 0.
+					*/
+					uint32_t fdl_chg_baud;
+					/**
+					* @brief The safety abort alarm passed from MCU to Acore
+					*        This field corresponds to the "safety_rst_alarm" register of
+					*        the safety_island_glb_aon
+					*/
+					uint32_t safety_abort_alarm;
+					/**
+					* @brief The top sys abort alarm passed from MCU to Acore
+					*        This field corresponds to the "abort_alarm" register of the top_glb
+					*/
+					uint32_t top_abort_alarm;
+				};
+
+				uint8_t reserved0[512];
+			};
+			uint8_t ddr_param[512];
+			/* MTD partition table */
+			uint8_t mtdparts[512];
+			/* Anti-rollback data */
+			uint8_t antirollback[512];
+			/* Debug policy */
+			uint8_t debugpolicy[512];
 		};
 	};
 
@@ -24,6 +56,9 @@ typedef struct boot_params {
 	unsigned short bootdevice;
 	struct membuff spl_console_out;
 } boot_params_t;
+
+_Static_assert(offsetof(boot_params_t, fdt_addr) == 3072,
+	      "fdt_addr offset in boot_params_t is not 3072 bytes");
 
 /* Magic number indicating that the U-Boot image has been loaded into memory */
 #define M57H_SOC_MAGIC     0x5a5a5a5aU
