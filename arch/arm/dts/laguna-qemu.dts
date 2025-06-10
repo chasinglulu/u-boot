@@ -167,7 +167,7 @@
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			broken-cd;
-			status = "disabled";
+			status = "okay";
 		};
 
 		usb0: usb0@0E100000 {

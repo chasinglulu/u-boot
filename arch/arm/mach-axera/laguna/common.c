@@ -243,6 +243,14 @@ void fdl_reset_misc(void)
 	set_bootstrap(0x10);
 }
 
+void fdl_sd_complete(void)
+{
+	printf("\n\nFDL downloading via SDcard completed. Rebooting...\n\n");
+	mdelay(50);
+	fdl_reset_misc();
+	reset_cpu();
+}
+
 #if defined(CONFIG_LUA_BOOTPARAMS_VERIFY)
 int check_bootparams(bool is_sbl)
 {
@@ -499,6 +507,10 @@ static void enter_download_mode(void)
 	case DOWNLOAD_IF_USB:
 		printf("Enter USB Download Mode...\n");
 		ret = fdl_usb_download(0, false);
+		break;
+	case DOWNLOAD_IF_SD:
+		printf("Enter SD Download Mode...\n");
+		ret = fdl_sd_download(-1, false);
 		break;
 	default:
 		debug("Not supported download interface '%d'\n", downif);
