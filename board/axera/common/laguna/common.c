@@ -239,7 +239,7 @@ struct blk_desc *get_blk_by_devnum(enum if_type if_type, int devnum)
 		return NULL;
 
 	max_devnum = blk_find_max_devnum(if_type);
-	debug("max devnum: %d\n", max_devnum);
+	debug("%s: max devnum: %d\n", __func__, max_devnum);
 	if (max_devnum < 0)
 		return ERR_PTR(max_devnum);
 	if (devnum > max_devnum)
@@ -358,7 +358,7 @@ int set_bootdevice_env(int bootdev)
 				env_set_ulong(env_get_name(ENV_SAFE_MTD), dev_seq(dev));
 		}
 		env_set(env_get_name(ENV_DEVTYPE), "mtd");
-		debug("main_mtd: 0x%lx safe_mtd: 0x%lx\n",
+		debug("%s: main_mtd: 0x%lx safe_mtd: 0x%lx\n", __func__,
 		           env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL),
 		           env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL));
 		break;
@@ -402,7 +402,7 @@ int set_bootdevice_env(int bootdev)
 				break;
 			}
 		}
-		debug("safe mtd: 0x%lx\n",
+		debug("%s: safe mtd: 0x%lx\n", __func__,
 		            env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL));
 
 		break;
@@ -518,7 +518,7 @@ int get_bootstate(void)
 #if CONFIG_IS_ENABLED(SYSINFO)
 	int downif = get_downif();
 
-	debug("%s: downif: %d\n", __func__, downif);
+	debug("%s: downif = %d\n", __func__, downif);
 	if (downif < 0)
 		return -ENODEV;
 
@@ -629,7 +629,7 @@ int get_bootdevice(const char **name)
 	if (bootstrap < 0)
 		return -ENXIO;
 
-	debug("%s: bootstrap: %d\n", __func__, bootstrap);
+	debug("%s: bootstrap = %d\n", __func__, bootstrap);
 	switch (bootstrap & 0xF) {
 	case BOOTSTRAP_SAFETY_NOR:
 		is_nor = true;
@@ -695,7 +695,7 @@ main_select:
 		free(full_mtdparts);
 	}
 
-	debug("main bootmode: %lu\n", main_bootmode);
+	debug("%s: main bootmode: %lu\n", __func__, main_bootmode);
 	switch (main_bootmode) {
 	case BOOTMODE_MAIN_EMMC:
 		if (is_nor)
@@ -737,7 +737,7 @@ int get_downif(void)
 
 	ret = uclass_get_device_by_name(UCLASS_SYSINFO,
 	                        dev_name, &dev);
-	debug("get_downif: %s (ret = %d)\n", dev_name, ret);
+	debug("%s: devive name: %s (ret = %d)\n", __func__, dev_name, ret);
 	if (IS_ERR_OR_NULL(dev)) {
 		pr_err("Not found '%s' node\n", dev_name);
 		return -ENODEV;
@@ -796,7 +796,7 @@ void remove_mtd_device(int bootdev)
 	struct udevice *dev = NULL;
 	int ret, i;
 
-	debug("%s: bootdev: %d\n", __func__, bootdev);
+	debug("%s: bootdev = %d\n", __func__, bootdev);
 	switch (bootdev) {
 	case BOOTDEVICE_ONLY_NAND:
 		devseq[0] = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);
