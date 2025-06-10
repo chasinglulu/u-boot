@@ -219,7 +219,9 @@ static inline int fdt_blob_setup_console(void *fdt) { return 0; }
 int fdtdec_board_setup(const void *blob)
 {
 #if CONFIG_IS_ENABLED(LUA_BOOTPARAMS_VERIFY)
-	if (check_bootparams(false)) {
+	int bootstate = get_bootstate();
+
+	if (bootstate == BOOTSTATE_POWERUP && check_bootparams(false)) {
 		pr_err("Invalid boot parameters\n");
 		return -EINVAL;
 	}

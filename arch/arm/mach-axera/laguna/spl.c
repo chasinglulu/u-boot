@@ -231,12 +231,6 @@ void spl_board_init(void)
 	const char *name = NULL;
 	int bootdev, bootstate;
 
-	if (check_bootparams(true)) {
-		pr_err("Boot params check failed, handup...\n");
-		hang();
-	}
-	memset(&bp->fdt_addr, 0, sizeof(*bp) - offsetof(boot_params_t, fdt_addr));
-
 	bootstate = get_bootstate();
 	if (bootstate > 0) {
 		const char *state = bootstate == BOOTSTATE_POWERUP ?
@@ -245,6 +239,12 @@ void spl_board_init(void)
 	} else {
 		printf("Boot State:    Unknown\n");
 	}
+
+	if (bootstate == BOOTSTATE_POWERUP && check_bootparams(true)) {
+		pr_err("Boot params check failed, handup...\n");
+		hang();
+	}
+	memset(&bp->fdt_addr, 0, sizeof(*bp) - offsetof(boot_params_t, fdt_addr));
 
 	bootdev = get_bootdevice(&name);
 	if (bootdev > 0) {
