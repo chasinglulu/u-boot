@@ -11,6 +11,11 @@ config FDL_USB
 	depends on FDL_USB_DRV
 	select FDL
 
+config FDL_SDCARD
+	bool "Enable FDL download over SDCard"
+	depends on DM_MMC
+	select FDL
+
 config FDL
 	bool
 
@@ -38,6 +43,48 @@ config FDL_BUF_SIZE
 	  The FDL protocol requires a large memory buffer for
 	  downloads. This buffer should be as large as possible for a
 	  platform. Define this to the size available RAM for FDL.
+
+config FDL_PARTITION_IMAGE
+	string "FDL Partition Table Image Filename"
+	depends on FDL_SDCARD
+	default "fdl_partition.img"
+	help
+	  This specifies the filename of the FDL partition table image
+	  to be used for FDL download over SDCard. The image should
+	  contain the partition table.
+
+config FDL_IMAGE_SUFFIX
+	string "FDL Image File Suffix"
+	depends on FDL_SDCARD
+	default ".img"
+	help
+	  This specifies the suffix of the FDL image files. The FDL
+	  download command will look for files with this suffix in the
+	  FDL download directory. For example, if the suffix is ".img",
+	  the FDL download command will look for files like
+	  "u-boot.img", "kernel.img", etc.
+
+config FDL_SHA1SUM
+	bool "Enable SHA1 checksum verification"
+	depends on FDL_SDCARD
+	select SHA1
+	help
+	  This enables SHA1 checksum verification for FDL
+	  downloaded images over SDCard. If enabled, the FDL download
+	  command will verify the SHA1 checksum of the downloaded image
+	  against the expected checksum before proceeding with the
+	  download.
+
+config FDL_SHA1SUM_FILENAME
+	string "SHA1 checksum filename"
+	depends on FDL_SDCARD && FDL_SHA1SUM
+	default "sha1sum.txt"
+	help
+	  This specifies the filename of the SHA1 checksum file to be
+	  used for FDL download over SDCard. The file should contain
+	  the SHA1 checksums of the FDL images in the format:
+	  "<sha1sum> <filename>". For example:
+	  "1234567890abcdef1234567890abcdef12345678 u-boot.img".
 
 config FDL_DEBUG
 	bool "FDL debug"

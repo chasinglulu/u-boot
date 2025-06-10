@@ -15,6 +15,7 @@ typedef enum {
 	FDL_LOGLEVEL_NONE = 0,
 	FDL_LOGLEVEL_CRIT,
 	FDL_LOGLEVEL_ERROR,
+	FDL_LOGLEVEL_WARNING,
 	FDL_LOGLEVEL_INFO,
 	FDL_LOGLEVEL_DEBUG
 } fdl_loglevel_t;
@@ -31,6 +32,7 @@ void fdl_set_loglevel(fdl_loglevel_t level);
 
 #define fdl_crit(fmt, ...)    FDL_LOG(FDL_LOGLEVEL_CRIT, fmt, ##__VA_ARGS__)
 #define fdl_err(fmt, ...)     FDL_LOG(FDL_LOGLEVEL_ERROR, "[FDL ERROR] " fmt, ##__VA_ARGS__)
+#define fdl_warn(fmt, ...)    FDL_LOG(FDL_LOGLEVEL_WARNING, "[FDL  WARN] " fmt, ##__VA_ARGS__)
 #define fdl_info(fmt, ...)    FDL_LOG(FDL_LOGLEVEL_INFO, "[FDL  INFO] " fmt, ##__VA_ARGS__)
 #define fdl_debug(fmt, ...)   FDL_LOG(FDL_LOGLEVEL_DEBUG, "[FDL DEBUG] " fmt, ##__VA_ARGS__)
 
@@ -390,15 +392,21 @@ int fdl_blk_write_partition(struct fdl_part_table *part_tab);
 int fdl_blk_erase(const char *part_name, size_t size);
 
 #if defined(CONFIG_FDL_UART)
- int fdl_uart_download(int dev_idx, bool timeout);
+int fdl_uart_download(int dev_idx, bool timeout);
 #else
 static inline int fdl_uart_download(int dev_idx, bool timeout) { return -ENOSYS; }
 #endif
 
-#if defined (CONFIG_FDL_USB)
- int fdl_usb_download(int dev_idx, bool timeout);
+#if defined(CONFIG_FDL_USB)
+int fdl_usb_download(int dev_idx, bool timeout);
 #else
 static inline int fdl_usb_download(int dev_idx, bool timeout) { return -ENOSYS; }
+#endif
+
+#if defined(CONFIG_FDL_SDCARD)
+int fdl_sd_download(int dev_idx, bool timeout);
+#else
+static inline int fdl_sd_download(int dev_idx, bool timeout) { return -ENOSYS; }
 #endif
 
 #endif

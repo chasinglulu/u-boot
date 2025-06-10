@@ -3,3 +3,4 @@
 obj-y += fdl_common.o fdl_command.o fdl_blk.o
 obj-$(CONFIG_FDL_UART) += fdl_uart.o
 obj-$(CONFIG_FDL_USB) += fdl_usb.o
+obj-$(CONFIG_FDL_SDCARD) += fdl_sd.o
