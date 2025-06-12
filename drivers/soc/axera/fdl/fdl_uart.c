@@ -293,6 +293,46 @@ failed:
 	return ret;
 }
 
+__weak int fdl_uart_get_baudrate(void)
+{
+	return CONFIG_VAL(BAUDRATE);
+}
+
+static int fdl_uart_baudrate_switch(struct udevice *dev)
+{
+	struct dm_serial_ops *ops = serial_get_ops(dev);
+	struct serial_device_info info;
+	int baudrate, ret;
+
+	if (!ops || !ops->setbrg) {
+		fdl_err("Device does not support baudrate setting\n");
+		return -EINVAL;
+	}
+
+	ret = serial_getinfo(dev, &info);
+	if (ret) {
+		fdl_err("Failed to get serial device info (ret %d)\n", ret);
+		return -EIO;
+	}
+
+	baudrate = fdl_uart_get_baudrate();
+	if (info.baudrate == baudrate) {
+		fdl_debug("No need to setup the baudrate of '%s'\n", dev->name);
+		return 0;
+	}
+
+	ret = ops->setbrg(dev, baudrate);
+	if (ret) {
+		fdl_err("Unable to set baudrate %d for '%s' (ret %d)\n",
+			baudrate, dev->name, ret);
+		return ret;
+	}
+	fdl_debug("Baudrate of '%s' switch from %d to %d\n",
+	                   dev->name, info.baudrate, baudrate);
+
+	return 0;
+}
+
 static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 {
 	char *cmd_packet = NULL;
@@ -308,6 +348,11 @@ static int fdl_uart_process(struct udevice *dev, bool timeout, bool need_ack)
 
 	fdl_init(NULL, 0);
 	memset(response, 0, sizeof(response));
+
+	ret = fdl_uart_baudrate_switch(dev);
+	if (unlikely(ret < 0))
+		fdl_warn("\n ** FDL packet transfer may fail. \
+		            Please check board UART settings. **\n\n");
 
 	if (unlikely(need_ack)) {
 		fdl_debug("Acknowledge the previous execute command\n");

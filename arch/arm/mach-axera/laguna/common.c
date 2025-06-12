@@ -251,6 +251,16 @@ void fdl_sd_complete(void)
 	reset_cpu();
 }
 
+int fdl_uart_get_baudrate(void)
+{
+	boot_params_t *bp = boot_params_get_base();
+
+	if (bp->fdl_chg_baud)
+		return bp->fdl_chg_baud;
+
+	return gd->baudrate;
+}
+
 #if defined(CONFIG_LUA_BOOTPARAMS_VERIFY)
 int check_bootparams(bool is_sbl)
 {
