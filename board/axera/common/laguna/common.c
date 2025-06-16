@@ -332,9 +332,8 @@ int set_bootdevice_env(int bootdev)
 		env_set_ulong(env_get_name(ENV_DEVNUM), dev_seq(dev));
 		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
-		/* probe all SPI NOR Flash devices */
-		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
-			;
+		/* Probe all SPI Nor Flash */
+		probe_all_spi_nor_devs();
 
 		/* iterate through available devices of MTD uclass */
 		ret = uclass_get(UCLASS_MTD, &uc);
@@ -383,8 +382,7 @@ int set_bootdevice_env(int bootdev)
 		env_set_ulong(env_get_name(ENV_DEVNUM), dev_seq(dev));
 
 		/* probe all SPI NOR Flash devices */
-		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
-			;
+		probe_all_spi_nor_devs();
 
 		/* iterate through available devices of MTD uclass */
 		ret = uclass_get(UCLASS_MTD, &uc);
@@ -431,49 +429,6 @@ const char *bootdevice_name[] = {
 	[BOOTDEVICE_BOTH_NOR_EMMC]   = "Both-Nor-eMMC",
 	[BOOTDEVICE_BOTH_NAND_EMMC]  = "Both-Nand-eMMC",
 };
-
-static struct blk_desc *find_safety_nor(void)
-{
-	struct uclass *uc = NULL;
-	struct mtd_info *mtd = NULL;
-	struct blk_desc *dev_desc = NULL;
-	struct udevice *dev, *parent, *child;
-	fdt_addr_t addr;
-	int ret;
-
-	ret = uclass_get(UCLASS_SPI_FLASH, &uc);
-	if (ret < 0)
-		return NULL;
-
-	uclass_foreach_dev(dev, uc) {
-		parent = dev_get_parent(dev);
-		addr = dev_read_addr(parent);
-		if (addr > 0x800000)
-			continue;
-
-		ret = device_probe(dev);
-		if (ret < 0)
-			continue;
-
-		device_find_first_child(dev, &child);
-		if (!child)
-			continue;
-		mtd = dev_get_uclass_priv(child);
-		if (mtd && mtd->type == MTD_NORFLASH) {
-			dev_desc = get_blk_by_devnum(IF_TYPE_MTD, dev_seq(child));
-			break;
-		}
-	}
-
-	return IS_ERR_OR_NULL(dev_desc) ? NULL : dev_desc;
-}
-
-static struct blk_desc *find_safety_nand(void)
-{
-	/* FIXME: TODO */
-
-	return NULL;
-}
 
 static int get_bootstrap(const char **name)
 {
@@ -549,17 +504,62 @@ void set_bootstate_env(uint32_t bootstate)
 }
 
 static __maybe_unused
-int probe_mtd_device(bool is_nor)
+struct blk_desc *find_safety_nor(void)
+{
+	struct uclass *uc = NULL;
+	struct mtd_info *mtd = NULL;
+	struct blk_desc *dev_desc = NULL;
+	struct udevice *dev, *parent, *child;
+	fdt_addr_t addr;
+	int ret;
+
+	ret = uclass_get(UCLASS_SPI_FLASH, &uc);
+	if (ret < 0)
+		return NULL;
+
+	uclass_foreach_dev(dev, uc) {
+		/* SPI device */
+		parent = dev_get_parent(dev);
+		addr = dev_read_addr(parent);
+		if (addr > 0x800000)
+			continue;
+
+		ret = device_probe(dev);
+		if (ret < 0)
+			continue;
+
+		/* SPI Nor Flash MTD device */
+		device_find_first_child(dev, &child);
+		if (!child)
+			continue;
+		mtd = dev_get_uclass_priv(child);
+		if (mtd && !mtd_type_is_nand(mtd))
+			break;
+	}
+
+	/* MTD block device */
+	dev_desc = get_blk_by_devnum(IF_TYPE_MTD, dev_seq(child));
+
+	return IS_ERR_OR_NULL(dev_desc) ? NULL : dev_desc;
+}
+
+static __maybe_unused
+struct blk_desc *find_safety_nand(void)
+{
+	/* FIXME: TODO */
+
+	return NULL;
+}
+
+static __maybe_unused
+int probe_all_mtd_device(bool is_nor)
 {
 	struct uclass *uc;
 	struct udevice *dev;
 	int ret = -ENODEV;
 
-	if (is_nor) {
-		/* probe all SPI NOR Flash devices */
-		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
-			;
-	}
+	if (is_nor)
+		probe_all_spi_nor_devs();
 
 	/* iterate through available devices of MTD uclass */
 	ret = uclass_get(UCLASS_MTD, &uc);
@@ -575,8 +575,7 @@ int probe_mtd_device(bool is_nor)
 		if (is_nor && mtd->type == MTD_NORFLASH) {
 			debug("Found NOR device %s\n", dev->name);
 			goto found;
-		} else if (!is_nor && (mtd->type == MTD_NANDFLASH ||
-			mtd->type == MTD_MLCNANDFLASH)) {
+		} else if (!is_nor && mtd_type_is_nand(mtd)) {
 			debug("Found NAND device %s\n", dev->name);
 			goto found;
 		} else {
@@ -591,6 +590,31 @@ found:
 	}
 
 	return 0;
+}
+
+static __maybe_unused
+struct blk_desc *get_safe_mtd_blk_dev(bool is_nor)
+{
+	struct blk_desc *dev_desc = NULL;
+	int ret;
+
+	ret = probe_all_mtd_device(is_nor);
+	if (ret < 0) {
+		debug("Failed to probe MTD devices (ret = %d)\n", ret);
+		return NULL;
+	}
+
+	if (is_nor)
+		dev_desc = find_safety_nor();
+	else
+		dev_desc = find_safety_nand();
+
+	if (IS_ERR_OR_NULL(dev_desc)) {
+		debug("Failed to find safety MTD block device\n");
+		return NULL;
+	}
+
+	return dev_desc;
 }
 
 int get_bootdevice(const char **name)
@@ -611,11 +635,13 @@ int get_bootdevice(const char **name)
 #endif
 
 #if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
-	struct blk_desc *dev_desc;
+	struct blk_desc __maybe_unused *dev_desc;
+	boot_params_t __maybe_unused *bp = NULL;
 	char *full_mtdparts = NULL;
 	char *asterisk = NULL;
+	char *prefix = NULL;
 	int bootstate, bootstrap;
-	ulong main_bootmode;
+	int main_bootmode = -1;
 	bool is_nor = false;
 	uint32_t bootdev;
 	int ret;
@@ -674,28 +700,50 @@ main_select:
 			return -EINVAL;
 		}
 	} else {
-		/* probe essential MTD device */
-		ret = probe_mtd_device(is_nor);
-		if (ret < 0)
+		/* Normal booting */
+#if defined(CONFIG_LUA_MTDPARTS_FROM_BUFFER)
+		/* read mtdparts from buffer */
+		bp = boot_params_get_base();
+		if (IS_ERR_OR_NULL(bp)) {
+			printf("Invaild boot parameters base address\n");
+			return -EINVAL;
+		}
+		ret = read_full_mtdparts_from_buffer((void *)bp->mtdparts,
+		                    sizeof(bp->mtdparts), &full_mtdparts);
+		if (ret < 0) {
+			debug("Unable to parse mtdparts from buffer '0x%p'\n", bp->mtdparts);
 			return ret;
-
-		/* Normal boot */
-		if (is_nor)
-			dev_desc = find_safety_nor();
-		else
-			dev_desc = find_safety_nand();
-		debug("Found safety device %s\n", dev_desc ? dev_desc->bdev->name : "Unknown");
+		}
+#elif defined(CONFIG_LUA_MTDPARTS_FROM_MTDBLOCK)
+		/* read mtdparts from mtd block */
+		dev_desc = get_safe_mtd_blk_dev(is_nor);
+		if (IS_ERR_OR_NULL(dev_desc)) {
+			printf("Unable to get safety MTD block device\n");
+			return -ENODEV;
+		}
+		debug("Found safety MTD block device: %s\n", dev_desc->bdev->name);
 		ret = read_full_mtdparts(dev_desc, &full_mtdparts);
 		if (ret < 0) {
 			debug("Failed to read full mtdparts string (ret = %d)\n", ret);
 			return ret;
 		}
-		asterisk = strchr(full_mtdparts, '*');
-		main_bootmode = simple_strtoul(asterisk + 1, NULL, 10);
+#else
+		pr_err("No mtdparts found, please check your configuration\n");
+		return -ENODEV;
+#endif
+
+		prefix = strchr(full_mtdparts, '#');
+		if (prefix) {
+			*prefix = '\0';
+			asterisk = strchr(full_mtdparts, '*');
+			main_bootmode = simple_strtoul(asterisk + 1, NULL, 10);
+		} else {
+			debug("No prefix found in mtdparts string\n");
+		}
 		free(full_mtdparts);
 	}
 
-	debug("%s: main bootmode: %lu\n", __func__, main_bootmode);
+	debug("%s: main bootmode: %d\n", __func__, main_bootmode);
 	switch (main_bootmode) {
 	case BOOTMODE_MAIN_EMMC:
 		if (is_nor)
@@ -806,7 +854,9 @@ void remove_mtd_device(int bootdev)
 		devseq[1] = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);
 		break;
 	case BOOTDEVICE_BOTH_NOR_EMMC:
+#if !defined(CONFIG_LUA_MTDPARTS_FROM_BUFFER)
 		devseq[0] = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL);
+#endif
 		break;
 	case BOOTDEVICE_ONLY_NOR:
 	case BOOTDEVICE_ONLY_HYPER:
@@ -818,7 +868,7 @@ void remove_mtd_device(int bootdev)
 	}
 
 	if (devseq[0] == ~0ULL && devseq[1] == ~0ULL) {
-		pr_err("Invalid device sequence\n");
+		debug("Invalid device sequence\n");
 		return;
 	}
 
@@ -828,7 +878,7 @@ void remove_mtd_device(int bootdev)
 
 		ret = uclass_get_device_by_seq(UCLASS_MTD, devseq[i], &dev);
 		if (!dev || ret) {
-			pr_err("Failed to get MTD device '%ld'\n (ret = %d)", devseq[i], ret);
+			pr_err("Failed to get MTD device '%ld' (ret = %d)\n", devseq[i], ret);
 			return;
 		}
 
@@ -836,3 +886,31 @@ void remove_mtd_device(int bootdev)
 		device_remove(dev, DM_REMOVE_NORMAL);
 	}
 }
+
+#if IS_ENABLED(CONFIG_DM_SPI_FLASH) && IS_ENABLED(CONFIG_SPI_FLASH_MTD)
+void probe_all_spi_nor_devs(void)
+{
+	struct udevice *dev = NULL;
+
+#if defined(CONFIG_LUA_MTDPARTS_FROM_BUFFER)
+	int bootstate = get_bootstate();
+
+	if (bootstate == BOOTSTATE_DOWNLOAD) {
+		debug("Probing all SPI NOR Flash devices...\n");
+		uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
+			;
+	} else {
+		debug("Skipping probing SPI NOR Flash devices\n");
+	}
+#else
+	debug("Probing all SPI NOR Flash devices...\n");
+	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
+		;
+#endif
+}
+#else
+inline void probe_all_spi_nor_devs(void)
+{
+	debug("SPI Flash support is not enabled\n");
+}
+#endif

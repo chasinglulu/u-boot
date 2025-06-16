@@ -44,7 +44,7 @@ typedef struct boot_params {
 			};
 			uint8_t ddr_param[512];
 			/* MTD partition table */
-			uint8_t mtdparts[512];
+			uint8_t mtdparts[896];
 			/* Anti-rollback data */
 			uint8_t antirollback[512];
 			/* Debug policy */
@@ -66,7 +66,7 @@ _Static_assert(offsetof(boot_params_t, fdt_addr) == 3072,
 static inline boot_params_t *boot_params_get_base(void)
 {
 	/* TODO: detect base during runtime */
-	return (boot_params_t *)CONFIG_LUA_IRAM_BASE;
+	return (boot_params_t *)CONFIG_LUA_OCM_BASE;
 }
 
 enum {
@@ -207,6 +207,7 @@ void set_bootdev_env_ready(bool okay);
 int get_abort(bool safety, const char **name);
 int check_bootparams(bool is_sbl);
 void calc_bootparams_crc32(bool is_sbl);
+void probe_all_spi_nor_devs(void);
 
 #include <blk.h>
 #include <part.h>

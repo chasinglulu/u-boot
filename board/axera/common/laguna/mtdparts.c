@@ -48,10 +48,12 @@ loff_t board_mtdparts_offset(uint8_t mtdtype, bool backup)
 	return offset;
 }
 
-void board_mtdparts_part_info(struct blk_desc *dev_desc, bool backup, lbaint_t *part_start, lbaint_t *part_size)
+void board_mtdparts_part_info(struct blk_desc *dev_desc, bool backup,
+                              lbaint_t *part_start, lbaint_t *part_size)
 {
 	struct mtd_info *mtd = blk_desc_to_mtd(dev_desc);
 	size_t metadata_size;
+	loff_t offset;
 
 	if (!part_start || !part_size || !mtd) {
 		pr_err("Invalid parameter\n");
@@ -71,192 +73,401 @@ void board_mtdparts_part_info(struct blk_desc *dev_desc, bool backup, lbaint_t *
 		return;
 	}
 
-	*part_start = board_mtdparts_offset(mtd->type, backup) / dev_desc->blksz;
+	offset = board_mtdparts_offset(mtd->type, backup);
+	*part_start = offset / dev_desc->blksz;
 	*part_size = metadata_size / dev_desc->blksz;
 }
 #endif
 
-static __maybe_unused
-struct blk_desc *find_vaild_mtdblock_device(void)
-{
-	struct blk_desc *blk_desc;
-	ulong main_mtd;
-	ulong safe_mtd;
-	int bootdev;
-
-	bootdev = get_bootdevice(NULL);
-	if (bootdev < 0) {
-		debug("%s: Invaild boot device\n", __func__);
-		return ERR_PTR(-EINVAL);
-	}
-
-	switch (bootdev) {
-	case BOOTDEVICE_ONLY_NAND:
-		main_mtd = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0UL);
-		if (unlikely(main_mtd == ~0UL))
-			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
-
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
-		if (IS_ERR_OR_NULL(blk_desc))
-			return ERR_PTR(-ENXIO);
-		break;
-	case BOOTDEVICE_BOTH_NOR_NAND:
-		/* mtdparts string written into safety SPI nor flash */
-		safe_mtd = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0UL);
-		if (unlikely(safe_mtd == ~0UL))
-			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
-
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
-		if (IS_ERR_OR_NULL(blk_desc))
-			return ERR_PTR(-ENXIO);
-		break;
-	case BOOTDEVICE_BOTH_NOR_EMMC:
-		safe_mtd = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0UL);
-		if (unlikely(safe_mtd == ~0UL))
-			safe_mtd = CONFIG_FDL_FLASH_NOR_MTD_DEV;
-
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
-		if (IS_ERR_OR_NULL(blk_desc))
-			return ERR_PTR(-ENXIO);
-		break;
-	default:
-		debug("%s: Not supported boot device\n", __func__);
-		return ERR_PTR(-EBUSY);
-	}
-
-	return blk_desc;
-}
-
-static __maybe_unused
+static inline
 int mtdpart_name_check(const char *name, const char **part_id, int len)
 {
 	int i;
-	int slen1, slen2;
 
-	slen1 = strlen(name);
-	for (i = 0; i < len; i++) {
-		slen2 = strlen(part_id[i]);
-		if (slen1 != slen2 ||
-		    strncmp(part_id[i], name, slen1))
-			continue;
-		else
-			return 0;
-	}
+	for (i = 0; i < len; i++)
+		if (!strcmp(part_id[i], name))
+			return i;
 
-	return -EINVAL;
+	return -1;
 }
 
 static __maybe_unused
-int splitup_mtdparts(char *full_mtdparts, char *sub_mtdparts)
+int splitup_mtdparts(const char *full_mtdparts,
+                      const char **main_mtdparts,
+                      const char **safe_mtdparts)
 {
-	struct mtd_info *mtd = NULL;
-	struct blk_desc *blk_desc;
-	char *p, *comma, *bracket;
-	char *safe_mtdparts;
-	char *main_mtdparts;
-	int safe_mtdparts_len;
-	int main_mtdparts_len;
-	char *name = NULL;
-	ulong main_mtd;
+	const char *p, *np, *comma, *bracket;
+	static char substr1[MTDPARTS_LEN];
+	static char substr2[MTDPARTS_LEN];
+	const char *hashtag = NULL;
 	int mtdpart_len;
-	int bootdev;
 	int name_len;
-	char buf[32];
+	char name[32];
+	int ret;
 
-	if (!full_mtdparts || !sub_mtdparts)
+	if (!full_mtdparts || !main_mtdparts || !safe_mtdparts)
 		return -EINVAL;
 
-	bootdev = get_bootdevice(NULL);
-	if (bootdev < 0) {
-		debug("Invaild boot device\n");
-		return -EINVAL;
-	}
+	memset(substr1, 0, MTDPARTS_LEN);
+	memset(substr2, 0, MTDPARTS_LEN);
+	hashtag = strchr(full_mtdparts, '#');
+	if (hashtag)
+		p = hashtag + 1;
+	else
+		p = full_mtdparts;
 
-	switch (bootdev) {
-	case BOOTDEVICE_BOTH_NOR_NAND:
-		/* Find Main SPI Nand flash */
-		main_mtd = env_get_ulong("main_mtd", 10, ~0UL);
-		if (unlikely(main_mtd == ~0UL))
-			main_mtd = CONFIG_FDL_FLASH_NAND_MTD_DEV;
-
-		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
-		if (IS_ERR_OR_NULL(blk_desc))
-			return -ENXIO;
-		break;
-	default:
-		return -EBUSY;
-	}
-	mtd = blk_desc_to_mtd(blk_desc);
-
-	p = full_mtdparts;
 	while ((comma = strchr(p, ',')) != NULL) {
 		mtdpart_len = comma - p + 1;
 		bracket = strchr(p, '(');
-		name = ++bracket;
-		bracket = strchr(name, ')');
-		name_len = bracket - name;
-		memcpy(buf, name, name_len);
-		buf[name_len] = '\0';
+		np = ++bracket;
+		bracket = strchr(np, ')');
+		name_len = bracket - np;
+		memcpy(name, np, name_len);
+		name[name_len] = '\0';
 
-		if (mtdpart_name_check(buf, safe_part_id,
-		             get_safe_part_id_count()))
-			break;
+		ret = mtdpart_name_check(name, safe_part_id,
+		                        get_safe_part_id_count());
+		if (ret >= 0)
+			strncat(substr1, p, mtdpart_len);
+		else
+			strncat(substr2, p, mtdpart_len);
+		p += mtdpart_len;
+	}
+
+	/* Remove the last comma */
+	if (strlen(substr1))
+		strrchr(substr1, ',')[0] = '\0';
+	if (strlen(substr2))
+		strrchr(substr2, ',')[0] = '\0';
+
+	*main_mtdparts = substr2;
+	*safe_mtdparts = substr1;
+	debug("main mtdparts: %s\n", *main_mtdparts);
+	debug("safe mtdparts: %s\n", *safe_mtdparts);
+
+	return 0;
+}
+
+static __maybe_unused
+int filter_out_mtdparts(const char *full_mtdparts,
+                          bool is_main, const char **mtdparts)
+{
+	const char *p, *np, *comma, *bracket;
+	static char substr[MTDPARTS_LEN];
+	const char *hashtag = NULL;
+	const char **part_id = NULL;
+	int part_count;
+	int mtdpart_len;
+	int name_len;
+	char name[32];
+	int ret;
+
+	if (!full_mtdparts || !mtdparts) {
+		debug("Invaild arguments\n");
+		return -EINVAL;
+	}
+
+	part_id = is_main ? main_part_id : safe_part_id;
+	part_count = is_main ? get_main_part_id_count() :
+	                      get_safe_part_id_count();
+
+	memset(substr, 0, MTDPARTS_LEN);
+	hashtag = strchr(full_mtdparts, '#');
+	if (hashtag)
+		p = hashtag + 1;
+	else
+		p = full_mtdparts;
+
+	while ((comma = strchr(p, ',')) != NULL) {
+		mtdpart_len = comma - p + 1;
+		bracket = strchr(p, '(');
+		np = ++bracket;
+		bracket = strchr(np, ')');
+		name_len = bracket - np;
+		memcpy(name, np, name_len);
+		name[name_len] = '\0';
+
+		ret = mtdpart_name_check(name, part_id,
+		                         part_count);
+		if (ret >= 0)
+			strncat(substr, p, mtdpart_len);
 
 		p += mtdpart_len;
 	}
-	safe_mtdparts_len = p - full_mtdparts;
-	main_mtdparts_len = strlen(full_mtdparts) - safe_mtdparts_len;
 
-	safe_mtdparts = full_mtdparts;
-	main_mtdparts = sub_mtdparts;
+	/* Remove the last comma */
+	if (strlen(substr))
+		strrchr(substr, ',')[0] = '\0';
 
-	strncat(main_mtdparts, mtd->name, strlen(mtd->name));
-	strncat(main_mtdparts, ":", MTDPARTS_LEN);
-	strncat(main_mtdparts, full_mtdparts + safe_mtdparts_len, MTDPARTS_LEN);
-	debug("main mtdparts: %s\n", main_mtdparts);
-
-	full_mtdparts[safe_mtdparts_len - 1] = '\0';
-	debug("safe mtdparts: %s\n", safe_mtdparts);
+	*mtdparts = substr;
+	debug("Filter out %s mtdparts: %s\n",
+	         is_main ? "main" : "safety", *mtdparts);
 
 	return 0;
 }
 
 static __maybe_unused
 void board_get_mtdparts(const char *dev, const char *partition,
-                          char *mtdids, char *mtdparts)
+			  char *mtdids, char *mtdparts)
 {
+	char dev_id[MTDIDS_LEN];
+	char dev_prefix[MTDIDS_LEN];
+
 	/* mtdids: "<dev>=<dev>, ...." */
-	if (mtdids[0] != '\0')
-		strcat(mtdids, ",");
-	strcat(mtdids, dev);
-	strcat(mtdids, "=");
-	strcat(mtdids, dev);
+	snprintf(dev_id, sizeof(dev_id), "%s=%s", dev, dev);
+	if (!strstr(mtdids, dev_id)) {
+		if (mtdids[0] != '\0')
+			strcat(mtdids, ",");
+		strcat(mtdids, dev_id);
+	}
 
 	/* mtdparts: "mtdparts=<dev>:<mtdparts_<dev>>;..." */
-	if (mtdparts[0] != '\0')
-		strncat(mtdparts, ";", MTDPARTS_LEN);
-	else
-		strcat(mtdparts, "mtdparts=");
+	snprintf(dev_prefix, sizeof(dev_prefix), "%s:", dev);
+	if (strstr(mtdparts, dev_prefix)) {
+		strncat(mtdparts, ",", MTDPARTS_LEN);
+		strncat(mtdparts, partition, MTDPARTS_LEN);
+	} else {
+		if (mtdparts[0] != '\0') {
+			strncat(mtdparts, ";", MTDPARTS_LEN);
+		} else {
+			strcat(mtdparts, "mtdparts=");
+		}
 
-	strncat(mtdparts, dev, MTDPARTS_LEN);
-	strncat(mtdparts, ":", MTDPARTS_LEN);
-	strncat(mtdparts, partition, MTDPARTS_LEN);
+		strncat(mtdparts, dev_prefix, MTDPARTS_LEN);
+		strncat(mtdparts, partition, MTDPARTS_LEN);
+	}
 }
+
+#if defined(CONFIG_LUA_MTDPARTS_FROM_MTDBLOCK)
+static int __maybe_unused
+parse_mtdparts_from_mtdblock(char *mtdids, char *mtdparts)
+{
+	struct blk_desc *blk_desc0 = NULL;
+	struct blk_desc *blk_desc1 = NULL;
+	struct blk_desc *found_dev = NULL;
+	struct mtd_info *mtd0 = NULL;
+	struct mtd_info *mtd1 = NULL;
+	struct udevice *dev = NULL;
+	const char *main_mtdparts = NULL;
+	const char *safe_mtdparts = NULL;
+	char *full_mtdparts;
+	int main_mtd, safe_mtd;
+	int bootdev;
+	int ret;
+
+	/* probe all MTD devices */
+	uclass_foreach_dev_probe(UCLASS_MTD, dev)
+		debug("MTD device name: %s\n", dev->name);
+
+	bootdev = get_bootdevice(NULL);
+	if (bootdev < 0) {
+		debug("Wrong boot device '%d'\n", bootdev);
+		return -EINVAL;
+	}
+
+	switch (bootdev) {
+	case BOOTDEVICE_BOTH_NOR_NAND:
+		main_mtd = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0UL);
+		safe_mtd = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0UL);
+
+		blk_desc0 = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
+		blk_desc1 = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
+		if (IS_ERR_OR_NULL(blk_desc0) ||
+		    IS_ERR_OR_NULL(blk_desc1)) {
+			debug("Unable to get MTD block device\n");
+			return -ENXIO;
+		}
+		found_dev = blk_desc0;
+		mtd0 = blk_desc_to_mtd(blk_desc0);
+		mtd1 = blk_desc_to_mtd(blk_desc1);
+		break;
+	case BOOTDEVICE_BOTH_NOR_EMMC:
+		safe_mtd = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0UL);
+
+		blk_desc0 = get_blk_by_devnum(IF_TYPE_MTD, safe_mtd);
+		if (IS_ERR_OR_NULL(blk_desc0))
+			return -ENXIO;
+		found_dev = blk_desc0;
+		mtd0 = blk_desc_to_mtd(blk_desc0);
+		break;
+	case BOOTDEVICE_ONLY_NAND:
+		main_mtd = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0UL);
+
+		blk_desc1 = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
+		if (IS_ERR_OR_NULL(blk_desc1))
+			return -ENXIO;
+		found_dev = blk_desc1;
+		mtd1 = blk_desc_to_mtd(blk_desc1);
+		break;
+	default:
+		debug("Not supported bootdevice '%d'\n", bootdev);
+		return -ENOTSUPP;
+	}
+	debug("MTDPARTS on MTD block device: %s\n", found_dev->bdev->name);
+
+	ret = read_full_mtdparts(found_dev, &full_mtdparts);
+	if (ret < 0) {
+		debug("Unable to read mtdparts from mtdblock device\n");
+		return ret;
+	}
+	debug("full mtdparts: %s\n", full_mtdparts);
+
+	ret = splitup_mtdparts(full_mtdparts, &main_mtdparts,
+	               &safe_mtdparts);
+	if (ret < 0) {
+		debug("Could not split up mtdparts string\n");
+		free(full_mtdparts);
+		return ret;
+	}
+
+	/* safe partitions on main MTD device */
+	if (IS_ERR_OR_NULL(mtd0) && strlen(safe_mtdparts) &&
+	    !IS_ERR_OR_NULL(mtd1))
+		board_get_mtdparts(mtd1->name, safe_mtdparts,
+		                          mtdids, mtdparts);
+
+	/* part of partitions on safe MTD device */
+	if (!IS_ERR_OR_NULL(mtd0) && strlen(safe_mtdparts))
+	    board_get_mtdparts(mtd0->name, safe_mtdparts,
+		                          mtdids, mtdparts);
+
+	/* part of partitions on main MTD device */
+	if (!IS_ERR_OR_NULL(mtd1) && strlen(main_mtdparts))
+	    board_get_mtdparts(mtd1->name, main_mtdparts,
+		                          mtdids, mtdparts);
+
+	if (full_mtdparts)
+		free(full_mtdparts);
+
+	return 0;
+}
+#else
+static inline int __maybe_unused
+parse_mtdparts_from_mtdblock(char *mtdids, char *mtdparts)
+{
+	return -ENODATA;
+}
+#endif /* !CONFIG_LUA_MTDPARTS_FROM_MTDBLOCK */
+
+#if defined(CONFIG_LUA_MTDPARTS_FROM_BUFFER)
+static int __maybe_unused
+parse_mtdparts_from_buffer(const char *buf, size_t buflen,
+                           char *mtdids, char *mtdparts)
+{
+	struct blk_desc *blk_desc = NULL;
+	struct mtd_info *mtd = NULL;
+	struct udevice *dev = NULL;
+	const char *main_mtdparts = NULL;
+	const char *safe_mtdparts = NULL;
+	bool safety_on_main = false;
+	char *full_mtdparts;
+	int main_mtd;
+	int bootdev;
+	int ret;
+
+	if (!buf || !mtdids || !mtdparts) {
+		pr_err("Invalid parameter\n");
+		return -EINVAL;
+	}
+
+	if (buflen < 1) {
+		pr_err("Buffer length is too short\n");
+		return -EINVAL;
+	}
+
+	/* probe all MTD devices */
+	uclass_foreach_dev_probe(UCLASS_MTD, dev)
+		debug("MTD device name: %s\n", dev->name);
+
+
+	bootdev = get_bootdevice(NULL);
+	if (bootdev < 0) {
+		debug("Wrong boot device '%d'\n", bootdev);
+		return -EINVAL;
+	}
+
+	switch (bootdev) {
+	case BOOTDEVICE_BOTH_NOR_NAND:
+	case BOOTDEVICE_ONLY_NAND:
+		main_mtd = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0UL);
+		blk_desc = get_blk_by_devnum(IF_TYPE_MTD, main_mtd);
+		if (IS_ERR_OR_NULL(blk_desc)) {
+			debug("Unable to get MTD block device\n");
+			return -ENXIO;
+		}
+		mtd = blk_desc_to_mtd(blk_desc);
+		if (bootdev == BOOTDEVICE_ONLY_NAND)
+			safety_on_main = true;
+		break;
+	default:
+		debug("Not supported bootdevice '%d'\n", bootdev);
+		return -ENOTSUPP;
+	}
+	debug("MTD block device: %s\n", blk_desc->bdev->name);
+	if (IS_ERR_OR_NULL(mtd)) {
+		debug("MTD device is not available\n");
+		return -ENODEV;
+	}
+
+#ifdef DEBUG
+	print_hex_dump("MTDPARTS BUFFER: ", DUMP_PREFIX_ADDRESS,
+	            16, 64, buf, buflen, true);
+#endif
+
+	ret = read_full_mtdparts_from_buffer(buf, buflen, &full_mtdparts);
+	if (ret < 0) {
+		debug("Unable to read mtdparts from buffer 0x'%p'\n", buf);
+		return ret;
+	}
+	debug("full mtdparts from buffer: %s\n", full_mtdparts);
+
+	ret = filter_out_mtdparts(full_mtdparts, true, &main_mtdparts);
+	if (ret < 0) {
+		debug("Could not filter out main mtdparts string\n");
+		free(full_mtdparts);
+		return ret;
+	}
+
+	if (mtd && strlen(main_mtdparts))
+		board_get_mtdparts(mtd->name, main_mtdparts,
+		                          mtdids, mtdparts);
+
+	/* safe partitions on main MTD device */
+	if (safety_on_main && mtd) {
+		ret = filter_out_mtdparts(full_mtdparts, false,
+		                          &safe_mtdparts);
+		if (ret < 0) {
+			debug("Could not filter out safe mtdparts string\n");
+			free(full_mtdparts);
+			return ret;
+		}
+		board_get_mtdparts(mtd->name, safe_mtdparts,
+		                          mtdids, mtdparts);
+	}
+
+	if (full_mtdparts)
+		free(full_mtdparts);
+
+	return 0;
+}
+#else
+static inline int __maybe_unused
+parse_mtdparts_from_buffer(const char *buf, size_t buflen,
+                           char *mtdids, char *mtdparts)
+{
+	return -ENODATA;
+}
+#endif /* !CONFIG_LUA_MTDPARTS_FROM_BUFFER */
 
 void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 {
-	struct mtd_info __maybe_unused *mtd;
-	struct udevice __maybe_unused *dev;
+	boot_params_t __maybe_unused *bp = NULL;
 	const char __maybe_unused *mtd_parts;
 	const char __maybe_unused *mtd_name;
 	static char parts[3 * MTDPARTS_LEN + 1];
 	static char ids[MTDIDS_LEN + 1];
 	static bool mtd_initialized;
-	struct blk_desc __maybe_unused *dev_desc;
-	char __maybe_unused *full_mtdparts;
-	char __maybe_unused sub_mtdparts[MTDPARTS_LEN];
-	char __maybe_unused *hashtag = NULL;
-	int __maybe_unused prefix_len = 0;
+	int __maybe_unused bootstate = 0;
 	int __maybe_unused ret;
 
 	if (mtd_initialized) {
@@ -269,44 +480,47 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	memset(ids, 0, sizeof(ids));
 
 #if defined(CONFIG_LUA_MTDPARTS_READ)
-	/* probe all MTD devices */
-	uclass_foreach_dev_probe(UCLASS_MTD, dev)
-		debug("MTD device: %s\n", dev->name);
-
-	dev_desc = find_vaild_mtdblock_device();
-	if (IS_ERR_OR_NULL(dev_desc)) {
-		debug("Unable to find vaild MTD block device\n");
+	bootstate = get_bootstate();
+	if (bootstate < 0) {
+		pr_err("Unknown bootstate\n");
 		return;
 	}
-	debug("MTD block device: %s\n", dev_desc->bdev->name);
-	mtd = blk_desc_to_mtd(dev_desc);
 
-	ret = read_full_mtdparts(dev_desc, &full_mtdparts);
-	if (ret < 0) {
-		debug("Failed to read mtdparts from mtd block device\n");
+	if (bootstate == BOOTSTATE_DOWNLOAD) {
+		ret = parse_mtdparts_from_mtdblock(ids, parts);
+		if (ret < 0) {
+			debug("Unable to parse mtdparts from mtdblock device\n");
+			return;
+		}
+	} else {
+#if defined(CONFIG_LUA_MTDPARTS_FROM_BUFFER)
+		/* read mtdparts from buffer */
+		bp = boot_params_get_base();
+		if (IS_ERR_OR_NULL(bp)) {
+			debug("Wrong boot parameters base address\n");
+			return;
+		}
+
+		ret = parse_mtdparts_from_buffer((void *)bp->mtdparts, sizeof(bp->mtdparts),
+		                           ids, parts);
+		if (ret < 0) {
+			debug("Unable to parse mtdparts from buffer 0x'%p'\n", bp->mtdparts);
+			return;
+		}
+#elif defined(CONFIG_LUA_MTDPARTS_FROM_MTDBLOCK)
+		/* read mtdparts from mtd block device */
+		ret = parse_mtdparts_from_mtdblock(ids, parts);
+		if (ret < 0) {
+			debug("Unable to parse mtdparts from mtdblock device\n");
+			return;
+		}
+#else
+		pr_err("Could not parse mtdparts, please check your configuration\n");
 		return;
-	}
-	debug("full mtdparts: %s\n", full_mtdparts);
-	hashtag = strchr(full_mtdparts, '#');
-	if (hashtag)
-		prefix_len = hashtag - full_mtdparts + 1;
-
-	memset(sub_mtdparts, 0, sizeof(sub_mtdparts));
-	ret = splitup_mtdparts(full_mtdparts, sub_mtdparts);
-	if (!ret) {
-		char *p;
-		p = strchr(sub_mtdparts, ':');
-		*p++ = '\0';
-		board_get_mtdparts(sub_mtdparts, p, ids, parts);
+#endif
 	}
 
-	if (!IS_ERR_OR_NULL(mtd) && strlen(full_mtdparts)) {
-		board_get_mtdparts(mtd->name, full_mtdparts + prefix_len, ids, parts);
-		mtd_initialized = true;
-	}
-
-	if (full_mtdparts)
-		free(full_mtdparts);
+	mtd_initialized = true;
 #endif
 
 #if defined(CONFIG_LUA_SPI_NOR_RUNTIME)

@@ -1,15 +1,29 @@
 
 config LUA_MTDPARTS_READ
-	bool "Allow MTDPARTS to be read from mtd device"
+	bool "Allow MTDPARTS to be read at runtime"
 	depends on SYS_MTDPARTS_RUNTIME
 	depends on AXERA_LUA
 	help
 	  This option allows us to dynamically build the variables mtdids
-	  and mtdparts at runtime by reading mtdparts string from mtd device.
+	  and mtdparts at runtime for booting.
 
-if LUA_MTDPARTS_READ
+config LUA_MTDPARTS_FROM_MTDBLOCK
+	bool "Read MTDPARTS from mtdblock device"
+	depends on LUA_MTDPARTS_READ
+	help
+	  This option reads the mtdparts string from a mtdblock device.
+	  Fixed partitions defined in the menu below will be used to
+	  determine the mtdparts string location.
 
-menu "Fixed partitions that affect mtdparts reading"
+config LUA_MTDPARTS_FROM_BUFFER
+	bool "Read MTDPARTS from a buffer"
+	depends on LUA_MTDPARTS_READ
+	depends on !SPI_FLASH_PROBE_ALL
+	help
+	  This option reads the mtdparts string from a buffer.
+
+menu "Fixed partitions on MTDBlock device"
+	depends on LUA_MTDPARTS_FROM_MTDBLOCK
 
 config LUA_SBL_SIZE_IN_NORFLASH
 	hex "SBL Partition Size in NOR Flash"
@@ -49,7 +63,6 @@ config LUA_METADATA_SIZE_IN_HYPERFLASH
 
 endmenu
 
-endif
 
 config LUA_SPI_NOR_RUNTIME
 	bool "Allow SPI NOR to be configured at runtime"
