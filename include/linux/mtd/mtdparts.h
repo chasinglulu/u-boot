@@ -38,6 +38,8 @@ typedef struct mtd_parts {
 
 int write_mtdparts(struct blk_desc *dev_desc, mtdparts_t *mpr);
 int read_full_mtdparts(struct blk_desc *dev_desc, char **mtdparts);
+int read_full_mtdparts_from_buffer(const char *buf, size_t buflen,
+                      char **mtdparts);
 int mtdparts_restore(struct blk_desc *dev_desc, const char *str_disk_guid,
                        const char *prefix,
                        struct disk_partition *parts, int part_count);

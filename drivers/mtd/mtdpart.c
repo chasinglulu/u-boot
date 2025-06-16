@@ -1594,3 +1594,25 @@ int read_full_mtdparts(struct blk_desc *dev_desc, char **mtdparts)
 
 	return le32_to_cpu(mpr->sizeof_mtdparts);
 }
+
+int read_full_mtdparts_from_buffer(const char *buf, size_t buflen,
+                      char **mtdparts)
+{
+	mtdparts_t *mpr = NULL;
+	int ret;
+
+	if (!buf || !mtdparts || buflen < sizeof(*mpr))
+		return -EINVAL;
+
+	mpr = (void *)buf;
+
+	ret = validate_mtdparts(mpr, mpr->my_lba);
+	if (ret < 0) {
+		pr_err("Invalid mtdparts in buffer\n");
+		return ret;
+	}
+
+	*mtdparts = strdup(mpr->mtdparts_str);
+
+	return le32_to_cpu(mpr->sizeof_mtdparts);
+}

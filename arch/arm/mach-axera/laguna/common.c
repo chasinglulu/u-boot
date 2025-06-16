@@ -714,13 +714,7 @@ int board_init(void)
 {
 	int bootdev = get_bootdevice(NULL);
 
-#if IS_ENABLED(CONFIG_DM_SPI_FLASH) && IS_ENABLED(CONFIG_SPI_FLASH_MTD)
-	struct udevice *dev;
-
-	/* probe all SPI NOR Flash device */
-	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
-		;
-#endif
+	probe_all_spi_nor_devs();
 
 	env_set_default(NULL, 0);
 	set_bootdevice_env(bootdev);
