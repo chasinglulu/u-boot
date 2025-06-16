@@ -118,10 +118,14 @@ static void mtd_probe_uclass_mtd_devs(void) { }
 #if IS_ENABLED(CONFIG_DM_SPI_FLASH) && IS_ENABLED(CONFIG_SPI_FLASH_MTD)
 static void mtd_probe_uclass_spi_nor_devs(void)
 {
-	struct udevice *dev;
+	/* Scanning uclass to probe devices */
+	if (IS_ENABLED(CONFIG_SPI_FLASH_PROBE_ALL)) {
+		int ret;
 
-	uclass_foreach_dev_probe(UCLASS_SPI_FLASH, dev)
-		;
+		ret = uclass_probe_all(UCLASS_SPI_FLASH);
+		if (ret)
+			return;
+	}
 }
 #else
 static void mtd_probe_uclass_spi_nor_devs(void) { }

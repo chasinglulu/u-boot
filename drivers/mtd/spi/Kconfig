@@ -78,6 +78,16 @@ config SF_DEFAULT_SPEED
 	  speed and mode from plat values computed from
 	  available node.
 
+config SPI_FLASH_PROBE_ALL
+	bool "Probe all SPI flash chips on the bus"
+	depends on SPI_FLASH || DM_SPI_FLASH
+	default y
+	help
+	  Enable probing of all SPI flash chips on the bus. This is useful
+	  when there are multiple SPI flash chips on the bus and you want to
+	  access them all. If you only have one chip, you can say N here to
+	  save some space.
+
 if SPI_FLASH
 
 config SPI_FLASH_SFDP_SUPPORT
