@@ -46,7 +46,8 @@ int __weak spl_board_get_devnum(uint bootdev_type)
 	return CONFIG_VAL(MULTI_BLK_DEVNUM);
 }
 
-static struct blk_desc *get_blk_by_devnum(struct spl_boot_device *bootdev, int devnum)
+static struct blk_desc *
+get_blk_by_devnum(struct spl_boot_device *bootdev, int devnum)
 {
 	enum if_type if_type;
 	struct blk_desc *dev_desc;
@@ -74,7 +75,7 @@ static struct blk_desc *get_blk_by_devnum(struct spl_boot_device *bootdev, int d
 		mtd_probe_devices();
 
 	max_devnum = blk_find_max_devnum(if_type);
-	debug("max devnum: %d\n", max_devnum);
+	debug("%s: max devnum: %d\n", __func__, max_devnum);
 	if (max_devnum < 0)
 		return ERR_PTR(max_devnum);
 	if (devnum > max_devnum)
@@ -82,15 +83,17 @@ static struct blk_desc *get_blk_by_devnum(struct spl_boot_device *bootdev, int d
 
 	dev_desc = blk_get_devnum_by_type(if_type, devnum);
 	if (IS_ERR_OR_NULL(dev_desc)) {
-		pr_err("No device for iface '%s', dev %d\n", blk_get_if_type_name(if_type), devnum);
+		pr_err("No device for iface '%s', dev %d\n",
+		         blk_get_if_type_name(if_type), devnum);
 		return ERR_PTR(-ENODEV);
 	}
 
 	return dev_desc;
 }
 
-static int get_part_by_name(struct blk_desc *dev_desc, const char *name,
-                      struct disk_partition *part)
+static int
+get_part_by_name(struct blk_desc *dev_desc, const char *name,
+                                  struct disk_partition *part)
 {
 	int ret;
 
@@ -116,7 +119,8 @@ static ulong spl_blk_load_read(struct spl_load_info *load,
 	debug("%s: start 0x%lx, blkcnt 0x%lx, buffer %p\n",
 	            __func__, sector, count, buf);
 
-	blks_read = blk_dread(dev_desc, sector, count, buf);
+	blks_read = blk_dread(dev_desc, sector,
+	                               count, buf);
 	if (blks_read == (ulong)-ENOSYS)
 		return 0;
 
@@ -145,7 +149,8 @@ static ulong spl_blk_load_legacy(struct spl_load_info *load,
 	};
 
 	debug("%s: sector: 0x%lx blkcnt 0x%lx\n", __func__, sector, blkcnt);
-	blks_read = blk_dread(dev_desc, sector, blkcnt, data);
+	blks_read = blk_dread(dev_desc, sector,
+	                                     blkcnt, data);
 	if (blks_read == (ulong)-ENOSYS) {
 		pr_err("blk_dread failed\n");
 		blks_read = 0;
@@ -170,14 +175,15 @@ static int spl_blk_load_image_part(struct spl_image_info *spl_image,
 	int ret = -EINVAL;
 
 	debug("%s: part start 0x%lx size 0x%lx blksz 0x%lx name %s\n",
-	         __func__, part->start, part->size, part->blksz, part->name);
+	        __func__, part->start, part->size, part->blksz, part->name);
 
 	header = spl_get_load_buffer(-sizeof(*header), sizeof(*header));
 
 	blkcnt = DIV_ROUND_UP_ULL(sizeof(*header), dev_desc->blksz);
 
 	/* read image header to find the image size & load address */
-	retlen = blk_dread(dev_desc, part->start, blkcnt, (char *)header);
+	retlen = blk_dread(dev_desc, part->start,
+	                             blkcnt, (char *)header);
 	debug("blk_dread start 0x%lx blkcnt %lu\n", part->start, retlen);
 	if (retlen == (ulong)-ENOSYS) {
 		ret = -EIO;
@@ -194,7 +200,8 @@ static int spl_blk_load_image_part(struct spl_image_info *spl_image,
 		load.filename = NULL;
 		load.bl_len = part->blksz;
 		load.read = spl_blk_load_read;
-		ret = spl_load_simple_fit(spl_image, &load, part->start, header);
+		ret = spl_load_simple_fit(spl_image, &load,
+		                   part->start, header);
 	} else if (IS_ENABLED(CONFIG_SPL_LEGACY_IMAGE_FORMAT) &&
 	            image_get_magic(header) == IH_MAGIC) {
 		struct spl_load_info load;
@@ -205,19 +212,22 @@ static int spl_blk_load_image_part(struct spl_image_info *spl_image,
 		load.filename = NULL;
 		load.bl_len = part->blksz;
 		load.read = spl_blk_load_legacy;
-		ret = spl_load_legacy_img(spl_image, bootdev, &load, part->start * part->blksz);
+		ret = spl_load_legacy_img(spl_image, bootdev, &load,
+		                         part->start * part->blksz);
 	}
 
 end:
 	if (ret < 0) {
-		printf("blk_dread error (start 0x%lx ret=%d)\n", part->start, ret);
+		printf("blk_dread error (start 0x%lx ret=%d)\n",
+		              part->start, ret);
 		return ret;
 	}
 
 	return 0;
 }
 
-static int spl_blk_load_multi_images(struct spl_image_info *spl_image,
+static int
+spl_blk_load_multi_images(struct spl_image_info *spl_image,
                                 struct spl_boot_device *bootdev)
 {
 	struct disk_partition info;

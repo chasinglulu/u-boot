@@ -359,13 +359,16 @@ int spl_board_get_devnum(uint bootdev_type)
 
 	switch (bootdev_type) {
 	case BOOT_DEVICE_MMC1:
-		devnum = env_get_ulong(env_get_name(ENV_MMC_DEV), 10, ~0ULL);
+		devnum = env_get_ulong(env_get_name(ENV_MMC_DEV),
+		                        10, ~0ULL);
 		break;
 	case BOOT_DEVICE_NOR:
-		devnum = env_get_ulong(env_get_name(ENV_SAFE_MTD), 10, ~0ULL);
+		devnum = env_get_ulong(env_get_name(ENV_SAFE_MTD),
+		                        10, ~0ULL);
 		break;
 	case BOOT_DEVICE_NAND:
-		devnum = env_get_ulong(env_get_name(ENV_MAIN_MTD), 10, ~0ULL);
+		devnum = env_get_ulong(env_get_name(ENV_MAIN_MTD),
+		                        10, ~0ULL);
 		break;
 	default:
 		return -1;
@@ -381,20 +384,50 @@ int spl_board_get_devnum(uint bootdev_type)
 int spl_multi_mmc_ab_select(struct blk_desc *dev_desc)
 {
 	struct disk_partition info;
+	bool fallback = false;
 	int ret;
 
-	if (!dev_desc)
+	if (unlikely(!dev_desc))
 		return -ENODEV;
 
-	ret = part_get_info_by_name(dev_desc, "misc", &info);
+retry:
+	if (fallback) {
+		/* Lookup the "misc_bak" partition */
+		debug("Using backup 'misc' partition\n");
+		ret = part_get_info_by_name(dev_desc, "misc_bak", &info);
+	} else {
+		/* Lookup the "misc" partition */
+		debug("Using 'misc' partition\n");
+		ret = part_get_info_by_name(dev_desc, "misc", &info);
+	}
+
 	if (ret < 0) {
-		debug("misc part not exist\n");
-		return ret;
+		if (fallback) {
+			pr_err("Unable to find 'misc_bak' partition on '%s' device.\n",
+			          dev_desc->bdev->name);
+			return -ENODEV;
+		} else {
+			debug("There are no 'misc' partition on '%s' device.\n",
+			          dev_desc->bdev->name);
+			fallback = true;
+			goto retry;
+		}
 	}
 
 	ret = ab_select_slot(dev_desc, &info);
-	if (ret < 0)
-		pr_err("failed to select ab slot\n");
+	if (ret < 0) {
+		if (fallback) {
+			pr_err("Invaild AB metadata in 'misc_bak' partition on '%s' device\n",
+			              dev_desc->bdev->name);
+			return -EINVAL;
+		} else {
+			debug("Invaild AB metadata in 'misc' partition on '%s' device\n",
+			              dev_desc->bdev->name);
+			fallback = true;
+			goto retry;
+		}
+	}
+	debug("Select out '%c' slot successfully\n", BOOT_SLOT_NAME(ret));
 
 	return ret;
 }
