@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2019 Eugeniu Rosca <rosca.eugeniu@gmail.com>
+ * Charleye <wangkart@aliyun.com>
  *
  * Command to read/modify/write Android BCB fields
  */
 
-#include <android_bootloader_message.h>
 #include <bcb.h>
 #include <command.h>
 #include <common.h>
-#include <display_options.h>
 #include <log.h>
 #include <part.h>
 #include <malloc.h>
 #include <memalign.h>
+#include <dm/device.h>
+#include <linux/err.h>
+#include <display_options.h>
+
+#include <android_bootloader_message.h>
 
 enum bcb_cmd {
 	BCB_CMD_LOAD,
@@ -24,8 +28,10 @@ enum bcb_cmd {
 	BCB_CMD_STORE,
 };
 
-static int bcb_dev = -1;
-static int bcb_part = -1;
+static int bcb_dev                             = -1;
+static int bcb_part                            = -1;
+static struct blk_desc *bcb_dev_desc           = NULL;
+static struct disk_partition bcb_part_info     = { 0 };
 static struct bootloader_message bcb __aligned(ARCH_DMA_MINALIGN) = { { 0 } };
 
 static int bcb_cmd_get(char *cmd)
@@ -65,20 +71,15 @@ static int bcb_is_misused(int argc, char *const argv[])
 			goto err;
 		break;
 	case BCB_CMD_STORE:
-		if (argc != 1)
+		if (argc != 1 && argc != 3)
 			goto err;
 		break;
 	case BCB_CMD_FIELD_DUMP:
-		if (argc != 2)
+		if (argc != 1 && argc != 2)
 			goto err;
 		break;
 	default:
 		printf("Error: 'bcb %s' not supported\n", argv[0]);
-		return -1;
-	}
-
-	if (cmd != BCB_CMD_LOAD && (bcb_dev < 0 || bcb_part < 0)) {
-		printf("Error: Please, load BCB first!\n");
 		return -1;
 	}
 
@@ -114,72 +115,82 @@ static int bcb_field_get(char *name, char **fieldp, int *sizep)
 	return 0;
 }
 
-static int __bcb_load(int devnum, const char *partp)
+static int bcb_load(struct blk_desc *dev_desc, struct disk_partition *part_info)
 {
-	struct blk_desc *desc;
-	struct disk_partition info;
-	u64 cnt;
-	char *endp;
-	int part, ret;
+	ulong blk_offset, blkcnt, offset;
+	char buf[sizeof(struct bootloader_message_ab)];
+	int ret;
 
-	desc = blk_get_devnum_by_type(IF_TYPE_MMC, devnum);
-	if (!desc) {
-		ret = -ENODEV;
-		goto err_read_fail;
+	offset = offsetof(struct bootloader_message_ab, message);
+	if (offset >= part_info->blksz)
+		blk_offset = offset / part_info->blksz;
+	else
+		blk_offset = 0;
+
+	blkcnt = DIV_ROUND_UP(sizeof(struct bootloader_message), part_info->blksz);
+	if (unlikely(blkcnt > part_info->size)) {
+		pr_err("Partition size too small\n");
+		ret = -EINVAL;
+		goto err;
 	}
 
-	part = simple_strtoul(partp, &endp, 0);
-	if (*endp == '\0') {
-		ret = part_get_info(desc, part, &info);
-		if (ret)
-			goto err_read_fail;
-	} else {
-		part = part_get_info_by_name(desc, partp, &info);
-		if (part < 0) {
-			ret = part;
-			goto err_read_fail;
-		}
-	}
-
-	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), info.blksz);
-	if (cnt > info.size)
-		goto err_too_small;
-
-	if (blk_dread(desc, info.start, cnt, &bcb) != cnt) {
+	ret = blk_dread(dev_desc, part_info->start + blk_offset,
+					blkcnt, buf);
+	if (ret != blkcnt) {
+		pr_err("Unable to read BCB from part '%s' on '%s' device.\n",
+		                 part_info->name, dev_desc->bdev->name);
 		ret = -EIO;
-		goto err_read_fail;
+		goto err;
 	}
 
-	bcb_dev = desc->devnum;
-	bcb_part = part;
-	debug("%s: Loaded from mmc %d:%d\n", __func__, bcb_dev, bcb_part);
+	if (blk_offset == 0)
+		memcpy(&bcb, buf + offset, sizeof(struct bootloader_message));
+	else
+		memcpy(&bcb, buf, sizeof(struct bootloader_message));
 
-	return CMD_RET_SUCCESS;
-err_read_fail:
-	printf("Error: mmc %d:%s read failed (%d)\n", devnum, partp, ret);
-	goto err;
-err_too_small:
-	printf("Error: mmc %d:%s too small!", devnum, partp);
-	goto err;
+	bcb_dev = dev_desc->devnum;
+	printf("BCB loaded from part '%s' on '%s' device successfully.\n",
+	                    part_info->name, dev_desc->bdev->name);
+
+	return 0;
+
 err:
 	bcb_dev = -1;
 	bcb_part = -1;
-
-	return CMD_RET_FAILURE;
+	bcb_dev_desc = NULL;
+	memset(&bcb_part_info, 0, sizeof(bcb_part_info));
+	return ret;
 }
 
 static int do_bcb_load(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char * const argv[])
+                       char * const argv[])
 {
-	char *endp;
-	int devnum = simple_strtoul(argv[1], &endp, 0);
+	int ret;
 
-	if (*endp != '\0') {
-		printf("Error: Device id '%s' not a number\n", argv[1]);
+	if (argc != 2) {
+		pr_err("Invalid number of arguments\n");
+		return CMD_RET_USAGE;
+	}
+
+	/* Lookup the "misc" partition */
+	ret = part_get_info_by_dev_and_name_or_num(argv[0], argv[1],
+	      &bcb_dev_desc, &bcb_part_info,
+	      false);
+	if (ret < 0) {
+		pr_err("Unable to get device and partition information\n");
 		return CMD_RET_FAILURE;
 	}
 
-	return __bcb_load(devnum, argv[2]);
+	ret = bcb_load(bcb_dev_desc, &bcb_part_info);
+	if (ret < 0) {
+		pr_err("Could not load BCB part '%s' on '%s' device\n",
+		            bcb_part_info.name, bcb_dev_desc->bdev->name);
+		return CMD_RET_FAILURE;
+	}
+	bcb_dev = bcb_dev_desc->devnum;
+	bcb_part = ret;
+
+	return CMD_RET_SUCCESS;
 }
 
 static int __bcb_set(char *fieldp, const char *valp)
@@ -215,23 +226,33 @@ static int __bcb_set(char *fieldp, const char *valp)
 }
 
 static int do_bcb_set(struct cmd_tbl *cmdtp, int flag, int argc,
-		      char * const argv[])
+                      char * const argv[])
 {
-	return __bcb_set(argv[1], argv[2]);
+	if (bcb_dev == -1 || bcb_part == -1) {
+		pr_err("\n ** No loaded BCB metadata **\n\n");
+		return CMD_RET_USAGE;
+	}
+
+	return __bcb_set(argv[0], argv[1]);
 }
 
 static int do_bcb_clear(struct cmd_tbl *cmdtp, int flag, int argc,
-			char *const argv[])
+                        char *const argv[])
 {
 	int size;
 	char *field;
 
-	if (argc == 1) {
+	if (bcb_dev == -1 || bcb_part == -1) {
+		pr_err("\n ** No loaded BCB metadata **\n\n");
+		return CMD_RET_USAGE;
+	}
+
+	if (argc == 0) {
 		memset(&bcb, 0, sizeof(bcb));
 		return CMD_RET_SUCCESS;
 	}
 
-	if (bcb_field_get(argv[1], &field, &size))
+	if (bcb_field_get(argv[0], &field, &size))
 		return CMD_RET_FAILURE;
 
 	memset(field, 0, size);
@@ -240,22 +261,27 @@ static int do_bcb_clear(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 static int do_bcb_test(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+                       char *const argv[])
 {
 	int size;
 	char *field;
-	char *op = argv[2];
+	char *op = argv[1];
 
-	if (bcb_field_get(argv[1], &field, &size))
+	if (bcb_dev == -1 || bcb_part == -1) {
+		pr_err("\n ** No loaded BCB metadata **\n\n");
+		return CMD_RET_USAGE;
+	}
+
+	if (bcb_field_get(argv[0], &field, &size))
 		return CMD_RET_FAILURE;
 
 	if (*op == '=' && *(op + 1) == '\0') {
-		if (!strncmp(argv[3], field, size))
+		if (!strncmp(argv[2], field, size))
 			return CMD_RET_SUCCESS;
 		else
 			return CMD_RET_FAILURE;
 	} else if (*op == '~' && *(op + 1) == '\0') {
-		if (!strstr(field, argv[3]))
+		if (!strstr(field, argv[2]))
 			return CMD_RET_FAILURE;
 		else
 			return CMD_RET_SUCCESS;
@@ -267,12 +293,22 @@ static int do_bcb_test(struct cmd_tbl *cmdtp, int flag, int argc,
 }
 
 static int do_bcb_dump(struct cmd_tbl *cmdtp, int flag, int argc,
-		       char *const argv[])
+                       char *const argv[])
 {
 	int size;
 	char *field;
 
-	if (bcb_field_get(argv[1], &field, &size))
+	if (bcb_dev == -1 || bcb_part == -1) {
+		pr_err("\n ** No loaded BCB metadata **\n\n");
+		return CMD_RET_USAGE;
+	}
+
+	if (argc ==0) {
+		print_buffer(0, (void *)&bcb, 1, sizeof(bcb), 16);
+		return CMD_RET_SUCCESS;
+	}
+
+	if (bcb_field_get(argv[0], &field, &size))
 		return CMD_RET_FAILURE;
 
 	print_buffer((ulong)field - (ulong)&bcb, (void *)field, 1, size, 16);
@@ -280,48 +316,118 @@ static int do_bcb_dump(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-static int __bcb_store(void)
+static int bcb_store(struct bootloader_message *bcb)
 {
-	struct blk_desc *desc;
-	struct disk_partition info;
-	u64 cnt;
+	ulong offset, blkcnt, blk_offset;
+	char buf[sizeof(struct bootloader_message_ab)];
 	int ret;
 
-	desc = blk_get_devnum_by_type(IF_TYPE_MMC, bcb_dev);
-	if (!desc) {
-		ret = -ENODEV;
+	if (unlikely(!bcb)) {
+		pr_err("Invalid BCB metadata\n");
+		return -EINVAL;
+	}
+
+	if (bcb_dev < 0 || bcb_part < 0) {
+		pr_err("Invalid device or partition\n");
+		return -EINVAL;
+	}
+
+	offset = offsetof(struct bootloader_message_ab, message);
+	if (offset >= bcb_part_info.blksz)
+		blk_offset = offset / bcb_part_info.blksz;
+	else
+		blk_offset = 0;
+	blkcnt = DIV_ROUND_UP(sizeof(struct bootloader_message), bcb_part_info.blksz);
+
+	ret = blk_dread(bcb_dev_desc, bcb_part_info.start + blk_offset,
+	                            blkcnt, buf);
+	if (IS_ERR_VALUE(ret)) {
+		pr_err("Could not read from the '%s' partition\n", bcb_part_info.name);
+		return -EIO;
+	}
+
+	if (blk_offset == 0)
+		memcpy(buf + offset, bcb, sizeof(struct bootloader_message));
+	else
+		memcpy(buf, bcb, sizeof(struct bootloader_message));
+
+	ret = blk_dwrite(bcb_dev_desc, bcb_part_info.start + blk_offset,
+	                    blkcnt, buf);
+	if (IS_ERR_VALUE(ret)) {
+		pr_err("Could not write back the '%s' partition\n", bcb_part_info.name);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int do_bcb_store(struct cmd_tbl *cmdtp, int flag, int argc,
+                        char * const argv[])
+{
+	int ret;
+
+	if (argc != 0 && argc != 2) {
+		pr_err("Invalid number of arguments\n");
 		goto err;
 	}
 
-	ret = part_get_info(desc, bcb_part, &info);
-	if (ret)
+	if (argc ==0 && (bcb_dev < 0 || bcb_part < 0)) {
+		pr_err("Please load BCB first.\n");
+		return CMD_RET_FAILURE;
+	}
+
+	if (argc == 0)
+		goto store_bcb;
+
+	ret = part_get_info_by_dev_and_name_or_num(argv[0], argv[1],
+	      &bcb_dev_desc, &bcb_part_info,
+	      false);
+	if (ret < 0) {
+		pr_err("Unable to get partition information\n");
 		goto err;
+	}
+	bcb_part = ret;
+	bcb_dev = bcb_dev_desc->devnum;
 
-	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), info.blksz);
-
-	if (blk_dwrite(desc, info.start, cnt, &bcb) != cnt) {
-		ret = -EIO;
+store_bcb:
+	ret = bcb_store(&bcb);
+	if (ret < 0) {
+		pr_err("Could not store BCB into part '%s' on '%s' device\n",
+		                  bcb_part_info.name, bcb_dev_desc->bdev->name);
 		goto err;
 	}
 
+	printf("BCB stored into part '%s' on '%s' device successfully.\n",
+	                bcb_part_info.name, bcb_dev_desc->bdev->name);
 	return CMD_RET_SUCCESS;
+
 err:
-	printf("Error: mmc %d:%d write failed (%d)\n", bcb_dev, bcb_part, ret);
+	bcb_dev_desc = NULL;
+	memset(&bcb_part_info, 0, sizeof(bcb_part_info));
+	bcb_dev = -1;
+	bcb_part = -1;
 
 	return CMD_RET_FAILURE;
 }
 
-static int do_bcb_store(struct cmd_tbl *cmdtp, int flag, int argc,
-			char * const argv[])
-{
-	return __bcb_store();
-}
-
-int bcb_write_reboot_reason(int devnum, char *partp, const char *reasonp)
+int bcb_write_reboot_reason(const char *ifname, int devnum,
+                            const char *part_name, const char *reasonp)
 {
 	int ret;
+	char dev_part_str[64];
 
-	ret = __bcb_load(devnum, partp);
+	sprintf(dev_part_str, "%d#%s",devnum, part_name);
+	debug("%s: Writing reboot reason '%s' to BCB on '%s %s'\n",
+	            __func__, reasonp, ifname, dev_part_str);
+	ret = part_get_info_by_dev_and_name_or_num(ifname, dev_part_str,
+	      &bcb_dev_desc, &bcb_part_info,
+	      false);
+	if (ret < 0) {
+		pr_err("Unable to get device and partition information (ret = %d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	ret = bcb_load(bcb_dev_desc, &bcb_part_info);
 	if (ret != CMD_RET_SUCCESS)
 		return ret;
 
@@ -329,7 +435,7 @@ int bcb_write_reboot_reason(int devnum, char *partp, const char *reasonp)
 	if (ret != CMD_RET_SUCCESS)
 		return ret;
 
-	ret = __bcb_store();
+	ret = bcb_store(&bcb);
 	if (ret != CMD_RET_SUCCESS)
 		return ret;
 
@@ -368,27 +474,39 @@ static int do_bcb(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 		return CMD_RET_FAILURE;
 	}
 
+	argc--;
+	argv++;
+
 	return c->cmd(cmdtp, flag, argc, argv);
 }
 
 U_BOOT_CMD(
 	bcb, CONFIG_SYS_MAXARGS, 1, do_bcb,
-	"Load/set/clear/test/dump/store Android BCB fields",
-	"load  <dev> <part>       - load  BCB from mmc <dev>:<part>\n"
-	"bcb set   <field> <val>      - set   BCB <field> to <val>\n"
-	"bcb clear [<field>]          - clear BCB <field> or all fields\n"
-	"bcb test  <field> <op> <val> - test  BCB <field> against <val>\n"
-	"bcb dump  <field>            - dump  BCB <field>\n"
-	"bcb store                    - store BCB back to mmc\n"
+	"Load/store/set/clear/test/dump Android BCB fields",
+	"load <interface> <dev[:part|#part_name]>\n"
+	"    - load BCB from 'part' on device type 'interface' instance 'dev'\n"
+	"bcb store [<interface>] [<dev[:part|#part_name]>]\n"
+	"    - store BCB to 'part' on device type 'interface' instance 'dev';\n"
+	"      if not specified, reuses the location from 'bcb load'\n"
+	"bcb set <field> <val>\n"
+	"    - set BCB <field> to <val>\n"
+	"bcb clear [<field>]\n"
+	"    - clear BCB <field> or all fields\n"
+	"bcb test <field> <op> <val>\n"
+	"    - test BCB <field> against <val>\n"
+	"bcb dump [<field>]\n"
+	"    - dump BCB <field> or all fields\n"
 	"\n"
 	"Legend:\n"
-	"<dev>   - MMC device index containing the BCB partition\n"
-	"<part>  - MMC partition index or name containing the BCB\n"
-	"<field> - one of {command,status,recovery,stage,reserved}\n"
-	"<op>    - the binary operator used in 'bcb test':\n"
-	"          '=' returns true if <val> matches the string stored in <field>\n"
-	"          '~' returns true if <val> matches a subset of <field>'s string\n"
-	"<val>   - string/text provided as input to bcb {set,test}\n"
-	"          NOTE: any ':' character in <val> will be replaced by line feed\n"
-	"          during 'bcb set' and used as separator by upper layers\n"
+	"<interface>  - block device interface type, e.g. 'mmc', 'mtd'\n"
+	"<dev>        - block device index containing the BCB partition\n"
+	"<part>       - block device partition index containing the BCB\n"
+	"<part_name>  - block device partition name containing the BCB\n"
+	"<field>      - one of {command,status,recovery,stage,reserved}\n"
+	"<op>         - the binary operator used in 'bcb test':\n"
+	"               '=' returns true if <val> matches the string stored in <field>\n"
+	"               '~' returns true if <val> matches a subset of <field>'s string\n"
+	"<val>        - string/text provided as input to bcb {set,test}\n"
+	"               NOTE: any ':' character in <val> will be replaced by line feed\n"
+	"               during 'bcb set' and used as separator by upper layers\n"
 );
