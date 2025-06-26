@@ -38,4 +38,16 @@ config SPL_ABORT_ALARM
 	help
 	  This option support abort alarm in SPL
 
+config ABC_SYSCON
+	bool "Support ABC SYSCON Driver"
+	depends on DM
+	help
+	  This option support syscon driver for AB Control.
+
+config SPL_ABC_SYSCON
+	bool "Support ABC SYSCON in SPL"
+	depends on SPL_DM
+	help
+	  This option support syscon driver for AB Control in SPL
+
 endif
