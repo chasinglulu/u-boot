@@ -117,8 +117,19 @@ struct bootloader_message_ab {
     char update_channel[128];
 
     // Round up the entire struct to 4096-byte.
-    char reserved[1888];
+    union {
+        char reserved[1888];
+#ifdef CONFIG_BOOTLOADER_MESSAGE_AB_REDUNDANT
+        struct {
+            uint8_t flags;
+            uint32_t crc32_le;
+        } __attribute__((packed));
+#endif
+    };
 };
+
+int bootloader_message_ab_load(struct bootloader_message_ab *buffer);
+int bootloader_message_ab_store(struct bootloader_message_ab *buffer);
 
 /**
  * Be cautious about the struct size change, in case we put anything post

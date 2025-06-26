@@ -889,6 +889,47 @@ config ANDROID_AB
 	  allows a bootloader to try a new version of the system but roll back
 	  to previous version if the new one didn't boot all the way.
 
+config BOOTLOADER_MESSAGE_AB_IFNAME
+	string "Interface for AB-specific bootloader message"
+	depends on ANDROID_AB
+	default "mmc"
+	help
+	  This specifies the interface type (e.g., 'mmc', 'mtd') where the
+	  A/B bootloader message partition is located. This is used to find
+	  the correct block device.
+
+config BOOTLOADER_MESSAGE_AB_DEV_PART
+	string "Device and partition for AB-specific bootloader message"
+	depends on ANDROID_AB
+	default "0#misc"
+	help
+	  This specifies the device and partition for the A/B bootloader
+	  message. The format is '<dev>#<part_name>', for example '0#misc'.
+	  This is where the primary AB-specific bootloader message is stored.
+
+config BOOTLOADER_MESSAGE_AB_REDUNDANT
+	bool "Redundant AB-specific Bootloader Message"
+	help
+	  This enables a redundant copy of the AB-specific bootloader message.
+	  It contains two main parts:
+	  - The Bootloader Control Block (BCB) for OTA commands.
+	  - The A/B Metadata for managing slots.
+
+	  The BCB is used for communication between OTA and the bootloader.
+	  A/B updates use the metadata to signal which slot to boot. Having a
+	  redundant copy helps prevent a single point of failure if this bootloader
+	  message gets corrupted.
+
+config BOOTLOADER_MESSAGE_AB_DEV_PART_REDUND
+	string "Device and partition for redundant AB bootloader message"
+	depends on ANDROID_AB && BOOTLOADER_MESSAGE_AB_REDUNDANT
+	default "0#misc_bak"
+	help
+	  This specifies the device and partition for the redundant A/B
+	  bootloader message. The format is '<dev>#<part_name>', for
+	  example '0#misc_bak'. This provides a fallback if the primary
+	  message is corrupted.
+
 endmenu
 
 menu "Blob list"
