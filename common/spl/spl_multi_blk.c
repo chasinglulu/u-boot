@@ -218,8 +218,8 @@ static int spl_blk_load_image_part(struct spl_image_info *spl_image,
 
 end:
 	if (ret < 0) {
-		printf("blk_dread error (start 0x%lx ret=%d)\n",
-		              part->start, ret);
+		printf("Image at offset '0x%lx' not found (ret = %d)\n",
+		              part->start * part->blksz, ret);
 		return ret;
 	}
 
