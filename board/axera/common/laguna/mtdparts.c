@@ -116,8 +116,13 @@ int splitup_mtdparts(const char *full_mtdparts,
 	else
 		p = full_mtdparts;
 
-	while ((comma = strchr(p, ',')) != NULL) {
-		mtdpart_len = comma - p + 1;
+	while (*p) {
+		comma = strchr(p, ',');
+		if (comma)
+			mtdpart_len = comma - p;
+		else
+			mtdpart_len = strlen(p);
+
 		bracket = strchr(p, '(');
 		np = ++bracket;
 		bracket = strchr(np, ')');
@@ -127,11 +132,18 @@ int splitup_mtdparts(const char *full_mtdparts,
 
 		ret = mtdpart_name_check(name, safe_part_id,
 		                        get_safe_part_id_count());
-		if (ret >= 0)
+		if (ret >= 0) {
 			strncat(substr1, p, mtdpart_len);
-		else
+			strcat(substr1, ",");
+		} else {
 			strncat(substr2, p, mtdpart_len);
-		p += mtdpart_len;
+			strcat(substr2, ",");
+		}
+
+		if (comma)
+			p = comma + 1;
+		else
+			p += mtdpart_len;
 	}
 
 	/* Remove the last comma */
@@ -178,8 +190,13 @@ int filter_out_mtdparts(const char *full_mtdparts,
 	else
 		p = full_mtdparts;
 
-	while ((comma = strchr(p, ',')) != NULL) {
-		mtdpart_len = comma - p + 1;
+	while (*p) {
+		comma = strchr(p, ',');
+		if (comma)
+			mtdpart_len = comma - p;
+		else
+			mtdpart_len = strlen(p);
+
 		bracket = strchr(p, '(');
 		np = ++bracket;
 		bracket = strchr(np, ')');
@@ -189,10 +206,15 @@ int filter_out_mtdparts(const char *full_mtdparts,
 
 		ret = mtdpart_name_check(name, part_id,
 		                         part_count);
-		if (ret >= 0)
+		if (ret >= 0) {
 			strncat(substr, p, mtdpart_len);
+			strcat(substr, ",");
+		}
 
-		p += mtdpart_len;
+		if (comma)
+			p = comma + 1;
+		else
+			p += mtdpart_len;
 	}
 
 	/* Remove the last comma */
