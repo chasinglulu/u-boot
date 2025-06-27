@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2017 The Android Open Source Project
  */
+
 #include <common.h>
 #include <android_ab.h>
 #include <android_bootloader_message.h>
@@ -83,7 +84,7 @@ static int ab_control_default(struct bootloader_control *abc)
  * @param[out] pointer to pointer to bootloader_control data
  * Return: 0 on success and a negative on error
  */
-static int ab_control_create_from_disk(struct blk_desc *dev_desc,
+int ab_control_create_from_disk(struct blk_desc *dev_desc,
 				       const struct disk_partition *part_info,
 				       struct bootloader_control **abc)
 {
@@ -95,7 +96,7 @@ static int ab_control_create_from_disk(struct blk_desc *dev_desc,
 
 	abc_pos = offsetof(struct bootloader_message_ab, slot_suffix);
 	if (abc_pos % dev_desc->blksz) {
-		log_warning("ANDROID: Boot control offset is not aligned with block size.\n");
+		log_debug("ANDROID: Boot control offset is not aligned with block size.\n");
 		abc_offset = 0;
 	} else {
 		abc_offset = abc_pos / part_info->blksz;
@@ -147,6 +148,22 @@ failed:
 	return ret;
 }
 
+int ab_control_create_from_buffer(struct bootloader_message_ab *buffer,
+				     struct bootloader_control *abc)
+{
+	loff_t offset;
+
+	if (!buffer || !abc) {
+		log_err("ANDROID: Invalid arguments\n");
+		return -EINVAL;
+	}
+
+	offset = offsetof(struct bootloader_message_ab, slot_suffix);
+	memcpy(abc, (void *)buffer + offset, sizeof(struct bootloader_control));
+
+	return 0;
+}
+
 /**
  * Store the loaded boot_control block.
  *
@@ -159,7 +176,7 @@ failed:
  *                it up to the nearest block boundary
  * Return: 0 on success and a negative on error
  */
-static int ab_control_store(struct blk_desc *dev_desc,
+int ab_control_store(struct blk_desc *dev_desc,
 			    const struct disk_partition *part_info,
 			    struct bootloader_control *abc)
 {
@@ -211,6 +228,22 @@ failed:
 	return ret;
 }
 
+int ab_control_store_into_buffer(struct bootloader_message_ab *buffer,
+				      struct bootloader_control *abc)
+{
+	loff_t offset;
+
+	if (!buffer || !abc) {
+		log_err("ANDROID: Invalid arguments\n");
+		return -EINVAL;
+	}
+
+	offset = offsetof(struct bootloader_message_ab, slot_suffix);
+	memcpy((void *)buffer + offset, abc, sizeof(struct bootloader_control));
+
+	return 0;
+}
+
 /**
  * Compare two slots.
  *
@@ -239,23 +272,12 @@ static int ab_compare_slots(const struct slot_metadata *a,
 	return 0;
 }
 
-int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
+static int ab_select(struct bootloader_control *abc, int *slotp)
 {
-	struct bootloader_control *abc = NULL;
 	u32 crc32_le;
 	int slot, i, ret;
 	bool store_needed = false;
 	char slot_suffix[4];
-
-	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
-	if (ret < 0) {
-		/*
-		 * This condition represents an actual problem with the code or
-		 * the board setup, like an invalid partition information.
-		 * Signal a repair mode and do not try to boot from either slot.
-		 */
-		return ret;
-	}
 
 	crc32_le = ab_control_compute_crc(abc);
 	if (abc->crc32_le != crc32_le) {
@@ -265,7 +287,6 @@ int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
 
 		ret = ab_control_default(abc);
 		if (ret < 0) {
-			free(abc);
 			return -ENODATA;
 		}
 		store_needed = true;
@@ -273,14 +294,12 @@ int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
 
 	if (abc->magic != BOOT_CTRL_MAGIC) {
 		log_err("ANDROID: Unknown A/B metadata: %.8x\n", abc->magic);
-		free(abc);
 		return -ENODATA;
 	}
 
 	if (abc->version > BOOT_CTRL_VERSION) {
 		log_err("ANDROID: Unsupported A/B metadata version: %.8x\n",
 			abc->version);
-		free(abc);
 		return -ENODATA;
 	}
 
@@ -350,6 +369,73 @@ int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
 		}
 	}
 
+	*slotp = slot;
+
+	return store_needed ? 1: 0;
+}
+
+int ab_select_slot_from_buffer(void)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_message_ab, buffer, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_control, abc, 1);
+	int slot, ret;
+	bool store_needed = false;
+
+	ret = bootloader_message_ab_load(buffer);
+	if (ret < 0) {
+		log_debug("%s: Could not load AB-specific bootloader message.\n", __func__);
+		return ret;
+	}
+
+	ret = ab_control_create_from_buffer(buffer, abc);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = ab_select(abc, &slot);
+	if (ret < 0) {
+		log_err("Unable to select slot\n");
+		return ret;
+	}
+	store_needed = !!ret;
+
+	if (store_needed) {
+		abc->crc32_le = ab_control_compute_crc(abc);
+		ab_control_store_into_buffer(buffer, abc);
+		bootloader_message_ab_store(buffer);
+	}
+
+	debug("%s: selected slot = %d\n", __func__, slot);
+	if (slot < 0)
+		return -EINVAL;
+
+	return slot;
+}
+
+int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
+{
+	struct bootloader_control *abc = NULL;
+	int slot, ret;
+	bool store_needed = false;
+
+	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
+	if (ret < 0) {
+		/*
+		 * This condition represents an actual problem with the code or
+		 * the board setup, like an invalid partition information.
+		 * Signal a repair mode and do not try to boot from either slot.
+		 */
+		return ret;
+	}
+
+	ret = ab_select(abc, &slot);
+	if (ret < 0) {
+		log_err("ANDROID: Could not select slot\n");
+		free(abc);
+		return ret;
+	}
+	store_needed = !!ret;
+
 	if (store_needed) {
 		abc->crc32_le = ab_control_compute_crc(abc);
 		ab_control_store(dev_desc, part_info, abc);
@@ -362,55 +448,70 @@ int ab_select_slot(struct blk_desc *dev_desc, struct disk_partition *part_info)
 	return slot;
 }
 
-int ab_mark_successful(struct blk_desc *dev_desc,
-                    struct disk_partition *part_info, int slot)
+int ab_control_mark_successful(int slot)
 {
-	struct bootloader_control *abc = NULL;
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_message_ab, buffer, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_control, abc, 1);
 	u32 crc32_le;
 	int ret;
 
-	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
+	ret = bootloader_message_ab_load(buffer);
 	if (ret < 0) {
-		log_err("ANDROID: Failed to load A/B metadata\n");
+		log_debug("%s: Could not load AB-specific bootloader message.\n", __func__);
 		return ret;
 	}
+
+	ret = ab_control_create_from_buffer(buffer, abc);
+	if (ret < 0) {
+		return ret;
+	}
+
 	crc32_le = ab_control_compute_crc(abc);
 	if (abc->crc32_le != crc32_le) {
-		log_debug("%s: nvalid CRC-32 (expected %.8x, found %.8x),",
-				__func__, crc32_le, abc->crc32_le);
-			return -ENODATA;
+		log_debug("%s: invalid CRC-32 (expected %.8x, found %.8x),",
+		             __func__, crc32_le, abc->crc32_le);
+		return -ENODATA;
 	}
 
 	abc->slot_info[slot].successful_boot = 1;
 	abc->slot_info[slot].tries_remaining = 7;
 
 	abc->crc32_le = ab_control_compute_crc(abc);
-	ret = ab_control_store(dev_desc, part_info, abc);
+	ret = ab_control_store_into_buffer(buffer, abc);
 	if (ret < 0) {
-		log_err("ANDROID: Failed to store A/B metadata\n");
-		free(abc);
 		return ret;
 	}
 
-	free(abc);
+	ret = bootloader_message_ab_store(buffer);
+	if (ret < 0) {
+		log_debug("%s: Could not store AB-specific bootloader message.\n", __func__);
+		return ret;
+	}
+
 	return 0;
 }
 
-int ab_mark_unbootable(struct blk_desc *dev_desc,
-					struct disk_partition *part_info, int slot)
+int ab_control_mark_unbootable(int slot)
 {
-	struct bootloader_control *abc = NULL;
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_message_ab, buffer, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_control, abc, 1);
 	u32 crc32_le;
 	int ret;
 
-	ret = ab_control_create_from_disk(dev_desc, part_info, &abc);
+	ret = bootloader_message_ab_load(buffer);
 	if (ret < 0) {
-		log_err("ANDROID: Failed to load A/B metadata\n");
+		log_debug("%s: Could not load AB-specific bootloader message.\n", __func__);
 		return ret;
 	}
+
+	ret = ab_control_create_from_buffer(buffer, abc);
+	if (ret < 0) {
+		return ret;
+	}
+
 	crc32_le = ab_control_compute_crc(abc);
 	if (abc->crc32_le != crc32_le) {
-		log_debug("%s: nvalid CRC-32 (expected %.8x, found %.8x),",
+		log_debug("%s: invalid CRC-32 (expected %.8x, found %.8x),",
 				__func__, crc32_le, abc->crc32_le);
 			return -ENODATA;
 	}
@@ -420,13 +521,42 @@ int ab_mark_unbootable(struct blk_desc *dev_desc,
 	abc->slot_info[slot].priority = 0;
 
 	abc->crc32_le = ab_control_compute_crc(abc);
-	ret = ab_control_store(dev_desc, part_info, abc);
+	ret = ab_control_store_into_buffer(buffer, abc);
 	if (ret < 0) {
-		log_err("ANDROID: Failed to store A/B metadata\n");
-		free(abc);
 		return ret;
 	}
 
-	free(abc);
+	ret = bootloader_message_ab_store(buffer);
+	if (ret < 0) {
+		log_debug("%s: Could not store AB-specific bootloader message.\n", __func__);
+		return ret;
+	}
+
 	return 0;
+}
+
+int ab_control_compare_slots(void)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_message_ab, buffer, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_control, abc, 1);
+	int ret;
+	bool equalty;
+
+	ret = bootloader_message_ab_load(buffer);
+	if (ret < 0) {
+		log_debug("%s: Could not load AB-specific bootloader message.\n", __func__);
+		return ret;
+	}
+
+	ret = ab_control_create_from_buffer(buffer, abc);
+	if (ret < 0) {
+		return ret;
+	}
+
+	equalty = (memcmp(&abc->slot_info[0], &abc->slot_info[1],
+	       sizeof(struct slot_metadata)) == 0);
+	if (equalty)
+		return 1;
+	else
+		return 0;
 }

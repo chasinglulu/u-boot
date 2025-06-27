@@ -9,25 +9,39 @@
 #include <env.h>
 #include <part.h>
 
+static int select_slot_from_disk(const char *ifname, const char *dev_part_str)
+{
+	struct blk_desc *dev_desc;
+	struct disk_partition part_info;
+
+	/* Lookup the "misc" partition from ifname and dev_part_str */
+	if (part_get_info_by_dev_and_name_or_num(ifname, dev_part_str,
+						 &dev_desc, &part_info,
+						 false) < 0) {
+		return -ENOENT;
+	}
+
+	return ab_select_slot(dev_desc, &part_info);
+}
+
 static int do_ab_select(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
 	int ret;
-	struct blk_desc *dev_desc;
-	struct disk_partition part_info;
 	char slot[2];
 
-	if (argc != 4)
+	if (argc != 2 && argc != 4)
 		return CMD_RET_USAGE;
 
-	/* Lookup the "misc" partition from argv[2] and argv[3] */
-	if (part_get_info_by_dev_and_name_or_num(argv[2], argv[3],
-						 &dev_desc, &part_info,
-						 false) < 0) {
-		return CMD_RET_FAILURE;
+	switch (argc) {
+	case 2:
+		ret = ab_select_slot_from_buffer();
+		break;
+	case 4:
+		ret = select_slot_from_disk(argv[2], argv[3]);
+		break;
 	}
 
-	ret = ab_select_slot(dev_desc, &part_info);
 	if (ret < 0) {
 		printf("Android boot failed, error %d.\n", ret);
 		return CMD_RET_FAILURE;
@@ -43,7 +57,7 @@ static int do_ab_select(struct cmd_tbl *cmdtp, int flag, int argc,
 
 U_BOOT_CMD(ab_select, 4, 0, do_ab_select,
 	   "Select the slot used to boot from and register the boot attempt.",
-	   "<slot_var_name> <interface> <dev[:part|#part_name]>\n"
+	   "<slot_var_name> [<interface>] [<dev[:part|#part_name]>]\n"
 	   "    - Load the slot metadata from the partition 'part' on\n"
 	   "      device type 'interface' instance 'dev' and store the active\n"
 	   "      slot in the 'slot_var_name' variable. This also updates the\n"
@@ -53,4 +67,5 @@ U_BOOT_CMD(ab_select, 4, 0, do_ab_select,
 	   "    - If 'part_name' is passed, preceded with a # instead of :, the\n"
 	   "      partition name whose label is 'part_name' will be looked up in\n"
 	   "      the partition table. This is commonly the \"misc\" partition.\n"
+	   "    - If not specified, the default interface, dev and part is used.\n"
 );
