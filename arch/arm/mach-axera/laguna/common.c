@@ -632,6 +632,7 @@ static int ft_system_hwinfo(void *blob)
 	int safety_abort, main_abort;
 	const char *safety_abort_str = NULL;
 	const char *main_abort_str = NULL;
+	ulong slot;
 
 	parent = fdt_path_offset(blob, "/hw_info_display");
 	if (parent < 0) {
@@ -676,6 +677,11 @@ static int ft_system_hwinfo(void *blob)
 		         &main_abort, sizeof(main_abort));
 		if (main_abort_str)
 			fdt_setprop_string(blob, parent, "axera,main-abort-name", main_abort_str);
+	}
+
+	slot = env_get_ulong("bootslot", 10, ~0UL);
+	if (slot != ~0UL) {
+		fdt_setprop_u32(blob, parent, "axera,boot-slot", slot);
 	}
 
 	return 0;
