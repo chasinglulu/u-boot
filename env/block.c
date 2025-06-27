@@ -9,7 +9,6 @@
 #include <common.h>
 #include <command.h>
 #include <fdtdec.h>
-#include <linux/stddef.h>
 #include <malloc.h>
 #include <memalign.h>
 #include <part.h>
@@ -18,8 +17,6 @@
 #include <dm/ofnode.h>
 #include <env.h>
 #include <env_internal.h>
-#include <mtd.h>
-#include <hexdump.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -30,9 +27,6 @@ __weak const char *env_blk_get_intf(void)
 
 __weak const char *env_blk_get_dev_part(int copy, bool only_dev)
 {
-	// return (const char *)CONFIG_ENV_BLK_DEVICE_AND_PART;
-	mtd_probe_devices();
-
 	if (only_dev)
 		return (const char *)CONFIG_ENV_BLK_DEVICE;
 
