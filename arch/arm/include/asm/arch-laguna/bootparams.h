@@ -53,6 +53,7 @@ typedef struct boot_params {
 	};
 
 	void *fdt_addr;
+	int32_t slot;
 	unsigned short bootdevice;
 	struct membuff spl_console_out;
 } boot_params_t;
@@ -200,7 +201,6 @@ bool is_secure_boot(void);
 void set_secureboot_env(bool secure);
 void remove_mtd_device(int bootdev);
 const char *env_get_name(int index);
-int abc_mark_bootable(bool okay);
 int soc_init_f(void);
 bool is_bootdev_env_ready(void);
 void set_bootdev_env_ready(bool okay);
@@ -208,6 +208,11 @@ int get_abort(bool safety, const char **name);
 int check_bootparams(bool is_sbl);
 void calc_bootparams_crc32(bool is_sbl);
 void probe_all_spi_nor_devs(void);
+
+/* AB Control operations */
+int safety_abc_setup(int mark_type, int slot);
+int safety_abc_get_slot(void);
+int abc_mark_bootable(bool okay);
 
 #include <blk.h>
 #include <part.h>

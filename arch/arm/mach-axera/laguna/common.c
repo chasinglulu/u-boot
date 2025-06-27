@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0+
  *
- * Common board-specific code
+ * Common SoC-specific code
  *
- * Copyright (c) 2024 Charleye <wangkart@aliyun.com>
+ * Copyright (C) 2024 Charleye <wangkart@aliyun.com>
  */
 
 #include <common.h>
@@ -307,6 +307,26 @@ inline int check_bootparams(bool is_sbl) { return 0; }
 inline void calc_bootparams_crc32(bool is_sbl) { }
 #endif /* CONFIG_LUA_BOOTPARAMS_VERIFY */
 
+static inline const char *get_blk_ifname(void)
+{
+	const char *varname;
+	const char *ifname = NULL;
+
+	varname = env_get_name(ENV_DEVTYPE);
+	ifname = env_get(varname);
+	if (!ifname) {
+		debug("'%s' environment variable not found\n", varname);
+		return NULL;
+	}
+
+	if (!strcmp(ifname, "mtd")) {
+		mtd_probe_devices();
+	}
+
+	return ifname;
+}
+
+
 #ifndef CONFIG_SPL_BUILD
 /*
  * Get the top of usable RAM
@@ -320,59 +340,38 @@ ulong board_get_usable_ram_top(ulong total_size)
 #ifdef CONFIG_LUA_AB
 static int scan_dev_for_extlinux_ab(void)
 {
-	struct blk_desc *dev_desc;
-	struct disk_partition part_info;
+	boot_params_t *bp = NULL;
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
 	char *devtype = NULL;
-	char *devnum = NULL;
-	char dev_part_str[32];
-	bool fallback = false;
+	ulong devnum;
 	int slot, ret;
 
-	devtype = env_get("devtype");
+	devtype = env_get(env_get_name(ENV_DEVTYPE));
 	if (unlikely(!devtype)) {
-		debug("Not Found 'devtype' environment variable\n");
+		debug("'devtype' environment variable not found\n");
 		return -ENODATA;
 	}
 
-	devnum = env_get("devnum");
-	if (unlikely(!devnum)) {
-		debug("Not Found 'devnum' environment variable\n");
+	devnum = env_get_ulong(env_get_name(ENV_DEVNUM), 10, ~0UL);
+	if (devnum == ~0UL) {
+		debug("devnum' environment variable not found\n");
 		return -ENODATA;
 	}
 
-retry:
-	if (fallback) {
-		/* Lookup the "misc_bak" partition */
-		snprintf(dev_part_str, 32, "%s#misc_bak", devnum);
-		debug("Using backup 'misc' partition\n");
-	} else {
-		/* Lookup the "misc" partition */
-		snprintf(dev_part_str, 32, "%s#misc", devnum);
-	}
-	ret = part_get_info_by_dev_and_name_or_num(devtype, dev_part_str,
-	                    &dev_desc, &part_info,
-	                    false);
-	if (ret < 0) {
-		if (fallback) {
-			pr_err("Not Found 'misc_bak' partition on '%s' device\n", devtype);
-			return -ENODEV;
-		} else {
-			fallback = true;
-			goto retry;
-		}
+	dev_desc = blk_get_dev(devtype, devnum);
+	if (IS_ERR_OR_NULL(dev_desc)) {
+		debug("Failed to get '%s %lu' block device\n",
+		      devtype, devnum);
+		return PTR_ERR(dev_desc);
 	}
 
-	ret = ab_select_slot(dev_desc, &part_info);
-	if (ret < 0) {
-		if (fallback) {
-			pr_err("Invaild AB control in 'misc_bak' partition on '%s' device\n", devtype);
-			return -EINVAL;
-		} else {
-			fallback = true;
-			goto retry;
-		}
+	bp = boot_params_get_base();
+	slot = bp->slot;
+	if (slot < 0 || slot >= 2) {
+		debug("Invalid slot '%d'\n", slot);
+		return -EINVAL;
 	}
-	slot = ret;
 
 	/* Lookup the "bootable falg" partition */
 	int part_count = 0;
@@ -389,30 +388,25 @@ retry:
 		part_map[part_count++] = p;
 	}
 	if (part_count != 2) {
-		if (fallback) {
-			debug("Too many or few bootable partitions on '%s' device\n", devtype);
-			return -EINVAL;
-		} else {
-			fallback = true;
-			goto retry;
-		}
+		debug("Too many or few bootable partitions\n");
+		return -EINVAL;
 	}
 
+	ret = part_get_info(dev_desc, part_map[slot], &part_info);
+	if (ret < 0) {
+		debug("Unable to get '%d' partition information on '%s' device\n",
+		           part_map[slot], devtype);
+		return ret;
+	}
 	ret = fs_set_blk_dev_with_part(dev_desc, part_map[slot]);
 	if (ret < 0) {
-		if (fallback) {
-			part_get_info(dev_desc, part_map[slot], &part_info);
-			pr_err("No filesystem exist in '%s (%d)' partition on '%s' device\n",
-				part_info.name, part_map[slot], devtype);
-			return -EBADSLT;
-		} else {
-			fallback = true;
-			goto retry;
-		}
+		pr_err("No filesystem exist in '%s (%d)' partition on '%s' device\n",
+			part_info.name, part_map[slot], devtype);
+		return -ENOENT;
 	}
 	fs_close();
 
-	printf("Using booting slot: %c\n", toupper(BOOT_SLOT_NAME(slot)));
+	printf("Using booting slot: %c\n", SLOT_NAME(slot));
 	env_set_ulong("bootslot", slot);
 	env_set_hex("distro_bootpart", part_map[slot]);
 	env_set("prefix", "/");
@@ -461,6 +455,7 @@ int board_late_init(void)
 {
 	int bootstate = get_bootstate();
 	int bootdev = get_bootdevice(NULL);
+	int ret;
 
 	if (is_bootdev_env_ready())
 		set_bootdev_env_ready(false);
@@ -474,8 +469,15 @@ int board_late_init(void)
 		break;
 	}
 
-	if (bootstate == BOOTSTATE_POWERUP)
-		scan_dev_for_extlinux_ab();
+	if (bootstate == BOOTSTATE_POWERUP) {
+		ret = scan_dev_for_extlinux_ab();
+#if defined(CONFIG_LUA_STRICT_CHECK)
+		if (ret < 0) {
+			pr_err("Unable to find extlinux on device (ret = %d).\n", ret);
+			return ret;
+		}
+#endif
+	}
 
 	if (bootstate == BOOTSTATE_DOWNLOAD)
 		env_set("download", "yes");
@@ -776,28 +778,21 @@ void board_cleanup_before_linux(void)
 #if defined(CONFIG_ENV_IS_IN_BLK)
 const char *env_blk_get_intf(void)
 {
-	debug("%s: env: %s = %s\n", __func__,
-	       env_get_name(ENV_DEVTYPE),
-	       env_get(env_get_name(ENV_DEVTYPE)));
-	return env_get(env_get_name(ENV_DEVTYPE));
+	return get_blk_ifname();
 }
 
 const char *env_blk_get_dev_part(int copy, bool only_dev)
 {
-	const char *devtype = env_get(env_get_name(ENV_DEVTYPE));
-
-	if (!strcmp(devtype, "mtd")) {
-		mtd_probe_devices();
-	}
-
-	if (only_dev) {
-		return env_get(env_get_name(ENV_DEVNUM));
-	}
-
 	static char dev_part_str[32];
+	const char *varname;
+
+	varname = env_get_name(ENV_DEVNUM);
+	if (only_dev) {
+		return env_get(varname);
+	}
+
 	snprintf(dev_part_str, sizeof(dev_part_str), "%s#%s",
-				env_get(env_get_name(ENV_DEVNUM)),
-				copy == 1 ? "ubootenv_bak" : "ubootenv");
+				env_get(varname), copy == 1 ? "ubootenv_bak" : "ubootenv");
 
 	debug("%s: dev_part_str = %s\n", __func__, dev_part_str);
 	return dev_part_str;
@@ -806,55 +801,27 @@ const char *env_blk_get_dev_part(int copy, bool only_dev)
 
 #endif /* !CONFIG_SPI_BUILD */
 
-static int find_misc_part(const char *devtype, unsigned int devnum,
-            struct blk_desc **blk_desc, struct disk_partition *info)
+const char *bootloader_message_ab_get_blk_ifname(void)
 {
-	struct blk_desc *dev_desc;
-	struct disk_partition part_info;
-	char dev_part_str[32];
-	bool fallback = false;
-	int ret;
+	return get_blk_ifname();
+}
 
-	if (!blk_desc || !info) {
-		debug("Invalid parameter\n");
-		return -EINVAL;
-	}
+const char *bootloader_message_ab_get_blk_dev_part(int copy)
+{
+	const char *varname;
+	static char dev_part_str[32];
 
-retry:
-	if (fallback) {
-		/* Lookup the "misc_bak" partition */
-		snprintf(dev_part_str, sizeof(dev_part_str), "%d#misc_bak", devnum);
-		debug("Using backup 'misc' partition\n");
-	} else {
-		/* Lookup the "misc" partition */
-		snprintf(dev_part_str, sizeof(dev_part_str), "%d#misc", devnum);
-		debug("Using 'misc' partition\n");
-	}
-	ret = part_get_info_by_dev_and_name_or_num(devtype, dev_part_str,
-	      &dev_desc, &part_info,
-	      false);
-	if (ret < 0) {
-		if (fallback) {
-			debug("Not Found 'misc_bak' partition on '%s' device\n", devtype);
-			return -ENODEV;
-		} else {
-			debug("Not Found 'misc' partition on '%s' device\n", devtype);
-			fallback = true;
-			goto retry;
-		}
-	}
+	varname = env_get_name(ENV_DEVNUM);
+	snprintf(dev_part_str, sizeof(dev_part_str), "%s#%s",
+	               env_get(varname), copy == 1 ? "misc_bak" : "misc");
 
-	*blk_desc = dev_desc;
-	memcpy(info, &part_info, sizeof(part_info));
-	return 0;
+	debug("%s: dev_part_str = %s\n", __func__, dev_part_str);
+	return dev_part_str;
 }
 
 int abc_mark_bootable(bool okay)
 {
-	struct blk_desc *dev_desc;
-	struct disk_partition part_info;
-	char *devtype = NULL;
-	ulong devnum = 0, slot;
+	ulong slot;
 	int ret;
 
 	slot = env_get_ulong("bootslot", 10, ~0ULL);
@@ -864,37 +831,17 @@ int abc_mark_bootable(bool okay)
 	}
 	debug("boot slot: %lu\n", slot);
 
-	devnum = env_get_ulong(env_get_name(ENV_DEVNUM), 10, ~0UL);
-	if (devnum == ~0UL) {
-		debug("Not found '%s' environment variable\n", env_get_name(ENV_DEVNUM));
-		return -EINVAL;
-	}
-	debug("devnum: %lu\n", devnum);
-
-	devtype = env_get(env_get_name(ENV_DEVTYPE));
-	if (unlikely(!devtype)) {
-		debug("Not Found '%s' environment variable\n", env_get_name(ENV_DEVTYPE));
-		return -EINVAL;
-	}
-	debug("devtype: %s\n", devtype);
-
-	ret = find_misc_part(devtype, devnum, &dev_desc, &part_info);
-	if (ret < 0) {
-		debug("Failed to get misc partition information\n");
-		return ret;
-	}
-
 	if (okay)
-		ret = ab_mark_successful(dev_desc, &part_info, slot);
+		ret = ab_control_mark_successful(!!slot);
 	else
-		ret = ab_mark_unbootable(dev_desc, &part_info, slot);
+		ret = ab_control_mark_unbootable(!!slot);
 	if (ret < 0) {
-		debug("Failed to mark slot %c %sbootable\n",
-		    toupper(BOOT_SLOT_NAME(slot)), okay ? "successful" : "unbootable");
+		debug("Failed to mark slot %c %s\n",
+		     SLOT_NAME(!!slot), okay ? "successful" : "unbootable");
 		return ret;
 	}
 	printf("Mark slot %c %s\n",
-	    toupper(BOOT_SLOT_NAME(slot)), okay ? "successful" : "unbootable");
+	         SLOT_NAME(!!slot), okay ? "successful" : "unbootable");
 
 	return 0;
 }

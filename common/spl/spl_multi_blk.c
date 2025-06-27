@@ -248,7 +248,7 @@ spl_blk_load_multi_images(struct spl_image_info *spl_image,
 
 	ab_slot = spl_multi_blk_ab_select();
 	if (ab_slot < 0) {
-		pr_err("failed to get ab slot\n");
+		pr_err("Unable to get AB slot\n");
 		return -EINVAL;
 	}
 

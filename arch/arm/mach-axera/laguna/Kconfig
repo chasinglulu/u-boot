@@ -539,6 +539,12 @@ config LUA_BOOTPARAMS_VERIFY
 	  This option enables verification of boot parameters with crc32.
 	  It is used to ensure the integrity and authenticity of boot parameters.
 
+config LUA_MCU_SLOT_FROM_BUFFER
+	bool "Obtain MCU slot from SBL handoff buffer"
+	default y
+	help
+	  This option enables obtaining the MCU slot from the SBL handoff buffer.
+
 config LUA_CUSTOM_SERVERIP
 	bool "Custom severip"
 	help

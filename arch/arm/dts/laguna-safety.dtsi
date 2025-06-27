@@ -55,6 +55,16 @@
 				u-boot,dm-pre-reloc;
 				u-boot,dm-spl;
 			};
+
+			reboot: reboot {
+				compatible = "syscon-reboot";
+				regmap = <&safety_glb_aon>;
+				offset = <LAGUNA_SYSCON_SAFETY_RST_CTRL>;
+				mask = <0x80>;
+				value = <0x80>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
 		};
 
 		safety_top_glb: safety_top_glb@006D9000 {
@@ -65,6 +75,24 @@
 			u-boot,dm-pre-reloc;
 			u-boot,dm-spl;
 			status = "disabled";
+		};
+
+		fcu: fcu@006C4000 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x00 0x006C4000 0x00 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
+			status = "disabled";
+
+			safety_abc_syscon: safety-abc-syscon {
+				compatible = "axera,laguna-abc-syscon";
+				regmap = <&fcu>;
+				offset = <LAGUNA_SYSCON_SAFETY_ABC>;
+				u-boot,dm-pre-reloc;
+				u-boot,dm-spl;
+			};
 		};
 
 		serial0: uart@00602000 {

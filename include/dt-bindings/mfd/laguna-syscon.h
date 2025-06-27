@@ -10,7 +10,11 @@
 #define LAGUNA_SYSCON_SAFETY_UART                0x8C
 
 /* safety glb aon register */
+#define LAGUNA_SYSCON_SAFETY_RST_CTRL            0x0C
 #define LAGUNA_SYSCON_SAFETY_RST_ALARM           0x18
+
+/* safety fcu register */
+#define LAGUNA_SYSCON_SAFETY_ABC                 0x00
 
 /* periph glb register */
 #define LAGUNA_SYSCON_PERIPH_EMAC                0x28

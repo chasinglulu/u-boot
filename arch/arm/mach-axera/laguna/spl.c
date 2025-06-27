@@ -8,6 +8,7 @@
 #include <asm/system.h>
 #include <semihosting.h>
 #include <android_ab.h>
+#include <linux/delay.h>
 #include <asm/io.h>
 #include <hang.h>
 #include <image.h>
@@ -17,11 +18,13 @@
 #include <spl.h>
 #include <cpu_func.h>
 #include <malloc.h>
-#include <test/test.h>
-#include <test/ut.h>
+
+#include <android_ab.h>
 #include <asm/arch/bootparams.h>
 #include <dm/device-internal.h>
-#include <linux/delay.h>
+
+#include <test/test.h>
+#include <test/ut.h>
 
 u32 spl_boot_device(void)
 {
@@ -225,11 +228,50 @@ static inline void wait_for_uboot(void)
 #endif
 }
 
+static void verify_bootslot(void)
+{
+	boot_params_t *bp = boot_params_get_base();
+	int slot = -1, ret;
+	bool equal_ab_slot;
+
+	slot = ab_select_slot_from_buffer();
+	if (slot < 0 || slot >= 2) {
+		printf("Wrong slot (ret = %d)\n", slot);
+		return;
+	}
+
+	ret = ab_control_compare_slots();
+	if (ret < 0) {
+		printf("Unable to compare two slots (A & B)\n");
+		return;
+	}
+	equal_ab_slot = !!ret;
+
+	bp->slot = slot;
+	if (slot != bp->mcu_slot) {
+		printf("Misaligned slot choice between Main and Safety (expected '%c', found '%c')\n",
+		                 SLOT_NAME(slot), SLOT_NAME(bp->mcu_slot));
+		safety_abc_setup(AB_MARK_ACTIVE, equal_ab_slot ? bp->mcu_slot : slot);
+		if (equal_ab_slot)
+			printf("Do not switch Safety abc. Rebooting...\n");
+		else
+			printf("Force safety abc to switch from %c to %c. Rebooting...\n",
+			                 SLOT_NAME(bp->mcu_slot), SLOT_NAME(slot));
+		reset_cpu();
+	}
+}
+
 void spl_board_init(void)
 {
 	boot_params_t *bp = boot_params_get_base();
 	const char *name = NULL;
 	int bootdev, bootstate;
+
+#if !defined(CONFIG_LUA_MCU_SLOT_FROM_BUFFER)
+	bp->mcu_slot = safety_abc_get_slot();
+	printf("MCU Slot:      %c (idx = %d)\n",
+	                   SLOT_NAME(bp->mcu_slot), bp->mcu_slot);
+#endif
 
 	bootstate = get_bootstate();
 	if (bootstate > 0) {
@@ -260,6 +302,18 @@ void spl_board_init(void)
 #if CONFIG_IS_ENABLED(ENV_SUPPORT)
 	env_relocate();
 	set_bootdevice_env(bp->bootdevice);
+
+	if (bootstate == BOOTSTATE_POWERUP) {
+		bp->slot = -1;
+		verify_bootslot();
+
+		if (bp->slot >=0 && bp->slot < 2) {
+			printf("Boot Slot:     %c (idx = %d)\n",
+			                   SLOT_NAME(bp->slot), bp->slot);
+		} else {
+			printf("Boot Slot:     Unknown\n");
+		}
+	}
 
 	if (is_secure_boot())
 		set_secureboot_env(true);
@@ -381,55 +435,21 @@ int spl_board_get_devnum(uint bootdev_type)
 }
 
 #if defined(CONFIG_LUA_AB)
-int spl_multi_mmc_ab_select(struct blk_desc *dev_desc)
+int spl_multi_blk_ab_select(void)
 {
-	struct disk_partition info;
-	bool fallback = false;
+	boot_params_t *bp = boot_params_get_base();
 	int ret;
 
-	if (unlikely(!dev_desc))
-		return -ENODEV;
+	if (bp->slot >=0 && bp->slot < 2)
+		return bp->slot;
 
-retry:
-	if (fallback) {
-		/* Lookup the "misc_bak" partition */
-		debug("Using backup 'misc' partition\n");
-		ret = part_get_info_by_name(dev_desc, "misc_bak", &info);
-	} else {
-		/* Lookup the "misc" partition */
-		debug("Using 'misc' partition\n");
-		ret = part_get_info_by_name(dev_desc, "misc", &info);
-	}
-
+	ret = ab_select_slot_from_buffer();
 	if (ret < 0) {
-		if (fallback) {
-			pr_err("Unable to find 'misc_bak' partition on '%s' device.\n",
-			          dev_desc->bdev->name);
-			return -ENODEV;
-		} else {
-			debug("There are no 'misc' partition on '%s' device.\n",
-			          dev_desc->bdev->name);
-			fallback = true;
-			goto retry;
-		}
+		printf("Could not select slot (ret = %d)\n", ret);
+		return ret;
 	}
-
-	ret = ab_select_slot(dev_desc, &info);
-	if (ret < 0) {
-		if (fallback) {
-			pr_err("Invaild AB metadata in 'misc_bak' partition on '%s' device\n",
-			              dev_desc->bdev->name);
-			return -EINVAL;
-		} else {
-			debug("Invaild AB metadata in 'misc' partition on '%s' device\n",
-			              dev_desc->bdev->name);
-			fallback = true;
-			goto retry;
-		}
-	}
-	debug("Select out '%c' slot successfully\n", BOOT_SLOT_NAME(ret));
 
 	return ret;
 }
 #endif /* CONFIG_LUA_AB */
-#endif /* CONFIG_SPL_MULTI_MMC */
+#endif
