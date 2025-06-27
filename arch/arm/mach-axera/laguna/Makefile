@@ -4,7 +4,7 @@
 #
 
 obj-y += common.o lowlevel.o memmap.o
-oby-y += soc_init.o
+obj-y += soc_init.o board.o
 
 CFLAGS_common.o := $(if $(BUILD_DATE),-DBUILD_DATE='"$(BUILD_DATE)"')
 
