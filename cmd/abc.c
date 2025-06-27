@@ -17,6 +17,7 @@
 #include <ctype.h>
 #include <dm/device.h>
 
+#include <android_ab.h>
 #include <android_bootloader_message.h>
 
 #define SLOT_NAME(slot_num)          ('A' + (slot_num))
@@ -27,100 +28,14 @@ static int abc_part                  = -1;
 static struct blk_desc *abc_dev_desc           = NULL;
 static struct disk_partition abc_part_info     = { 0 };
 static struct bootloader_control abc_metadata  = { 0 };
+static struct bootloader_message_ab bl_msg_ab  = { 0 };
+static bool abc_metadata_loaded = false;
+static bool need_stored = false;
 
-static int abc_store(struct bootloader_control *abc)
+__weak int abc_board_setup(enum ab_slot_mark type, int slot)
 {
-	ulong abc_offset, abc_blocks;
-	char buf[sizeof(struct bootloader_message_ab)];
-	uint32_t crc32_le;
-	ulong abc_pos;
-	int ret;
-
-	if (unlikely(!abc)) {
-		pr_err("Invalid A/B metadata\n");
-		return -EINVAL;
-	}
-
-	if (abc_dev < 0 || abc_part < 0) {
-		pr_err("Invalid device or partition\n");
-		return -EINVAL;
-	}
-
-	abc_pos = offsetof(struct bootloader_message_ab, slot_suffix);
-	if (abc_pos >= abc_part_info.blksz)
-		abc_offset = abc_pos / abc_part_info.blksz;
-	else
-		abc_offset = 0;
-	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control), abc_part_info.blksz);
-
-	ret = blk_dread(abc_dev_desc, abc_part_info.start + abc_offset,
-	                            abc_blocks, buf);
-	if (IS_ERR_VALUE(ret)) {
-		pr_err("Could not read from the misc partition\n");
-		return -EIO;
-	}
-
-	crc32_le = crc32(0, (void *)abc, offsetof(typeof(*abc), crc32_le));
-	abc->crc32_le = crc32_le;
-
-	if (abc_offset == 0)
-		memcpy(buf + abc_pos, abc, sizeof(struct bootloader_control));
-	else
-		memcpy(buf, abc, sizeof(struct bootloader_control));
-
-	ret = blk_dwrite(abc_dev_desc, abc_part_info.start + abc_offset,
-	                    abc_blocks, buf);
-	if (IS_ERR_VALUE(ret)) {
-		pr_err("Could not write back the misc partition\n");
-		return -EIO;
-	}
-
+	/* Overridden by board-specific code */
 	return 0;
-}
-
-static int abc_load_from_blk(struct blk_desc *dev_desc, struct disk_partition *part_info)
-{
-	ulong abc_offset, abc_blocks, abc_pos;
-	char buf[sizeof(struct bootloader_message_ab)];
-	int ret;
-
-	abc_pos = offsetof(struct bootloader_message_ab, slot_suffix);
-	if (abc_pos >= part_info->blksz)
-		abc_offset = abc_pos / part_info->blksz;
-	else
-		abc_offset = 0;
-
-	abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_control), part_info->blksz);
-	if (unlikely(abc_blocks > part_info->size)) {
-		pr_err("Partition size too small\n");
-		ret = -EINVAL;
-		goto err;
-	}
-
-	ret = blk_dread(dev_desc, part_info->start + abc_offset,
-					abc_blocks, buf);
-	if (ret != abc_blocks) {
-		pr_err("Unable to read A/B metadata from part '%s' on '%s' device.\n",
-		                 part_info->name, dev_desc->bdev->name);
-		ret = -EIO;
-		goto err;
-	}
-
-	if (abc_offset == 0)
-		memcpy(&abc_metadata, buf + abc_pos, sizeof(struct bootloader_control));
-	else
-		memcpy(&abc_metadata, buf, sizeof(struct bootloader_control));
-
-	abc_dev = dev_desc->devnum;
-	printf("A/B metadata loaded from part '%s' on '%s' device successfully.\n",
-	                    part_info->name, dev_desc->bdev->name);
-
-	return 0;
-
-err:
-	abc_dev = -1;
-	abc_part = -1;
-	return ret;
 }
 
 static int abc_validate(struct bootloader_control *abc)
@@ -154,28 +69,80 @@ static int abc_validate(struct bootloader_control *abc)
 	return 0;
 }
 
-static int abc_load(struct blk_desc *dev_desc, struct disk_partition *part_info)
+static int abc_load_from_disk(const char *ifname, const char *dev_part_str)
 {
+	struct bootloader_control *abc = NULL;
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
+	int part = -1;
 	int ret;
 
-	if (abc_dev_desc == NULL || abc_part == -1) {
-		pr_err("Invalid device descriptor or partition infomation\n");
-		return -ENODATA;
-	}
-
-	ret = abc_load_from_blk(dev_desc, part_info);
+	/* Lookup the "misc" partition */
+	ret = part_get_info_by_dev_and_name_or_num(ifname, dev_part_str,
+	      &dev_desc, &part_info,
+	      false);
 	if (ret < 0) {
-		pr_err("Failed to load A/B metadata from part '%s' on '%s' device\n",
-		                 part_info->name, dev_desc->bdev->name);
+		pr_err("Unable to get device and partition information\n");
+		return ret;
+	}
+	part = ret;
+
+	ret = ab_control_create_from_disk(dev_desc, &part_info, &abc);
+	if (ret < 0) {
+		pr_err("Could not load A/B metadata from '%s %s'\n",
+		                             ifname, dev_part_str);
 		return ret;
 	}
 
-	ret = abc_validate(&abc_metadata);
+	ret = abc_validate(abc);
 	if (ret < 0) {
-		pr_err("Invalid A/B metadata\n");
+		free(abc);
+		pr_err("Unable to validate A/B metadata\n");
 		return ret;
 	}
 
+	memcpy(&abc_metadata, abc, sizeof(abc_metadata));
+	abc_metadata_loaded = true;
+	free(abc);
+
+	abc_dev_desc = dev_desc;
+	abc_part_info = part_info;
+	abc_part = part;
+	abc_dev = dev_desc->devnum;
+
+	printf("A/B metadata loaded from '%s %s' successfully.\n",
+	                             ifname, dev_part_str);
+	return 0;
+}
+
+static int abc_load_from_buffer(void)
+{
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_message_ab, buffer, 1);
+	ALLOC_CACHE_ALIGN_BUFFER(struct bootloader_control, abc, 1);
+	int ret;
+
+	ret = bootloader_message_ab_load(buffer);
+	if (ret < 0) {
+		pr_err("Could not load AB-specific bootloader message.\n");
+		return ret;
+	}
+
+	ret = ab_control_create_from_buffer(buffer, abc);
+	if (ret < 0) {
+		pr_err("Unable to create A/B metadata from buffer\n");
+		return ret;
+	}
+
+	ret = abc_validate(abc);
+	if (ret < 0) {
+		pr_err("Unable to validate A/B metadata from buffer\n");
+		return ret;
+	}
+
+	memcpy(&bl_msg_ab, buffer, sizeof(bl_msg_ab));
+	memcpy(&abc_metadata, abc, sizeof(abc_metadata));
+	abc_metadata_loaded = true;
+	printf("A/B metadata loaded from buffer successfully.\n");
 	return 0;
 }
 
@@ -184,44 +151,139 @@ static int do_abc_load(struct cmd_tbl *cmdtp, int flag, int argc,
 {
 	int ret;
 
-	if (argc != 2) {
+	if (argc != 0 && argc != 2) {
 		pr_err("Invalid number of arguments\n");
-		goto err;
+		return CMD_RET_USAGE;
 	}
 
-	/* Lookup the "misc" partition */
-	ret = part_get_info_by_dev_and_name_or_num(argv[0], argv[1],
-	      &abc_dev_desc, &abc_part_info,
-	      false);
-	if (ret < 0) {
-		pr_err("Unable to get device and partition information\n");
-		goto err;
+	switch (argc) {
+	case 0:
+		ret = abc_load_from_buffer();
+		break;
+	case 2:
+		ret = abc_load_from_disk(argv[0], argv[1]);
+		break;
 	}
-	abc_part = ret;
 
-	ret = abc_load(abc_dev_desc, &abc_part_info);
 	if (ret < 0) {
-		pr_err("Could not load A/B metadata part '%s' on '%s' device\n",
-		            abc_part_info.name, abc_dev_desc->bdev->name);
-		goto err;
+		pr_err("Failed to load A/B metadata\n");
+		return CMD_RET_FAILURE;
 	}
 
 	return CMD_RET_SUCCESS;
+}
 
-err:
-	abc_dev_desc = NULL;
-	memset(&abc_part_info, 0, sizeof(abc_part_info));
-	abc_dev = -1;
-	abc_part = -1;
+static int abc_store_into_disk(struct blk_desc *dev_desc,
+                               struct disk_partition *part_info,
+                               struct bootloader_control *abc)
+{
+	int ret;
 
-	return CMD_RET_FAILURE;
+	abc->crc32_le = crc32(0, (void *)abc, offsetof(typeof(*abc), crc32_le));
+	ret = ab_control_store(dev_desc, part_info, abc);
+	if (ret < 0) {
+		pr_err("Could not store A/B metadata into partition '%s' on '%s' device\n",
+		       part_info->name, dev_desc->bdev->name);
+		return ret;
+	}
+
+	printf("A/B metadata stored into partition '%s' on '%s' device successfully.\n",
+	                 part_info->name, dev_desc->bdev->name);
+	return 0;
+}
+
+static int abc_store_with_dev_part_str(const char *ifname,
+								 const char *dev_part_str,
+								 struct bootloader_control *abc)
+{
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
+	int ret;
+
+	ret = part_get_info_by_dev_and_name_or_num(ifname, dev_part_str,
+	      &dev_desc, &part_info,
+	      false);
+	if (ret < 0) {
+		pr_err("Unable to get partition information\n");
+		return ret;
+	}
+
+	ret = abc_store_into_disk(dev_desc, &part_info, abc);
+	if (ret < 0) {
+		pr_err("Failed to store A/B metadata into '%s %s'\n",
+		       ifname, dev_part_str);
+		return ret;
+	}
+
+	printf("A/B metadata stored into '%s %s' successfully.\n",
+	       ifname, dev_part_str);
+	return 0;
+}
+
+static int abc_store_into_buffer(struct bootloader_message_ab *buffer,
+                                 struct bootloader_control *abc)
+{
+	int ret;
+
+	abc->crc32_le = crc32(0, (void *)abc, offsetof(typeof(*abc), crc32_le));
+	ret = ab_control_store_into_buffer(buffer, abc);
+	if (ret < 0) {
+		pr_err("Unable to store A/B metadata into buffer\n");
+		return ret;
+	}
+
+	ret = bootloader_message_ab_store(buffer);
+	if (ret < 0) {
+		pr_err("Could not store AB-specific bootloader message.\n");
+		return ret;
+	}
+
+	printf("A/B metadata stored into buffer successfully.\n");
+	return 0;
+}
+
+static int do_abc_store(struct cmd_tbl *cmdtp, int flag, int argc,
+                       char * const argv[])
+{
+	int ret;
+
+	if (argc != 0 && argc != 2) {
+		pr_err("Invalid number of arguments\n");
+		return CMD_RET_USAGE;
+	}
+
+	if (!abc_metadata_loaded) {
+		pr_err("No A/B metadata loaded. Please load it first.\n");
+		return CMD_RET_FAILURE;
+	}
+
+	switch (argc) {
+	case 0:
+		if (abc_part < 0 || abc_dev < 0)
+			ret = abc_store_into_buffer(&bl_msg_ab, &abc_metadata);
+		else
+			ret = abc_store_into_disk(abc_dev_desc, &abc_part_info,
+			                      &abc_metadata);
+		break;
+	case 2:
+		ret = abc_store_with_dev_part_str(argv[0], argv[1],
+		                       &abc_metadata);
+		break;
+	}
+
+	if (ret < 0) {
+		pr_err("Failed to store A/B metadata\n");
+		return CMD_RET_FAILURE;
+	}
+
+	return CMD_RET_SUCCESS;
 }
 
 static int abc_get_active_slot(void)
 {
 	int i, slot;
 
-	if (abc_dev == -1 || abc_part == -1) {
+	if (!abc_metadata_loaded) {
 		pr_err("\n ** No loaded A/B metadata **\n\n");
 		return -ENODATA;
 	}
@@ -239,59 +301,10 @@ static int abc_get_active_slot(void)
 	return slot;
 }
 
-static int do_abc_store(struct cmd_tbl *cmdtp, int flag, int argc,
-                       char * const argv[])
-{
-	int ret;
-
-	if (argc != 0 && argc != 2) {
-		pr_err("Invalid number of arguments\n");
-		goto err;
-	}
-
-	if (argc == 0 && (abc_dev < 0 || abc_part < 0)) {
-		pr_err("Please load A/B metadata first.\n");
-		return CMD_RET_FAILURE;
-	}
-
-	if (argc == 0)
-		goto store_abc;
-
-	ret = part_get_info_by_dev_and_name_or_num(argv[0], argv[1],
-	      &abc_dev_desc, &abc_part_info,
-	      false);
-	if (ret < 0) {
-		pr_err("Unable to get partition information\n");
-		goto err;
-	}
-	abc_part = ret;
-	abc_dev = abc_dev_desc->devnum;
-
-store_abc:
-	ret = abc_store(&abc_metadata);
-	if (ret < 0) {
-		pr_err("Could not store A/B metadata into part '%s' on '%s' device\n",
-		                  abc_part_info.name, abc_dev_desc->bdev->name);
-		goto err;
-	}
-
-	printf("A/B metadata stored into part '%s' on '%s' device successfully.\n",
-	                abc_part_info.name, abc_dev_desc->bdev->name);
-	return CMD_RET_SUCCESS;
-
-err:
-	abc_dev_desc = NULL;
-	memset(&abc_part_info, 0, sizeof(abc_part_info));
-	abc_dev = -1;
-	abc_part = -1;
-
-	return CMD_RET_FAILURE;
-}
-
-static int do_abc_get_slots(struct cmd_tbl *cmdtp, int flag, int argc,
+static int do_abc_get_number(struct cmd_tbl *cmdtp, int flag, int argc,
                             char * const argv[])
 {
-	if (abc_dev == -1 || abc_part == -1) {
+	if (!abc_metadata_loaded) {
 		pr_err("\n ** No loaded A/B metadata **\n\n");
 		return CMD_RET_USAGE;
 	}
@@ -300,7 +313,7 @@ static int do_abc_get_slots(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-static int do_abc_get_cur_slot(struct cmd_tbl *cmdtp, int flag, int argc,
+static int do_abc_get_current(struct cmd_tbl *cmdtp, int flag, int argc,
                                char * const argv[])
 {
 	int slot;
@@ -316,17 +329,11 @@ static int do_abc_get_cur_slot(struct cmd_tbl *cmdtp, int flag, int argc,
 static int abc_prepare_slot(int argc, char * const argv[])
 {
 	char token;
-	int slot, ret;
+	int slot;
 
-	if (abc_dev == -1 || abc_part == -1) {
+	if (!abc_metadata_loaded) {
 		pr_err("\n ** No loaded A/B metadata **\n\n");
 		return -ENODATA;
-	}
-
-	ret = abc_load(abc_dev_desc, &abc_part_info);
-	if (ret < 0) {
-		pr_err("Failed to load A/B metadata\n");
-		return ret;
 	}
 
 	if (argc > 0) {
@@ -353,7 +360,7 @@ static int do_abc_dump(struct cmd_tbl *cmdtp, int flag, int argc,
 	struct slot_metadata *slotp;
 	int i;
 
-	if (abc_dev == -1 || abc_part == -1) {
+	if (!abc_metadata_loaded) {
 		pr_err("\n ** No loaded A/B metadata **\n\n");
 		return -ENODATA;
 	}
@@ -385,16 +392,14 @@ static int do_abc_mark_successful(struct cmd_tbl *cmdtp, int flag, int argc,
 	slotp->successful_boot = 1;
 	slotp->tries_remaining = 7;
 
-	if (abc_store(metadata) < 0) {
-		pr_err("Failed to store A/B metadata with successful mark\n");
-		return CMD_RET_FAILURE;
-	}
+	abc_board_setup(AB_MARK_SUCCESSFUL, slot);
 
+	need_stored = true;
 	printf("Slot %c marked as successful\n", SLOT_NAME(slot));
 	return CMD_RET_SUCCESS;
 }
 
-static int do_abc_set_active_boot(struct cmd_tbl *cmdtp, int flag, int argc,
+static int do_abc_mark_active(struct cmd_tbl *cmdtp, int flag, int argc,
                                   char * const argv[])
 {
 	struct bootloader_control *metadata = &abc_metadata;
@@ -420,16 +425,14 @@ static int do_abc_set_active_boot(struct cmd_tbl *cmdtp, int flag, int argc,
 	if(slotp->priority == 15)
 		slotp->priority = 15 - 1;
 
-	if (abc_store(metadata) < 0) {
-		pr_err("Failed to store A/B metadata with active slot setting\n");
-		return CMD_RET_FAILURE;
-	}
+	abc_board_setup(AB_MARK_ACTIVE, slot);
 
+	need_stored = true;
 	pr_err("Slot %c marked as next active \n", SLOT_NAME(slot));
 	return CMD_RET_SUCCESS;
 }
 
-static int do_abc_set_unbootable(struct cmd_tbl *cmdtp, int flag, int argc,
+static int do_abc_mark_unbootable(struct cmd_tbl *cmdtp, int flag, int argc,
                                  char * const argv[])
 {
 	struct bootloader_control *metadata = &abc_metadata;
@@ -445,16 +448,14 @@ static int do_abc_set_unbootable(struct cmd_tbl *cmdtp, int flag, int argc,
 	slotp->priority = 0;
 	slotp->tries_remaining = 0;
 
-	if (abc_store(metadata) < 0) {
-		pr_err("Failed to store A/B metadata with unbootable setting\n");
-		return CMD_RET_FAILURE;
-	}
+	abc_board_setup(AB_MARK_UNBOOTABLE, slot);
 
+	need_stored = true;
 	printf("Slot %c marked as unbootable\n", SLOT_NAME(slot));
 	return CMD_RET_SUCCESS;
 }
 
-static int do_abc_check_bootable(struct cmd_tbl *cmdtp, int flag, int argc,
+static int abc_is_bootable(struct cmd_tbl *cmdtp, int flag, int argc,
                                  char * const argv[])
 {
 	struct bootloader_control *metadata = &abc_metadata;
@@ -477,7 +478,7 @@ static int do_abc_check_bootable(struct cmd_tbl *cmdtp, int flag, int argc,
 	return CMD_RET_SUCCESS;
 }
 
-static int do_abc_check_bootup_status(struct cmd_tbl *cmdtp, int flag, int argc,
+static int abc_is_successful(struct cmd_tbl *cmdtp, int flag, int argc,
                                char * const argv[])
 {
 	struct bootloader_control *metadata = &abc_metadata;
@@ -526,14 +527,14 @@ static struct cmd_tbl abc_commands[] = {
 	U_BOOT_CMD_MKENT(load, CONFIG_SYS_MAXARGS, 1, do_abc_load, "", ""),
 	U_BOOT_CMD_MKENT(store, CONFIG_SYS_MAXARGS, 1, do_abc_store, "", ""),
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_abc_dump, "", ""),
-	U_BOOT_CMD_MKENT(get-number-slots, 1, 1, do_abc_get_slots, "", ""),
-	U_BOOT_CMD_MKENT(get-current-slot, 1, 1, do_abc_get_cur_slot, "", ""),
-	U_BOOT_CMD_MKENT(mark-boot-successful, 1, 1, do_abc_mark_successful, "", ""),
-	U_BOOT_CMD_MKENT(set-active-boot-slot, 2, 1, do_abc_set_active_boot, "", ""),
-	U_BOOT_CMD_MKENT(set-slot-as-unbootable, 2, 1, do_abc_set_unbootable, "", ""),
-	U_BOOT_CMD_MKENT(is-slot-bootable, 2, 1, do_abc_check_bootable, "", ""),
-	U_BOOT_CMD_MKENT(is-slot-marked-successful, 2, 1, do_abc_check_bootup_status, "", ""),
+	U_BOOT_CMD_MKENT(get-number, 1, 1, do_abc_get_number, "", ""),
+	U_BOOT_CMD_MKENT(get-current, 1, 1, do_abc_get_current, "", ""),
 	U_BOOT_CMD_MKENT(get-suffix, 2, 1, do_abc_get_suffix, "", ""),
+	U_BOOT_CMD_MKENT(mark-successful, 1, 1, do_abc_mark_successful, "", ""),
+	U_BOOT_CMD_MKENT(mark-active, 2, 1, do_abc_mark_active, "", ""),
+	U_BOOT_CMD_MKENT(mark-unbootable, 2, 1, do_abc_mark_unbootable, "", ""),
+	U_BOOT_CMD_MKENT(is-bootable, 2, 1, abc_is_bootable, "", ""),
+	U_BOOT_CMD_MKENT(is-successful, 2, 1, abc_is_successful, "", ""),
 };
 
 static int do_abc(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -559,33 +560,50 @@ static int do_abc(struct cmd_tbl *cmdtp, int flag, int argc,
 		return CMD_RET_FAILURE;
 	}
 
+	if (need_stored && abc_metadata_loaded) {
+		/* Store the metadata if it has been modified */
+		if (abc_part < 0 || abc_dev < 0) {
+			ret = abc_store_into_buffer(&bl_msg_ab, &abc_metadata);
+		} else {
+			ret = abc_store_into_disk(abc_dev_desc, &abc_part_info,
+			                      &abc_metadata);
+		}
+		if (ret < 0) {
+			pr_err("Unable to store A/B metadata\n");
+			return CMD_RET_FAILURE;
+		}
+		need_stored = false;
+	}
+
 	return CMD_RET_SUCCESS;
 }
 
 U_BOOT_CMD(
 	abc, CONFIG_SYS_MAXARGS, 1, do_abc,
 	"Manage A/B metadata",
-	"load <interface> <dev[:part|#part_name]>\n"
+	"load [<interface>] [<dev[:part|#part_name]>]\n"
 	"    - load A/B metadata from 'part' on device type 'interface' instance 'dev'\n"
+	"      If not specified, the default interface, dev and part is used.\n"
 	"abc store [<interface>] [<dev[:part|#part_name]>]\n"
 	"    - store A/B metadata to 'part' on device type 'interface' instance 'dev'\n"
-	"      if not specified, reuses the location from 'abc load'\n"
+	"      if not specified, reuses the location from 'abc load' or use the default\n"
+	"      location\n"
 	"abc dump\n"
 	"    - dump A/B metadata\n"
-	"abc get-number-slots\n"
+	"abc get-number\n"
 	"    - print number of slots\n"
-	"abc get-current-slot\n"
+	"abc get-current\n"
 	"    - print currently running SLOT\n"
-	"abc mark-boot-successful [SLOT]\n"
-	"    - mark current or <SLOT> slot as GOOD\n"
-	"abc set-active-boot-slot [SLOT]\n"
-	"    - On next boot, load and execute SLOT\n"
-	"abc set-slot-as-unbootable [SLOT]\n"
-	"    - mark SLOT as invalid\n"
-	"abc is-slot-bootable [SLOT]\n"
-	"    - returns 0 only if SLOT is bootable\n"
-	"abc is-slot-marked-successful [SLOT]\n"
-	"    - returns 0 only if SLOT is marked GOOD\n"
 	"abc get-suffix [SLOT] [varname]\n"
 	"    - prints suffix for SLOT and store the slot suffix in the 'varname' variable\n"
+	"abc mark-successful [SLOT]\n"
+	"    - mark current or <SLOT> slot as GOOD\n"
+	"abc mark-active [SLOT]\n"
+	"    - On next boot, load and execute SLOT\n"
+	"abc mark-unbootable [SLOT]\n"
+	"    - mark SLOT as invalid\n"
+	"abc is-bootable [SLOT]\n"
+	"    - returns 0 only if SLOT is bootable\n"
+	"abc is-successful [SLOT]\n"
+	"    - returns 0 only if SLOT is marked GOOD\n"
 );
