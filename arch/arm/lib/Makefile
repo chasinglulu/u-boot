@@ -71,7 +71,7 @@ obj-y	+= interrupts_64.o
 else
 obj-y	+= interrupts.o
 endif
-ifndef CONFIG_$(SPL_TPL_)SYSRESET
+ifndef CONFIG_SYSRESET_CMD_RESET
 obj-y	+= reset.o
 endif
 

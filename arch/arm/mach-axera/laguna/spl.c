@@ -257,6 +257,7 @@ static void verify_bootslot(void)
 		else
 			printf("Force safety abc to switch from %c to %c. Rebooting...\n",
 			                 SLOT_NAME(bp->mcu_slot), SLOT_NAME(slot));
+		mdelay(10);
 		reset_cpu();
 	}
 }

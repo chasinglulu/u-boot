@@ -261,6 +261,17 @@ int fdl_uart_get_baudrate(void)
 	return gd->baudrate;
 }
 
+void reset_misc(void)
+{
+	int ret;
+
+	ret = safety_abc_setup(AB_MARK_SUCCESSFUL, 0);
+	if (ret < 0) {
+		pr_err("Could not setup safety abc value\n");
+		return;
+	}
+}
+
 #if defined(CONFIG_LUA_BOOTPARAMS_VERIFY)
 int check_bootparams(bool is_sbl)
 {
