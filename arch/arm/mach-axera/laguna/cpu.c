@@ -36,8 +36,24 @@ static const char *main_abort_str[] = {
 
 int get_abort(bool safety, const char **name)
 {
-	struct udevice *dev;
 	uint32_t abort;
+
+#if defined(CONFIG_LUA_ABORT_ALARM_FROM_BUFFER)
+	boot_params_t *bp = boot_params_get_base();
+
+	if (safety) {
+		abort = ffs(bp->safety_abort_alarm);
+		if (name)
+			*name = abort < SAFETY_ABORT_COUNT ? safety_abort_str[abort] : "Unknown";
+		return abort < SAFETY_ABORT_COUNT ? abort : -EIO;
+	} else {
+		abort = ffs(bp->top_abort_alarm);
+		if (name)
+			*name = abort < ABORT_COUNT ? main_abort_str[abort] : "Unknown";
+		return abort < ABORT_COUNT ? abort : -EIO;
+	}
+#else
+	struct udevice *dev;
 
 	uclass_foreach_dev_probe(UCLASS_MISC, dev) {
 		abort = misc_read(dev, 0, NULL, 0);
@@ -57,6 +73,7 @@ int get_abort(bool safety, const char **name)
 			return abort < ABORT_COUNT ? abort : -EIO;
 		}
 	}
+#endif
 
 	if (name)
 		*name = "Unknown";
@@ -102,6 +119,17 @@ static void print_abort_alarm(uint32_t abort, bool safety)
 #if defined(CONFIG_DISPLAY_CPUINFO) && !defined(CONFIG_SPL_BUILD)
 static int print_reset_cause(void)
 {
+#if defined(CONFIG_LUA_ABORT_ALARM_FROM_BUFFER)
+	boot_params_t *bp = boot_params_get_base();
+
+	debug("Safety abort alarm: 0x%.8x\n", bp->safety_abort_alarm);
+	debug("Top abort alarm: 0x%.8x\n", bp->top_abort_alarm);
+
+	printf("Safe Reset Cause: ");
+	print_abort_alarm(ffs(bp->safety_abort_alarm), true);
+	printf("Main Reset Cause: ");
+	print_abort_alarm(ffs(bp->top_abort_alarm), false);
+#else
 	struct udevice *dev;
 	uint32_t abort;
 
@@ -121,6 +149,7 @@ static int print_reset_cause(void)
 			print_abort_alarm(abort, false);
 		}
 	}
+#endif
 
 	return 0;
 }

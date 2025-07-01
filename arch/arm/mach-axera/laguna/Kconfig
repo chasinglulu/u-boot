@@ -545,6 +545,13 @@ config LUA_MCU_SLOT_FROM_BUFFER
 	help
 	  This option enables obtaining the MCU slot from the SBL handoff buffer.
 
+config LUA_ABORT_ALARM_FROM_BUFFER
+	bool "Obtain abort alarm from SBL handoff buffer"
+	depends on !ABORT_ALARM
+	default y
+	help
+	  This option enables obtaining the abort alarm from the SBL handoff buffer.
+
 config LUA_CUSTOM_SERVERIP
 	bool "Custom severip"
 	help

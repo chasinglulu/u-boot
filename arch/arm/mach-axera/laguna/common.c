@@ -640,7 +640,7 @@ static int ft_system_hwinfo(void *blob)
 	fdt32_t boardid, bootdev;
 	const char *chipname;
 	const char *bootdev_name = NULL;
-	int safety_abort, main_abort;
+	int32_t safety_abort, main_abort;
 	const char *safety_abort_str = NULL;
 	const char *main_abort_str = NULL;
 	ulong slot;
@@ -678,12 +678,14 @@ static int ft_system_hwinfo(void *blob)
 	safety_abort = get_abort(true, &safety_abort_str);
 	main_abort = get_abort(false, &main_abort_str);
 	if (safety_abort > 0) {
+		safety_abort = cpu_to_fdt32(safety_abort);
 		fdt_setprop(blob, parent, "axera,safety-abort",
 		         &safety_abort, sizeof(safety_abort));
 		if (safety_abort_str)
 			fdt_setprop_string(blob, parent, "axera,safety-abort-name", safety_abort_str);
 	}
 	if (main_abort > 0) {
+		main_abort = cpu_to_fdt32(main_abort);
 		fdt_setprop(blob, parent, "axera,main-abort",
 		         &main_abort, sizeof(main_abort));
 		if (main_abort_str)
