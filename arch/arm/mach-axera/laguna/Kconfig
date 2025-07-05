@@ -424,7 +424,7 @@ config LUA_SHA512
 endchoice
 
 config LUA_RAS
-	bool "Enable RSA Verifacation"
+	bool "Enable RSA Verification"
 	depends on LUA_SECURE_BOOT
 	select RSA
 	select RSA_VERIFY
@@ -483,6 +483,20 @@ config LUA_PKEY_CODE
 	  Public Key (DER) is stored in Code.
 
 endchoice
+
+config LUA_CIPHER
+	bool "Enable AES Cipher"
+	depends on LUA_SECURE_BOOT
+	select AES
+	select SPL_AES if SPL
+	help
+	  This option enables AES cipher support.
+
+config LUA_DM_VERITY
+	bool "Enable DM Verity Verification for rootfs"
+	depends on LUA_SECURE_BOOT
+	help
+	  This option enables DM Verity support.
 
 endmenu
 

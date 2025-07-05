@@ -63,7 +63,6 @@ config LUA_METADATA_SIZE_IN_HYPERFLASH
 
 endmenu
 
-
 config LUA_SPI_NOR_RUNTIME
 	bool "Allow SPI NOR to be configured at runtime"
 	depends on SYS_MTDPARTS_RUNTIME

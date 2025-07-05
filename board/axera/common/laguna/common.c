@@ -105,6 +105,20 @@ inline int get_main_part_id_count(void)
 	return ARRAY_SIZE(main_part_id);
 }
 
+inline const char *get_rootfs_part_name(void)
+{
+	const boot_params_t *bp = boot_params_get_base();
+
+#if defined(CONFIG_LUA_AB)
+	if (bp->slot < 0 || bp->slot >= 2)
+		return NULL;
+
+	return bp->slot ? "rootfs_b" : "rootfs_a";
+#else
+	return "rootfs";
+#endif
+}
+
 #if CONFIG_IS_ENABLED(BOOT_DEVICE_SYSCON)
 const char *main_bootmodes[] = {
 	[BOOTMODE_MAIN_NOR]     = "NOR",

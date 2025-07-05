@@ -189,6 +189,7 @@ enum {
 
 extern const char *safe_part_id[];
 extern const char *main_part_id[];
+const char *get_rootfs_part_name(void);
 int get_safe_part_id_count(void);
 int get_main_part_id_count(void);
 int get_bootdevice(const char **name);
@@ -208,6 +209,7 @@ int get_abort(bool safety, const char **name);
 int check_bootparams(bool is_sbl);
 void calc_bootparams_crc32(bool is_sbl);
 void probe_all_spi_nor_devs(void);
+int verify_rootfs_dm_verity(void);
 
 /* AB Control operations */
 int safety_abc_setup(int mark_type, int slot);
