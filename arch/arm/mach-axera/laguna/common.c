@@ -549,12 +549,262 @@ static void enter_download_mode(void)
 static inline void enter_download_mode(void) { }
 #endif
 
+#if defined(CONFIG_USE_BOOTARGS)
+static void bootargs_merge_unique(char *bootargs, size_t size, const char *src)
+{
+	if (!src || !*src)
+		return;
+
+	const int max_args = 128;
+	const char *args[max_args];
+	char buf[CONFIG_SYS_CBSIZE] = { 0 };
+	char *token = NULL;
+	int lens[max_args];
+	int count = 0;
+
+	for (char *p = bootargs; *p && count < max_args;) {
+		while (*p == ' ') p++;
+		if (!*p) break;
+		args[count] = p;
+		int len = 0;
+		while (p[len] && p[len] != ' ') len++;
+		lens[count++] = len;
+		p += len;
+	}
+
+	strncpy(buf, src, CONFIG_SYS_CBSIZE);
+	for (token = strtok(buf, " "); token; token = strtok(NULL, " ")) {
+		int tlen = strlen(token);
+		int dup = 0;
+		for (int i = 0; i < count; ++i) {
+			if (lens[i] == tlen && !strncmp(token, args[i], tlen)) {
+				dup = 1;
+				break;
+			}
+		}
+		if (!dup) {
+			if (bootargs[0] != '\0')
+				strncat(bootargs, " ", size - strlen(bootargs) - 1);
+			strncat(bootargs, token, size - strlen(bootargs) - 1);
+			if (count < max_args) {
+				args[count] = bootargs + strlen(bootargs) - tlen;
+				lens[count++] = tlen;
+			}
+		}
+	}
+}
+
+char *board_fdt_chosen_bootargs(void)
+{
+	char bootargs[CONFIG_SYS_CBSIZE] = { 0 };
+	const char *extra_args = NULL;
+	const char *orig_args = NULL;
+	const char *dtb_args = NULL;
+	const char *dm_verity_args = NULL;
+	char *fdt_addr = images.ft_addr;
+	int nodeoffset;
+
+	nodeoffset = fdt_path_offset(fdt_addr, "/chosen");
+	if (nodeoffset < 0) {
+		debug("No '/chosen' node found in FDT\n");
+		return NULL;
+	}
+
+	orig_args = env_get("bootargs");
+	dtb_args = fdt_getprop(fdt_addr, nodeoffset, "bootargs", NULL);
+	extra_args = env_get("extra_args");
+
+	bootargs_merge_unique(bootargs, sizeof(bootargs), dtb_args);
+	bootargs_merge_unique(bootargs, sizeof(bootargs), orig_args);
+	bootargs_merge_unique(bootargs, sizeof(bootargs), extra_args);
+
+	dm_verity_args = env_get("dm_verity_args");
+	if (dm_verity_args) {
+		strncat(bootargs, " ", CONFIG_SYS_CBSIZE);
+		strcat(bootargs, dm_verity_args);
+	}
+
+	env_set("bootargs", bootargs);
+
+	return env_get("bootargs");
+}
+#endif
+
 #ifdef CONFIG_LAST_STAGE_INIT
+static int loglevel_env_set(void)
+{
+	const char *loglevel = env_get("loglevel");
+
+	if (!loglevel) {
+		debug("Setting default loglevel to '10'\n");
+		env_set("loglevel", "10");
+		return 0;
+	}
+
+	return 0;
+}
+
+static int rootfs_env_set(void)
+{
+	const char *varname = NULL;
+	const char *devtype = NULL;
+	const char *partname = NULL;
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
+	char rootname[PART_NAME_LEN] = { 0 };
+	char misc[PART_NAME_LEN] = { 0 };
+	const char *rootfstype = NULL;
+	int fstype = FS_TYPE_ANY;
+	int part, bootdev, ret;
+
+	ulong devnum;
+
+	varname = env_get_name(ENV_DEVTYPE);
+	devtype = env_get(varname);
+	if (unlikely(!devtype)) {
+		debug("'%s' environment variable not found\n", varname);
+		return -ENODATA;
+	}
+
+	varname = env_get_name(ENV_DEVNUM);
+	devnum = env_get_ulong(varname, 10, ~0UL);
+	if (devnum == ~0UL) {
+		debug("'%s' environment variable not found\n", varname);
+		return -ENODATA;
+	}
+
+	dev_desc = blk_get_dev(devtype, devnum);
+	if (IS_ERR_OR_NULL(dev_desc)) {
+		debug("Unable to get '%s %lu' block device\n",
+		               devtype, devnum);
+		return -ENODEV;
+	}
+
+	partname = get_rootfs_part_name();
+	if (unlikely(!partname)) {
+		debug("Unable to get rootfs partition name\n");
+		return -ENODATA;
+	}
+	part = part_get_info_by_name(dev_desc, partname, &part_info);
+	if (part < 0) {
+		debug("Unable to get '%s' partition information on '%s' device\n",
+		           partname, devtype);
+		return part;
+	}
+	debug("%s: part: %d\n", __func__, part);
+
+	bootdev = get_bootdevice(NULL);
+	debug("%s: bootdev: %d\n", __func__, bootdev);
+	if (unlikely(bootdev < 0)) {
+		debug("Unable to get boot device\n");
+		return -ENODEV;
+	}
+
+	ret = fs_set_blk_dev_with_part(dev_desc, part);
+	if (likely(ret < 0)) {
+		debug("No filesystem probed in '%s (%d)' partition on '%s' device\n",
+		               part_info.name, part, devtype);
+	} else {
+		fstype = fs_get_type();
+	}
+
+	switch (bootdev) {
+	case BOOTDEVICE_ONLY_NAND:
+	case BOOTDEVICE_BOTH_NOR_NAND:
+	case BOOTDEVICE_ONLY_NOR:
+	case BOOTDEVICE_BOTH_NOR_NOR:
+	case BOOTDEVICE_ONLY_HYPER:
+	case BOOTDEVICE_BOTH_NOR_HYPER:
+		if (fstype == FS_TYPE_ANY) {
+			env_set("rootfstype", "ubifs");
+			env_set("root", "ubi0:rootfs");
+			env_set("access", "rw");
+			snprintf(misc, sizeof(misc), "ubi.mtd=%s", part_info.name);
+			strncat(misc, " rootwait", 10);
+			env_set("misc", misc);
+		} else if (fstype == FS_TYPE_SQUASHFS) {
+			env_set("access", "ro");
+			env_set("rootfstype", "squashfs");
+			snprintf(rootname, sizeof(rootname),
+			               "/dev/mtdblock%d", part);
+			env_set("root", rootname);
+			env_set("misc", "rootwait");
+		} else {
+			pr_err("Unsupported filesystem type '%d' (bootdev = %d)\n",
+			       fstype, bootdev);
+			return -EINVAL;
+		}
+		return 0;
+	case BOOTDEVICE_ONLY_EMMC:
+	case BOOTDEVICE_BOTH_NOR_EMMC:
+	case BOOTDEVICE_BOTH_NAND_EMMC:
+	case BOOTDEVICE_BOTH_HYPER_EMMC:
+		if (fstype == FS_TYPE_ANY) {
+			pr_err("Unable to probe filesystem type (bootdev = %d)\n", bootdev);
+			return -EINVAL;
+		}
+		break;
+	default:
+		pr_err("Unsupported boot device '%d'\n", bootdev);
+		return -EINVAL;
+	}
+
+	switch (fstype) {
+	case FS_TYPE_EXT:
+	case FS_TYPE_SQUASHFS:
+		rootfstype = fs_get_type_name();
+		env_set("rootfstype", rootfstype);
+		snprintf(rootname, sizeof(rootname), "/dev/mmcblk%lup%d",
+		                            devnum, part);
+		env_set("root", rootname);
+		env_set("misc", "rootwait");
+		if (fstype == FS_TYPE_SQUASHFS)
+			env_set("access", "ro");
+		else
+#if defined(CONFIG_LUA_DM_VERITY)
+			env_set("access", "ro");
+#else
+			env_set("access", "rw");
+#endif
+		break;
+	default:
+		pr_err("Unsupported file system type '%d'\n", fstype);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 int last_stage_init(void)
 {
+	const char * const vars[] = {
+		"bootcmd",
+		"distro_bootcmd",
+		"bootcmd_blk_extlinux",
+		"bootargs",
+	};
+	int ret;
+
 	if (env_get_yesno("download") == 1)
 		enter_download_mode();
 
+	env_set_default_vars(ARRAY_SIZE(vars), (char * const *)vars, 0);
+	loglevel_env_set();
+	ret = rootfs_env_set();
+	if (ret < 0)
+		pr_warn("Unable to set rootfs releated environment variables (ret = %d)\n", ret);
+	fs_close();
+
+#ifdef CONFIG_LUA_DM_VERITY
+	int bootstate = get_bootstate();
+	if (bootstate == BOOTSTATE_POWERUP) {
+		ret = verify_rootfs_dm_verity();
+		if (ret < 0) {
+			pr_err("Unable to verify rootfs verity (ret = %d)\n", ret);
+			return ret;
+		}
+	}
+#endif
 	return 0;
 }
 #endif
