@@ -1434,6 +1434,7 @@ int verfiy_pxefile(ulong pxefile_addr, ulong *conf)
 	}
 
 	debug("   extlinux.conf at 0x%08lx, len = 0x%08lx (%ld)\n", load, len, len);
+	((char *)((void *)load))[len - 1] = '\0'; /* ensure null termination */
 	*conf = load;
 #else
 	*conf = pxefile_addr;
