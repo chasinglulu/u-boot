@@ -218,7 +218,7 @@ static int process_dm_verity_bootargs(const char *verity_header)
 	              start_sector, sectors_num, devname, devname,
 	              data_block_size, hash_block_size, data_blocks,
 	              hash_start_block, hash_algo, root_hash,
-	              salt ? salt : "-");
+	              strlen(salt) ? salt : "-");
 	strcat(verity_args, verity_table);
 	strcat(verity_args, "\"");
 
@@ -256,7 +256,7 @@ static size_t get_rootfs_img_size(void)
 	};
 	size_t fssize = 0;
 	const char *rootfstype = NULL;
-	int i;
+	int i, ret;
 
 	rootfstype = env_get("rootfstype");
 	if (!rootfstype) {
@@ -268,9 +268,10 @@ static size_t get_rootfs_img_size(void)
 		if (strcmp(fssizes[i].name, rootfstype) == 0) {
 			loff_t size = 0;
 
-			if (fssizes[i].get_fssize(&size)) {
-				debug("Unable to get size for '%s' filesystem\n",
-				      fssizes[i].name);
+			ret = fssizes[i].get_fssize(&size);
+			if (ret < 0) {
+				debug("Unable to get size for '%s' filesystem (ret = %d)\n",
+				      fssizes[i].name, ret);
 				return 0;
 			}
 			fssize = size;

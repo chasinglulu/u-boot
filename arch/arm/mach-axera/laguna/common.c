@@ -793,7 +793,6 @@ int last_stage_init(void)
 	ret = rootfs_env_set();
 	if (ret < 0)
 		pr_warn("Unable to set rootfs releated environment variables (ret = %d)\n", ret);
-	fs_close();
 
 #ifdef CONFIG_LUA_DM_VERITY
 	int bootstate = get_bootstate();
@@ -805,6 +804,8 @@ int last_stage_init(void)
 		}
 	}
 #endif
+
+	fs_close();
 	return 0;
 }
 #endif
