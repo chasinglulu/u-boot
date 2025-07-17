@@ -444,7 +444,7 @@ const char *bootdevice_name[] = {
 	[BOOTDEVICE_BOTH_NAND_EMMC]  = "Both-Nand-eMMC",
 };
 
-static int get_bootstrap(const char **name)
+int get_bootstrap(const char **name)
 {
 	const char *dev_name = "syscon-bootdev";
 	struct udevice *dev;

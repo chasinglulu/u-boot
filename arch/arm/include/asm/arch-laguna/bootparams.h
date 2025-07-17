@@ -195,6 +195,7 @@ int get_main_part_id_count(void);
 int get_bootdevice(const char **name);
 int set_bootdevice_env(int bootdev);
 int get_bootstate(void);
+int get_bootstrap(const char **name);
 int set_bootstrap(uint32_t bootstrap);
 int get_downif(void);
 void set_downif_env(int downif);

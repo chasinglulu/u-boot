@@ -240,7 +240,15 @@ int fdtdec_board_setup(const void *blob)
 
 void fdl_reset_misc(void)
 {
-	set_bootstrap(0x10);
+	int bootstrap;
+
+	bootstrap = get_bootstrap(NULL);;
+	if (bootstrap < 0) {
+		pr_err("Invaild bootstrap\n");
+		set_bootstrap(BOOTSTRAP_SAFETY_NOR | BIT(4));
+	} else {
+		set_bootstrap(bootstrap | BIT(4));
+	}
 }
 
 void fdl_sd_complete(void)
