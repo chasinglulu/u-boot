@@ -604,6 +604,11 @@ char *board_fdt_chosen_bootargs(void)
 	char *fdt_addr = images.ft_addr;
 	int nodeoffset;
 
+	if (!fdt_addr) {
+		pr_warn("No FDT found, unable to set bootargs.\n");
+		return env_get("bootargs");
+	}
+
 	nodeoffset = fdt_path_offset(fdt_addr, "/chosen");
 	if (nodeoffset < 0) {
 		debug("No '/chosen' node found in FDT\n");
