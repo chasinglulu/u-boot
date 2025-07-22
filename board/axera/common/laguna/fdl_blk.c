@@ -649,14 +649,10 @@ erase_both_dev:
 			continue;
 		}
 
-		if (blk_desc->if_type != IF_TYPE_MTD) {
-			debug("Skip device '%s' (not MTD)\n", blk_desc->bdev->name);
-			continue;
-		}
-
 		mtd = blk_desc_to_mtd(blk_desc);
-		if (!mtd_type_is_nand(mtd)) {
-			debug("Skip device '%s' (not NAND)\n", blk_desc->bdev->name);
+		if (blk_desc->if_type != IF_TYPE_MTD ||
+		    IS_ERR_OR_NULL(mtd)) {
+			debug("Skip device '%s' (not MTD)\n", blk_desc->bdev->name);
 			continue;
 		}
 
@@ -715,6 +711,10 @@ int fdl_blk_write_data(const char *part_name, size_t image_size)
 
 	written = blk_dwrite(dev_desc, sector,
 	                       blkcnt, fdl_buf_addr);
+#ifdef DEBUG
+	print_hex_dump("Image Data: ", DUMP_PREFIX_OFFSET,
+	                      16, 64, fdl_buf_addr, 64, true);
+#endif
 	debug("blk_dwrite: ret = %ld\n", written);
 	if (written != blkcnt) {
 		pr_err("Size of written image not equal to expected size (%lu != %lu)\n",

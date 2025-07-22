@@ -184,6 +184,10 @@ static int spl_blk_load_image_part(struct spl_image_info *spl_image,
 	/* read image header to find the image size & load address */
 	retlen = blk_dread(dev_desc, part->start,
 	                             blkcnt, (char *)header);
+#ifdef DEBUG
+	print_hex_dump("Image Header: ", DUMP_PREFIX_OFFSET,
+	                      16, 64, header, sizeof(*header), true);
+#endif
 	debug("blk_dread start 0x%lx blkcnt %lu\n", part->start, retlen);
 	if (retlen == (ulong)-ENOSYS) {
 		ret = -EIO;
