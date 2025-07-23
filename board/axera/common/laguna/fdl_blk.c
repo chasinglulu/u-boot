@@ -543,6 +543,9 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 	if (str_disk_guid)
 		free(str_disk_guid);
 
+	if (is_mtdparts_ready())
+		set_mtdparts_ready(false);
+
 	return 0;
 }
 

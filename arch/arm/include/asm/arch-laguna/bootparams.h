@@ -210,6 +210,8 @@ int check_bootparams(bool is_sbl);
 void calc_bootparams_crc32(bool is_sbl);
 void probe_all_spi_nor_devs(void);
 int verify_rootfs_dm_verity(void);
+bool is_mtdparts_ready(void);
+void set_mtdparts_ready(bool okay);
 
 /* AB Control operations */
 int safety_abc_setup(int mark_type, int slot);

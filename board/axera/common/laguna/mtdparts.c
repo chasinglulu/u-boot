@@ -16,6 +16,18 @@
 #define MTDPARTS_LEN    512
 #define MTDIDS_LEN      128
 
+static bool mtd_initialized= false;
+
+inline bool is_mtdparts_ready(void)
+{
+	return mtd_initialized;
+}
+
+inline void set_mtdparts_ready(bool okay)
+{
+	mtd_initialized = okay;
+}
+
 #if defined(CONFIG_LUA_MTDPARTS_READ)
 loff_t board_mtdparts_offset(uint8_t mtdtype, bool backup)
 {
@@ -488,7 +500,6 @@ void board_mtdparts_default(const char **mtdids, const char **mtdparts)
 	const char __maybe_unused *mtd_name;
 	static char parts[3 * MTDPARTS_LEN + 1];
 	static char ids[MTDIDS_LEN + 1];
-	static bool mtd_initialized;
 	int __maybe_unused bootstate = 0;
 	int __maybe_unused ret;
 
