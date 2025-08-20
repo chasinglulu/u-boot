@@ -24,9 +24,12 @@ static int maxpacket;
 static void fdl_response_tx(struct udevice *dev, const char *response)
 {
 	int len = fdl_get_resp_size(response);
+	int ret;
 
 	FDL_DUMP("RESPONSE: ", response, len);
-	fdl_usb_drv_write(dev, response, len);
+	ret = fdl_usb_drv_write(dev, response, len);
+	if (ret < 0)
+		fdl_err("Unable to send response: %d\n", ret);
 }
 
 int fdl_usb_rx_timeout(struct udevice *dev, char *buf, size_t len, uint32_t timeout)
@@ -214,8 +217,13 @@ static int fdl_usb_process(struct udevice *dev, bool timeout, bool need_ack)
 		fdl_response_tx(dev, response);
 
 #ifdef CONFIG_FDL_RAW_DATA_DL
-		if (!fdl_compare_command_by_tag(&fdl, FDL_COMMAND_MIDST_DATA))
+		if (!fdl_compare_command_by_tag(&fdl, FDL_COMMAND_MIDST_DATA)) {
+			if (cmd_packet) {
+				free(cmd_packet);
+				cmd_packet = NULL;
+			}
 			continue;
+		}
 
 		payload = (void *)&fdl_tx_payload_info;
 		fdl_data_len = ROUND(payload->len, maxpacket);
