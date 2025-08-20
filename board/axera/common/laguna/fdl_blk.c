@@ -549,6 +549,37 @@ int fdl_blk_write_partition(struct fdl_part_table *ptab)
 	return 0;
 }
 
+static int fdl_blk_erase_mmc(struct blk_desc *blk_desc)
+{
+	struct udevice *mmc_dev;
+	struct mmc *mmc;
+	int ret;
+	debug("Erasing eMMC GPT header and backup...\n");
+
+	mmc_dev = dev_get_parent(blk_desc->bdev);
+	debug("MMC device: %s\n", mmc_dev->name);
+
+	mmc = mmc_get_mmc_dev(mmc_dev);
+	debug("MMC device: %p\n", mmc);
+
+	if (mmc == NULL || mmc_init(mmc) != 0 || IS_MMC(mmc) == 0U)
+		return -ENODEV;
+
+	ret = blk_derase(blk_desc, 0, mmc->erase_grp_size);
+	if (ret != mmc->erase_grp_size) {
+		pr_err("Failed to erase eMMC GPT header (ret = %d)\n", ret);
+		return -EIO;
+	}
+
+	ret = blk_derase(blk_desc, blk_desc->lba - 34, 33);
+	if (ret != 33) {
+		pr_err("Failed to erase eMMC GPT backup (ret = %d)\n", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 int fdl_blk_erase(const char *part_name, size_t size)
 {
 	struct blk_desc *blk_desc = NULL;
@@ -556,7 +587,7 @@ int fdl_blk_erase(const char *part_name, size_t size)
 	struct udevice *dev;
 	struct uclass *uc;
 	struct mtd_info *mtd;
-	ulong main_mtd;
+	ulong main_mtd, mmc_dev;
 	int bootdev, ret;
 	size_t erase_size;
 	lbaint_t erase_lba;
@@ -611,8 +642,16 @@ eraseall:
 			return -ENXIO;
 		break;
 	case BOOTDEVICE_ONLY_EMMC:
-		debug("Not need erasing the whole eMMC\n");
-		return 0;
+		mmc_dev = env_get_ulong(env_get_name(ENV_MMC_DEV), 10, ~0UL);
+		if (unlikely(mmc_dev == ~0UL))
+			mmc_dev = CONFIG_FDL_FLASH_MMC_DEV;
+
+		blk_desc = get_blk_by_devnum(IF_TYPE_MMC, mmc_dev);
+		if (IS_ERR_OR_NULL(blk_desc)) {
+			pr_err("Unable to get block device descriptor for eMMC\n");
+			return -ENXIO;
+		}
+		break;
 	case BOOTDEVICE_BOTH_NOR_NAND:
 	case BOOTDEVICE_BOTH_NOR_EMMC:
 		goto erase_both_dev;
@@ -622,10 +661,16 @@ eraseall:
 	}
 
 	debug("Erasing single device '%s'...\n", blk_desc->bdev->name);
-	ret = blk_derase(blk_desc, 0, blk_desc->lba);
-	if (ret != blk_desc->lba) {
-		pr_err("Failed to erase the whole device '%s' (ret = %d)\n", blk_desc->bdev->name, ret);
-		return -EIO;
+	if (blk_desc->if_type == IF_TYPE_MMC) {
+		ret = fdl_blk_erase_mmc(blk_desc);
+		if (ret < 0)
+			return ret;
+	} else {
+		ret = blk_derase(blk_desc, 0, blk_desc->lba);
+		if (ret != blk_desc->lba) {
+			pr_err("Failed to erase the whole device '%s' (ret = %d)\n", blk_desc->bdev->name, ret);
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -646,6 +691,14 @@ erase_both_dev:
 		blk_desc = dev_get_uclass_plat(dev);
 		if (IS_ERR_OR_NULL(blk_desc)) {
 			pr_err("Failed to get device descriptor\n");
+			continue;
+		}
+
+		if (blk_desc->if_type == IF_TYPE_MMC) {
+			ret = fdl_blk_erase_mmc(blk_desc);
+			if (ret < 0 && ret != -ENODEV)
+				return ret;
+
 			continue;
 		}
 
