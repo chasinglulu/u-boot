@@ -241,8 +241,7 @@
 		"mmc_dev=0\0"                                                         \
 		"secureboot=0\0"                                                      \
 		"devtype=none\0"                                                      \
-		"devnum=0\0"                                                          \
-		"bootslot=0\0"
+		"devnum=0\0"
 
 #include <config_distro_bootcmd.h>
 

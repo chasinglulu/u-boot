@@ -18,6 +18,7 @@
 #include <spl.h>
 #include <cpu_func.h>
 #include <malloc.h>
+#include <blk.h>
 
 #include <android_ab.h>
 #include <asm/arch/bootparams.h>
@@ -109,6 +110,10 @@ void spl_board_prepare(void)
 	remove_mtd_device(bp->bootdevice);
 
 	calc_bootparams_crc32(false);
+
+	/* Wait for UART output flush to prevent garbled characters */
+	if (bp->bootdevice == BOOTDEVICE_OCM)
+		mdelay(5);
 }
 
 int spl_parse_board_header(struct spl_image_info *spl_image,
@@ -228,6 +233,7 @@ static inline void wait_for_uboot(void)
 #endif
 }
 
+#if defined(CONFIG_LUA_AB)
 static void verify_bootslot(void)
 {
 	boot_params_t *bp = boot_params_get_base();
@@ -261,6 +267,7 @@ static void verify_bootslot(void)
 		reset_cpu();
 	}
 }
+#endif
 
 void spl_board_init(void)
 {
@@ -273,7 +280,6 @@ void spl_board_init(void)
 	printf("MCU Slot:      %c (idx = %d)\n",
 	                   SLOT_NAME(bp->mcu_slot), bp->mcu_slot);
 #endif
-
 	bootstate = get_bootstate();
 	if (bootstate > 0) {
 		const char *state = bootstate == BOOTSTATE_POWERUP ?
@@ -297,6 +303,8 @@ void spl_board_init(void)
 		printf("Boot Device:   Unknown\n");
 	}
 
+	blkcache_configure(64, 64);
+
 	if (bootstate == BOOTSTATE_DOWNLOAD)
 		bp->bootdevice = BOOTDEVICE_OCM;
 
@@ -304,6 +312,7 @@ void spl_board_init(void)
 	env_relocate();
 	set_bootdevice_env(bp->bootdevice);
 
+#if defined(CONFIG_LUA_AB)
 	if (bootstate == BOOTSTATE_POWERUP) {
 		bp->slot = -1;
 		verify_bootslot();
@@ -315,6 +324,7 @@ void spl_board_init(void)
 			printf("Boot Slot:     Unknown\n");
 		}
 	}
+#endif
 
 	if (is_secure_boot())
 		set_secureboot_env(true);

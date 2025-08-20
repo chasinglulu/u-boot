@@ -23,6 +23,7 @@
 #if IS_ENABLED(CONFIG_CMD_NAND) && IS_ENABLED(CONFIG_MTD_RAW_NAND)
 #include <nand.h>
 #endif
+#include <blk.h>
 #include <fs.h>
 #include <android_ab.h>
 #include <linux/ctype.h>
@@ -356,6 +357,12 @@ ulong board_get_usable_ram_top(ulong total_size)
 	return gd->ram_base + gd->ram_size - 1;
 }
 
+int arch_cpu_init(void)
+{
+	blkcache_configure(64, 512);
+	return 0;
+}
+
 #ifdef CONFIG_LUA_AB
 static int scan_dev_for_extlinux_ab(void)
 {
@@ -433,7 +440,70 @@ static int scan_dev_for_extlinux_ab(void)
 	return 0;
 }
 #else
-static inline int scan_dev_for_extlinux_ab(void) { return 0; }
+static int scan_dev_for_extlinux_ab(void)
+{
+	struct blk_desc *dev_desc = NULL;
+	struct disk_partition part_info = { 0 };
+	char *devtype = NULL;
+	ulong devnum;
+	int part_num = -1;
+	int ret;
+
+	devtype = env_get(env_get_name(ENV_DEVTYPE));
+	if (unlikely(!devtype)) {
+		debug("'devtype' environment variable not found\n");
+		return -ENODATA;
+	}
+
+	devnum = env_get_ulong(env_get_name(ENV_DEVNUM), 10, ~0UL);
+	if (devnum == ~0UL) {
+		debug("devnum' environment variable not found\n");
+		return -ENODATA;
+	}
+
+	dev_desc = blk_get_dev(devtype, (int)devnum);
+	if (IS_ERR_OR_NULL(dev_desc)) {
+		debug("Failed to get '%s %lu' block device\n",
+		      devtype, devnum);
+		return (int)PTR_ERR(dev_desc);
+	}
+
+	/* Lookup the "bootable falg" partition */
+	for (int p = 1; p <= MAX_SEARCH_PARTITIONS; p++) {
+		int r = part_get_info(dev_desc, p, &part_info);
+
+		if (r != 0)
+			continue;
+
+		if (part_info.bootable) {
+			part_num = p;
+			break;
+		}
+	}
+	if (part_num == -1) {
+		debug("No bootable partition found\n");
+		return -EINVAL;
+	}
+
+	ret = part_get_info(dev_desc, part_num, &part_info);
+	if (ret < 0) {
+		debug("Unable to get '%d' partition information on '%s' device\n",
+		           part_num, devtype);
+		return ret;
+	}
+	ret = fs_set_blk_dev_with_part(dev_desc, part_num);
+	if (ret < 0) {
+		pr_err("No filesystem exist in '%s (%d)' partition on '%s' device\n",
+			part_info.name, part_num, devtype);
+		return -ENOENT;
+	}
+	fs_close();
+
+	env_set_hex("distro_bootpart", (ulong)part_num);
+	env_set("prefix", "/");
+
+	return 0;
+}
 #endif
 
 #ifndef BUILD_DATE

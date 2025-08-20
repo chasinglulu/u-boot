@@ -107,9 +107,9 @@ inline int get_main_part_id_count(void)
 
 inline const char *get_rootfs_part_name(void)
 {
+#if defined(CONFIG_LUA_AB)
 	const boot_params_t *bp = boot_params_get_base();
 
-#if defined(CONFIG_LUA_AB)
 	if (bp->slot < 0 || bp->slot >= 2)
 		return NULL;
 
